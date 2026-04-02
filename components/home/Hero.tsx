@@ -14,7 +14,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative flex min-h-[74vh] items-center overflow-hidden">
+    <section className="relative flex min-h-[55vh] items-center overflow-hidden">
       {/* Background image */}
       <div className="pointer-events-none absolute inset-0">
         <Image
