@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Hero() {
   const [search, setSearch] = useState("");
@@ -13,28 +14,47 @@ export default function Hero() {
   };
 
   return (
-    <section className="bg-white px-8 pb-20 pt-[88px]">
-      <div className="mx-auto max-w-[960px] text-center">
-        <div className="mb-5 inline-block rounded-full bg-coral/[0.08] px-[10px] py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
+    <section className="relative flex min-h-[74vh] items-center overflow-hidden">
+      {/* Background image */}
+      <div className="pointer-events-none absolute inset-0">
+        <Image
+          src="/images/hero-home.png"
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        {/* Gradient overlay — dark left, lighter right */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.15) 100%)",
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 mx-auto w-full max-w-[1100px] px-8 py-[100px] md:px-12">
+        <div className="mb-5 inline-block rounded-full bg-coral px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-white">
           Arizona&apos;s giving brokerage
         </div>
-        <h1 className="mb-5 font-serif text-[clamp(40px,5.5vw,72px)] font-semibold leading-[1.1] tracking-[-0.03em] text-black">
+        <h1 className="mb-5 max-w-[700px] font-serif text-[clamp(38px,5vw,68px)] font-semibold leading-[1.1] tracking-[-0.02em] text-white">
           Every home funds a cause{" "}
           <em className="text-coral">you choose.</em>
         </h1>
-        <p className="mx-auto mb-10 max-w-[500px] text-[17px] font-light leading-[1.8] text-muted">
-          Buy or sell with Givenest and we donate to a charity of your choice at
+        <p className="mb-10 max-w-[460px] text-[17px] font-normal leading-[1.8] text-white" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.6)" }}>
+          Buy or sell on givenest and we donate to a charity of your choice at
           closing — at no extra cost.
         </p>
 
         {/* Search bar */}
-        <div className="mx-auto flex max-w-[600px] overflow-hidden rounded-lg border border-border shadow-[0_2px_20px_rgba(0,0,0,0.1)]">
+        <div className="flex w-full max-w-[580px] overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Search by city, zip, or address..."
-            className="flex-1 border-none bg-white px-[22px] py-[18px] font-sans text-[15px] font-light text-black outline-none placeholder:text-[#c0bdb6]"
+            className="min-w-0 flex-1 border-none bg-white px-4 py-[18px] font-sans text-[15px] font-light text-black outline-none placeholder:text-[#c0bdb6] md:px-[22px]"
           />
           <button
             onClick={handleSearch}
@@ -44,16 +64,16 @@ export default function Hero() {
           </button>
         </div>
 
-        <div className="mt-[18px] flex flex-wrap justify-center gap-7">
+        <div className="mt-[18px] flex flex-wrap gap-7" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.6)" }}>
           <Link
             href="/sell"
-            className="text-[13px] text-muted transition-colors hover:text-black"
+            className="text-[13px] text-white transition-colors hover:text-white/80"
           >
             Get a selling estimate →
           </Link>
           <Link
             href="/charities"
-            className="text-[13px] text-muted transition-colors hover:text-black"
+            className="text-[13px] text-white transition-colors hover:text-white/80"
           >
             Browse charities →
           </Link>

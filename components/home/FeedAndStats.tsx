@@ -29,7 +29,7 @@ export default function FeedAndStats() {
 
   return (
     <section className="bg-white px-8 py-[72px]">
-      <div className="mx-auto grid max-w-[1100px] grid-cols-2 gap-16">
+      <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-16 md:grid-cols-2">
         {/* Feed */}
         <div>
           <div className="mb-[6px] flex items-center gap-2">

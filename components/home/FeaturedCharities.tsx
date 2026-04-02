@@ -19,7 +19,7 @@ export default function FeaturedCharities() {
             <h2 className="font-serif text-[clamp(20px,2.5vw,30px)] font-medium tracking-[-0.02em]">
               Causes already receiving
               <br />
-              Givenest donations.
+              givenest donations.
             </h2>
           </div>
           <Link
@@ -30,7 +30,7 @@ export default function FeaturedCharities() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 gap-[14px]">
+        <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
           {CHARITIES.map((c) => (
             <div
               key={c.id}

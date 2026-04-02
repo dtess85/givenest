@@ -18,9 +18,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Givenest — Every Home Funds a Cause",
+  title: "givenest — Every Home Funds a Cause",
   description:
-    "Buy or sell with Givenest and we donate to a charity of your choice at closing — at no extra cost. Arizona's giving brokerage.",
+    "Buy or sell with givenest and we donate to a charity of your choice at closing — at no extra cost. Arizona's giving brokerage.",
 };
 
 export default function RootLayout({

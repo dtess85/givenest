@@ -12,7 +12,7 @@ export default function AgentCTA() {
           <em className="text-coral">Build a brand worth talking about.</em>
         </h2>
         <p className="mx-auto mb-8 max-w-[480px] text-sm font-light leading-[1.8] text-muted">
-          Most brokerages offer splits and tools. None offer meaning. Givenest
+          Most brokerages offer splits and tools. None offer meaning. givenest
           gives you something no other brokerage can — a reason for clients to
           choose you.
         </p>

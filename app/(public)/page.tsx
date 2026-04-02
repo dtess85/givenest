@@ -3,7 +3,6 @@ import MathStrip from "@/components/home/MathStrip";
 import HowItWorks from "@/components/home/HowItWorks";
 import FeedAndStats from "@/components/home/FeedAndStats";
 import FeaturedCharities from "@/components/home/FeaturedCharities";
-import AgentCTA from "@/components/home/AgentCTA";
 import FinalCTA from "@/components/home/FinalCTA";
 
 export default function Home() {
@@ -14,7 +13,6 @@ export default function Home() {
       <HowItWorks />
       <FeedAndStats />
       <FeaturedCharities />
-      <AgentCTA />
       <FinalCTA />
     </>
   );
