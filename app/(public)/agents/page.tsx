@@ -317,7 +317,7 @@ export default function Agents() {
       </div>
 
       {/* Join CTA */}
-      <div style={{ background: "#0C0D0D", padding: "80px 48px" }}>
+      <div style={{ background: "#F4F3EE", padding: "80px 48px" }}>
         <div
           style={{ maxWidth: "640px", margin: "0 auto", textAlign: "center" }}
         >
@@ -336,7 +336,7 @@ export default function Agents() {
               fontWeight: 600,
               lineHeight: 1.15,
               letterSpacing: "-0.02em",
-              color: "#FAF9F7",
+              color: "#0C0D0D",
               margin: "0 0 16px",
             }}
           >
@@ -348,7 +348,7 @@ export default function Agents() {
             style={{
               fontSize: "16px",
               fontWeight: 300,
-              color: "rgba(255,255,255,0.65)",
+              color: "#6B6860",
               lineHeight: 1.85,
               margin: "0 0 40px",
             }}
@@ -383,8 +383,8 @@ export default function Agents() {
               href="/buy"
               style={{
                 background: "transparent",
-                color: "rgba(255,255,255,0.75)",
-                border: "1px solid rgba(255,255,255,0.2)",
+                color: "#6B6860",
+                border: "1px solid #E3DED6",
                 padding: "14px 36px",
                 fontSize: "15px",
                 fontWeight: 400,
