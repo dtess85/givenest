@@ -65,7 +65,7 @@ export default function HowItWorks() {
         <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">
           Every home does good.
         </span>
-        <Link href="/about" className="text-[13px] font-medium text-white transition-colors hover:text-white/80">
+        <Link href="/about" className="text-[15px] font-semibold text-white transition-colors hover:text-white/80">
           Learn more →
         </Link>
       </div>
