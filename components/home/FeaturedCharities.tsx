@@ -9,9 +9,8 @@ const CHARITIES = [
 
 export default function FeaturedCharities() {
   return (
-    <section className="border-t border-border bg-pampas px-8 py-16">
-      <div className="mx-auto max-w-[1100px]">
-        <div className="mb-8 flex items-baseline justify-between">
+    <div>
+      <div className="mb-8 flex items-baseline justify-between">
           <div>
             <span className="mb-2 inline-block rounded-full bg-coral/[0.08] px-[10px] py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
               Featured charities
@@ -30,7 +29,7 @@ export default function FeaturedCharities() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-[14px]">
           {CHARITIES.map((c) => (
             <div
               key={c.id}
@@ -53,7 +52,6 @@ export default function FeaturedCharities() {
             </div>
           ))}
         </div>
-      </div>
-    </section>
+    </div>
   );
 }

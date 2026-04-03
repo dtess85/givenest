@@ -28,10 +28,8 @@ export default function FeedAndStats() {
   }, []);
 
   return (
-    <section className="bg-white px-8 py-[72px]">
-      <div className="mx-auto max-w-[1100px]">
-        {/* Stats */}
-        <div className="mx-auto max-w-[560px]">
+    <div>
+        <div>
           <span className="mb-[6px] inline-block rounded-full bg-coral/[0.08] px-[10px] py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
             Platform to date
           </span>
@@ -80,8 +78,7 @@ export default function FeedAndStats() {
             </div>
           </div>
         </div>
-      </div>
-    </section>
+    </div>
   );
 }
 
