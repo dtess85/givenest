@@ -8,7 +8,7 @@ const steps = [
   {
     number: "02",
     title: "Choose your cause",
-    desc: "Select any charity in the country. Your choice is tied to your transaction.",
+    desc: "Select any charity in the country. Your choice is tied to your transaction and tracked on our dashboard.",
     link: { label: "Browse charities", href: "/charities" },
   },
   {
