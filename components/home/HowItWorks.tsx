@@ -66,7 +66,7 @@ export default function HowItWorks() {
           Every home does good.
         </span>
         <Link href="/about" className="text-[13px] font-medium text-white transition-colors hover:text-white/80 self-end">
-          Learn more →
+          See how →
         </Link>
       </div>
     </div>
