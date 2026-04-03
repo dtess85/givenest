@@ -7,12 +7,17 @@ import { fmt } from "@/lib/utils";
 
 export default function Charities() {
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
 
-  const filtered = CHARITIES.filter(
-    (c) =>
+  const CATEGORIES = ["All", ...Array.from(new Set(CHARITIES.map((c) => c.category)))];
+
+  const filtered = CHARITIES.filter((c) => {
+    const matchesSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.category.toLowerCase().includes(search.toLowerCase())
-  );
+      c.category.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = activeCategory === "All" || c.category === activeCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div>
@@ -47,6 +52,22 @@ export default function Charities() {
           <span className="text-[13px] font-light text-muted">
             Nonprofits that givenest has donated to
           </span>
+        </div>
+
+        <div className="mb-6 flex flex-wrap gap-2">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`rounded-full px-[14px] py-[7px] text-[11px] font-medium uppercase tracking-[0.06em] transition-colors ${
+                activeCategory === cat
+                  ? "bg-coral text-white"
+                  : "bg-border text-muted hover:text-black"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
