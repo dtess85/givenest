@@ -248,9 +248,9 @@ export default function Agents() {
                   margin: "0 0 16px",
                 }}
               >
-                What makes a
+                What makes our
                 <br />
-                <em style={{ color: "#E36858" }}>Givenest agent</em> different.
+                <em style={{ color: "#E36858" }}>agents</em> different.
               </h2>
               <p
                 style={{
