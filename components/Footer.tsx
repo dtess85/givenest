@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Wordmark from "./Wordmark";
 
 export default function Footer() {
   return (
@@ -21,19 +22,7 @@ export default function Footer() {
         >
           <div>
             <div style={{ marginBottom: 12 }}>
-              <span style={{ fontSize: 17, fontWeight: 600, color: "#ffffff" }}>
-                give
-              </span>
-              <span
-                style={{
-                  fontSize: 17,
-                  fontWeight: 600,
-                  color: "#E36858",
-                  fontStyle: "italic",
-                }}
-              >
-                nest
-              </span>
+              <Wordmark size={17} dark />
             </div>
             <p style={{ color: "#999999", fontSize: 13, lineHeight: 1.8, maxWidth: 250 }}>
               Arizona&apos;s giving brokerage. Every home we close funds a cause
@@ -82,11 +71,9 @@ export default function Footer() {
 
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span style={{ fontSize: 12, color: "#666666" }}>
-            &copy; 2025 Givenest. Licensed Arizona Real Estate Brokerage.
+            &copy; 2026 Givenest. Licensed Arizona Real Estate Brokerage.
           </span>
-          <span style={{ fontSize: 12, color: "#666666" }}>
-            givenest.com
-          </span>
+          <Wordmark size={12} dark />
         </div>
       </div>
     </div>
