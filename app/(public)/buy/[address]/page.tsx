@@ -72,18 +72,11 @@ export default function PropertyDetail() {
                 key={a.initials}
                 className="flex items-center gap-[14px] rounded-[10px] border border-border bg-white p-[14px_18px]"
               >
-                <div className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-full bg-[#F0EFED] text-[11px] font-medium text-muted">
+                <div className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
                   {a.initials}
                 </div>
                 <div className="flex-1">
                   <div className="text-[13px] font-medium">{a.name}</div>
-                  <div className="mt-px text-xs text-muted">{a.markets}</div>
-                </div>
-                <div className="mr-[10px] text-right">
-                  <div className="text-[15px] font-semibold text-coral">
-                    {a.closings}
-                  </div>
-                  <div className="text-[10px] text-cloudy">closings</div>
                 </div>
                 <button className="rounded-md border border-border px-[14px] py-[7px] text-xs transition-all hover:border-coral hover:text-coral">
                   Request
