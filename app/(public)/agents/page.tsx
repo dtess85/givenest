@@ -42,43 +42,15 @@ export default function Agents() {
   return (
     <div>
       {/* Hero */}
-      <div style={{ position: "relative", height: "520px", overflow: "hidden" }}>
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1600&q=80')",
-            backgroundSize: "cover",
-            backgroundPosition: "center 30%",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(to bottom, rgba(12,13,13,0.25) 0%, rgba(12,13,13,0.72) 100%)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            padding: "0 48px 52px",
-            maxWidth: "1100px",
-            margin: "0 auto",
-          }}
-        >
+      <div style={{ background: "#FFFFFF", padding: "52px 48px 72px" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <div
             style={{
               fontSize: "11px",
               fontWeight: 500,
               letterSpacing: "0.12em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.65)",
+              color: "#E36858",
               marginBottom: "16px",
             }}
           >
@@ -90,7 +62,7 @@ export default function Agents() {
               fontSize: "clamp(36px, 5vw, 60px)",
               fontWeight: 600,
               lineHeight: 1.1,
-              color: "#FFFFFF",
+              color: "#0C0D0D",
               letterSpacing: "-0.02em",
               margin: "0 0 16px",
               maxWidth: "640px",
@@ -104,7 +76,7 @@ export default function Agents() {
             style={{
               fontSize: "17px",
               fontWeight: 300,
-              color: "rgba(255,255,255,0.80)",
+              color: "#6B6860",
               maxWidth: "480px",
               lineHeight: 1.75,
               margin: 0,
