@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AGENTS } from "@/lib/mock-data";
 
 const values = [
   "You believe real estate can mean more than a commission check.",
@@ -62,6 +63,54 @@ export default function Agents() {
           >
             Schedule a conversation →
           </button>
+        </div>
+      </section>
+
+      {/* Meet the team */}
+      <section className="bg-white px-8 pb-16 pt-12">
+        <div className="mx-auto max-w-[1100px]">
+          <span className="mb-3 inline-block rounded-full bg-coral/[0.08] px-[10px] py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
+            Our agents
+          </span>
+          <h2 className="mb-8 font-serif text-[clamp(22px,2.8vw,36px)] font-medium tracking-[-0.02em] text-black">
+            The team behind the giving.
+          </h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {AGENTS.map((agent) => (
+              <div
+                key={agent.name}
+                className="rounded-[10px] border border-border bg-white p-6"
+              >
+                <div className="mb-4 flex items-center gap-4">
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[15px] font-semibold text-white">
+                    {agent.initials}
+                  </div>
+                  <div>
+                    <div className="text-[15px] font-semibold text-black">{agent.name}</div>
+                    <div className="text-xs font-light text-muted">{agent.markets}</div>
+                  </div>
+                </div>
+                <div className="h-px bg-border" />
+                <div className="mt-4 flex items-baseline justify-between">
+                  <span className="text-xs font-light text-muted">Closings</span>
+                  <span className="text-base font-semibold text-coral">{agent.closings}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Join the brokerage */}
+      <section className="bg-white px-8 pb-4 pt-16">
+        <div className="mx-auto max-w-[720px]">
+          <span className="mb-3 inline-block rounded-full bg-coral/[0.08] px-[10px] py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
+            Join the brokerage
+          </span>
+          <h2 className="font-serif text-[clamp(22px,2.8vw,36px)] font-medium tracking-[-0.02em] text-black">
+            Become part of something{" "}
+            <em className="text-coral">worth sharing.</em>
+          </h2>
         </div>
       </section>
 

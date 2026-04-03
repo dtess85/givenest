@@ -42,9 +42,8 @@ export const CHARITIES: CharityItem[] = [
 ];
 
 export const AGENTS: AgentItem[] = [
-  { name: "Sarah Chen", markets: "Scottsdale · Paradise Valley", closings: 18, initials: "SC" },
-  { name: "Marcus Webb", markets: "Phoenix · Tempe · Chandler", closings: 24, initials: "MW" },
-  { name: "Alicia Romero", markets: "Gilbert · Mesa · Queen Creek", closings: 15, initials: "AR" },
+  { name: "Kyndall Yates", markets: "Gilbert · Mesa · Chandler", closings: 0, initials: "KY" },
+  { name: "Dustin Tessendorf", markets: "Scottsdale · Phoenix · Paradise Valley", closings: 0, initials: "DT" },
 ];
 
 export function getPropertyBySlug(slug: string): Property | undefined {
