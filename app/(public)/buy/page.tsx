@@ -80,7 +80,7 @@ export default function Buy() {
                   </div>
                   <div className="mb-[10px] h-px bg-border" />
                   <div className="flex items-baseline justify-between">
-                    <span className="text-xs text-muted">Gives to charity</span>
+                    <span className="text-xs text-muted">Estimated Donation</span>
                     <span className="text-[15px] font-semibold text-coral">
                       {fmt(givingPool)}
                     </span>
