@@ -65,8 +65,11 @@ export default function HowItWorks() {
         <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">
           Every home does good.
         </span>
+        <span className="text-[15px] font-light text-white/80 tracking-[-0.01em]">
+          Built to create impact with every closing.
+        </span>
         <Link href="/about" className="text-[13px] font-medium text-white transition-colors hover:text-white/80 self-end">
-          See how →
+          Learn more →
         </Link>
       </div>
     </div>
