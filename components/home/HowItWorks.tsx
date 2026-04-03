@@ -2,7 +2,7 @@ const steps = [
   {
     number: "01",
     title: "Find your home",
-    desc: "Search Arizona listings. See the donation amount on every property.",
+    desc: "Search Arizona listings. See the estimated donation amount on every property.",
     link: { label: "Browse homes", href: "/buy" },
   },
   {
