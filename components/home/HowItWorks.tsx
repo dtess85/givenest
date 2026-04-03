@@ -63,7 +63,7 @@ export default function HowItWorks() {
     <div className="bg-coral px-8 py-[18px]">
       <div className="mx-auto max-w-[960px]">
         <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">
-          Free for every client. Always.
+          Every home does good.
         </span>
       </div>
     </div>
