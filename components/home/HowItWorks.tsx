@@ -61,11 +61,11 @@ export default function HowItWorks() {
       </div>
     </section>
     <div className="bg-coral px-8 py-[18px]">
-      <div className="mx-auto flex max-w-[960px] items-center justify-between">
+      <div className="mx-auto max-w-[960px] flex items-center gap-5">
         <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">
           Every home does good.
         </span>
-        <Link href="/about" className="text-[13px] font-medium text-white/80 transition-colors hover:text-white">
+        <Link href="/about" className="text-[13px] font-medium text-white transition-colors hover:text-white/80">
           Learn more →
         </Link>
       </div>
