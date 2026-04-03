@@ -36,12 +36,9 @@ export const PROPERTIES: Property[] = [
 ];
 
 export const CHARITIES: CharityItem[] = [
-  { id: 1, name: "St. Mary's Food Bank", category: "Food Security", city: "Phoenix, AZ", total: 48200, closings: 14 },
-  { id: 2, name: "Arizona Humane Society", category: "Animal Welfare", city: "Phoenix, AZ", total: 31500, closings: 9 },
-  { id: 3, name: "Boys & Girls Club of Metro Phoenix", category: "Youth", city: "Phoenix, AZ", total: 22800, closings: 7 },
-  { id: 4, name: "Habitat for Humanity AZ", category: "Housing", city: "Statewide", total: 61400, closings: 19 },
-  { id: 5, name: "Phoenix Children's Hospital", category: "Health", city: "Phoenix, AZ", total: 19200, closings: 5 },
-  { id: 6, name: "Southwest Human Development", category: "Early Childhood", city: "Phoenix, AZ", total: 12600, closings: 4 },
+  { id: 1, name: "Gilbert Christian Schools", category: "Education", city: "Gilbert, AZ", total: 0, closings: 0 },
+  { id: 2, name: "Orchard: Africa", category: "International", city: "South Africa", total: 0, closings: 0 },
+  { id: 3, name: "House of Refuge", category: "Housing", city: "Mesa, AZ", total: 0, closings: 0 },
 ];
 
 export const AGENTS: AgentItem[] = [
