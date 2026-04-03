@@ -13,17 +13,17 @@ const FEED = [
 ];
 
 const STATS = [
-  { value: "$284,190", label: "Donated to charity", highlight: false },
-  { value: "82", label: "Homes closed", highlight: false },
-  { value: "41", label: "Charities supported", highlight: false },
-  { value: "100%", label: "Donated directly at closing, always", highlight: true },
+  { value: "$0", label: "Donated to charity", highlight: false },
+  { value: "0", label: "Homes closed", highlight: false },
+  { value: "0", label: "Charities supported", highlight: false },
+  { value: "25%", label: "% of commission donated at close", highlight: true },
 ];
 
 export default function FeedAndStats() {
   const [barWidth, setBarWidth] = useState(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => setBarWidth(68), 600);
+    const timer = setTimeout(() => setBarWidth(0), 600);
     return () => clearTimeout(timer);
   }, []);
 
@@ -59,15 +59,15 @@ export default function FeedAndStats() {
           {/* Giving goal */}
           <div className="mt-5 rounded-lg border border-border bg-pampas p-4">
             <div className="mb-[6px] flex justify-between">
-              <span className="text-[13px] text-muted">2025 giving goal</span>
-              <span className="text-[13px] font-semibold text-coral">68%</span>
+              <span className="text-[13px] text-muted">2026 giving goal</span>
+              <span className="text-[13px] font-semibold text-coral">0%</span>
             </div>
             <div className="mb-2 flex justify-between">
               <span className="text-xs font-light text-muted">
-                $284,190 raised
+                $0 raised
               </span>
               <span className="text-xs font-light text-muted">
-                $420,000 goal
+                $250,000 goal
               </span>
             </div>
             <div className="h-[3px] overflow-hidden rounded-sm bg-border">
