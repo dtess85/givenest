@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { fmt } from "@/lib/utils";
-
-const CHARITIES = [
-  { id: 1, name: "St. Mary's Food Bank", category: "Food Security", city: "Phoenix, AZ", total: 48200, closings: 14 },
-  { id: 2, name: "Arizona Humane Society", category: "Animal Welfare", city: "Phoenix, AZ", total: 31500, closings: 9 },
-  { id: 3, name: "Boys & Girls Club of Metro Phoenix", category: "Youth", city: "Phoenix, AZ", total: 22800, closings: 7 },
-];
+import { CHARITIES } from "@/lib/mock-data";
 
 export default function FeaturedCharities() {
   return (
