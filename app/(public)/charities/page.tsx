@@ -26,7 +26,7 @@ export default function Charities() {
           <span className="mb-3 inline-block rounded-full bg-coral/[0.08] px-[10px] py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
             Charity showcase
           </span>
-          <h1 className="mb-[18px] font-serif text-[clamp(26px,3.5vw,44px)] font-medium leading-[1.2] tracking-[-0.02em]">
+          <h1 className="mb-[18px] font-serif text-[clamp(36px,5vw,60px)] font-medium leading-[1.1] tracking-[-0.02em]">
             1.8M+ charities.{" "}
             <em className="text-coral">Your choice.</em>
           </h1>
