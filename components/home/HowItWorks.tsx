@@ -14,7 +14,7 @@ const steps = [
   {
     number: "03",
     title: "Choose your agent",
-    desc: "Work with any agent. They handle the transaction. We make the donation.",
+    desc: "Work with a givenest agent. They handle the deal—we make the donation.",
     link: { label: "Find an agent", href: "/agents" },
   },
 ];
