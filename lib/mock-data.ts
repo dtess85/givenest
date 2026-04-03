@@ -8,6 +8,7 @@ export interface Property {
   sqft: number;
   type: string;
   slug: string;
+  donation?: number; // optional override for estimated donation
 }
 
 export interface CharityItem {
@@ -27,7 +28,7 @@ export interface AgentItem {
 }
 
 export const PROPERTIES: Property[] = [
-  { id: 1, address: "2635 E Los Altos Rd", city: "Gilbert, AZ 85297", price: 4000000, beds: 5, baths: 4.5, sqft: 7000, type: "Single Family", slug: "2635-e-los-altos-rd" },
+  { id: 1, address: "2635 E Los Altos Rd", city: "Gilbert, AZ 85297", price: 5990000, beds: 5, baths: 4.5, sqft: 7000, type: "Single Family", slug: "2635-e-los-altos-rd", donation: 30000 },
 ];
 
 export const CHARITIES: CharityItem[] = [

@@ -46,7 +46,7 @@ export default function Buy() {
         </div>
         <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((h) => {
-            const givingPool = calcGivingPool(h.price);
+            const givingPool = h.donation ?? calcGivingPool(h.price);
             return (
               <Link
                 key={h.id}
