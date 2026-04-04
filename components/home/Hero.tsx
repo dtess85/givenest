@@ -48,7 +48,7 @@ export default function Hero() {
         </p>
 
         {/* Search bar */}
-        <div className="flex w-full max-w-[800px] overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
+        <div className="flex w-full max-w-[640px] overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
