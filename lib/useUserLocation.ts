@@ -4,35 +4,23 @@ import { useState, useEffect } from "react";
 
 export interface UserLocation {
   city: string;
-  state: string;
+  state: string;      // full name, e.g. "Arizona"
+  stateCode: string;  // abbreviation, e.g. "AZ"
 }
 
 export function useUserLocation(): UserLocation | null {
   const [loc, setLoc] = useState<UserLocation | null>(null);
 
   useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`,
-            { headers: { "Accept-Language": "en" } }
-          );
-          const data = await res.json();
-          const city =
-            data.address?.city ||
-            data.address?.town ||
-            data.address?.village ||
-            "";
-          const state = data.address?.state || "";
-          if (city || state) setLoc({ city, state });
-        } catch {
-          // silently fail — location is a nice-to-have
-        }
-      },
-      () => {} // denied — no-op
-    );
+    fetch("https://ipapi.co/json/")
+      .then((r) => r.json())
+      .then((data) => {
+        const city = data.city || "";
+        const state = data.region || "";
+        const stateCode = data.region_code || "";
+        if (city || state) setLoc({ city, state, stateCode });
+      })
+      .catch(() => {});
   }, []);
 
   return loc;

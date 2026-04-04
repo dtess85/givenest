@@ -70,6 +70,7 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
     if (!loc || !userLoc) return 0;
     const l = loc.toLowerCase();
     if (userLoc.city && l.includes(userLoc.city.toLowerCase())) return 2;
+    if (userLoc.stateCode && l.includes(userLoc.stateCode.toLowerCase())) return 1;
     if (userLoc.state && l.includes(userLoc.state.toLowerCase())) return 1;
     return 0;
   };
