@@ -87,7 +87,10 @@ export default function About() {
           </h2>
           <p className="mb-10 text-[14px] font-light text-muted">Licensed Arizona agents committed to more than just closing deals.</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {AGENTS.map((a) => (
+            {[
+              ...AGENTS,
+              { name: "Dustin Tessendorf", initials: "DT", email: "dustin@givenest.com", phone: "(480) 234-5678", markets: "", closings: 0, instagram: "https://www.instagram.com/dtess/" },
+            ].map((a) => (
               <div key={a.initials} className="flex items-center gap-4 rounded-[10px] border border-border bg-white p-5">
                 <div className="flex h-[46px] w-[46px] flex-shrink-0 items-center justify-center rounded-full bg-coral text-[13px] font-medium text-white">
                   {a.initials}
