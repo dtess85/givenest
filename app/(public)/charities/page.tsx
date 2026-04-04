@@ -104,26 +104,33 @@ export default function Charities() {
 
   return (
     <div>
-      <div className="bg-white px-8 pb-16 pt-[80px]">
-        <div className="mx-auto max-w-[1100px]">
-          <span className="mb-3 inline-block rounded-full bg-coral/[0.08] px-[10px] py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
-            Charity showcase
-          </span>
-          <h1 className="mb-[18px] font-serif text-[clamp(36px,5vw,60px)] font-medium leading-[1.1] tracking-[-0.02em]">
-            1.8M+ charities.{" "}
-            <em className="text-coral">Your choice.</em>
-          </h1>
-
-          <div className="flex max-w-[460px]">
-            <input
-              className="flex-1 rounded-l-md border border-r-0 border-border bg-white px-[14px] py-[11px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-              placeholder="Search any organization..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button className="rounded-r-md bg-coral px-[22px] py-[11px] text-sm font-medium text-white transition-colors hover:bg-[#d4574a]">
-              Search
-            </button>
+      <div className="relative h-[340px] w-full overflow-hidden">
+        <img
+          src="/images/charities-banner.png"
+          alt="Community hands around a plant"
+          className="h-full w-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 flex flex-col justify-end px-8 pb-10">
+          <div className="mx-auto w-full max-w-[1100px]">
+            <span className="mb-3 inline-block rounded-full bg-white/20 px-[10px] py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-white">
+              Charity showcase
+            </span>
+            <h1 className="mb-5 font-serif text-[clamp(36px,5vw,60px)] font-medium leading-[1.1] tracking-[-0.02em] text-white">
+              1.8M+ charities.{" "}
+              <em className="text-coral">Your choice.</em>
+            </h1>
+            <div className="flex max-w-[460px]">
+              <input
+                className="flex-1 rounded-l-md border border-r-0 border-white/30 bg-white/90 px-[14px] py-[11px] text-sm outline-none placeholder:text-[#999] focus:border-coral"
+                placeholder="Search any organization..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button className="rounded-r-md bg-coral px-[22px] py-[11px] text-sm font-medium text-white transition-colors hover:bg-[#d4574a]">
+                Search
+              </button>
+            </div>
           </div>
         </div>
       </div>
