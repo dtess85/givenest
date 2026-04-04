@@ -11,7 +11,7 @@ export default function Home() {
       <Hero />
       <MathStrip />
       <HowItWorks />
-      <section className="border-t border-border bg-pampas px-8 py-16">
+      <section className="border-t border-border bg-white px-8 py-16">
         <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-16 md:grid-cols-2">
           <FeedAndStats />
           <FeaturedCharities />
