@@ -9,7 +9,7 @@ export default function MathStrip() {
         </span>
         <Link
           href="/giving"
-          className="flex-shrink-0 text-[13px] font-medium text-white/60 hover:text-white transition-colors"
+          className="flex-shrink-0 text-[13px] font-medium text-white hover:opacity-70 transition-opacity"
         >
           Learn more →
         </Link>
