@@ -143,7 +143,7 @@ export default function Sell() {
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-[860px] grid-cols-1 gap-11 px-8 py-11 md:grid-cols-[1fr_320px]">
+      <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-16 px-8 py-11 md:grid-cols-[1fr_380px]">
         {/* Left — estimate calculator */}
         <div>
           <h3 className="mb-[18px] font-serif text-[17px] font-medium tracking-[-0.01em]">
