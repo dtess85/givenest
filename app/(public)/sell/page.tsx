@@ -60,7 +60,6 @@ export default function Sell() {
               <div>
                 {[
                   { label: "Home value", value: fmt(num), highlight: false },
-                  { label: "Estimated commission", value: fmt(commission), highlight: false },
                   { label: "Estimated donation (25%)", value: fmt(givingPool), highlight: true },
                 ].map(({ label, value: v, highlight }) => (
                   <div
