@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { CHARITIES } from "@/lib/mock-data";
 import { fmt } from "@/lib/utils";
+import { useUserLocation } from "@/lib/useUserLocation";
 
 interface EveryOrgNonprofit {
   name: string;
   ein: string;
+  location?: string;
   description?: string;
   profileUrl?: string;
   logoUrl?: string;
@@ -19,6 +21,17 @@ export default function Charities() {
   const [results, setResults] = useState<EveryOrgNonprofit[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userLoc = useUserLocation();
+
+  const locationScore = (loc?: string) => {
+    if (!loc || !userLoc) return 0;
+    const l = loc.toLowerCase();
+    if (userLoc.city && l.includes(userLoc.city.toLowerCase())) return 2;
+    if (userLoc.state && l.includes(userLoc.state.toLowerCase())) return 1;
+    return 0;
+  };
+
+  const sortedResults = results.slice().sort((a, b) => locationScore(b.location) - locationScore(a.location));
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -140,8 +153,9 @@ export default function Charities() {
             )}
 
             <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
-              {results.map((r) => {
+              {sortedResults.map((r) => {
                 const isFeatured = FEATURED_EINS.has(r.ein);
+                const isLocal = !isFeatured && locationScore(r.location) > 0;
                 return (
                   <div
                     key={r.ein || r.name}
@@ -155,11 +169,16 @@ export default function Charities() {
                             Featured
                           </span>
                         )}
-                        {r.ein && (
-                          <span className="text-[10px] text-muted">EIN {r.ein}</span>
+                        {isLocal && (
+                          <span className="rounded-full bg-emerald-50 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-emerald-600">
+                            Local
+                          </span>
                         )}
                       </div>
                       <div className="mb-[2px] text-sm font-medium">{r.name}</div>
+                      {r.location && (
+                        <div className="mb-[6px] text-xs text-muted">{r.location}</div>
+                      )}
                       {r.description && (
                         <div className="mb-[14px] line-clamp-2 text-xs font-light leading-[1.6] text-muted">
                           {r.description}

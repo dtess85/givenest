@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { calcCommission, calcGivingPool } from "@/lib/commission";
 import { fmt } from "@/lib/utils";
 import { CHARITIES } from "@/lib/mock-data";
+import { useUserLocation } from "@/lib/useUserLocation";
 
 interface GivingPanelProps {
   price: number;
@@ -13,6 +14,7 @@ interface GivingPanelProps {
 interface EveryOrgNonprofit {
   name: string;
   ein: string;
+  location?: string;
   description?: string;
   profileUrl?: string;
   logoUrl?: string;
@@ -33,6 +35,7 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
   const [charity, setCharity] = useState<PickedCharity | null>(null);
   const [matched, setMatched] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userLoc = useUserLocation();
 
   const commission = calcCommission(price);
   const givingPool = calcGivingPool(price);
@@ -63,11 +66,20 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
     { label: "Estimated donation (25%)", value: fmt(givingPool), highlight: true },
   ];
 
+  const locationScore = (loc?: string) => {
+    if (!loc || !userLoc) return 0;
+    const l = loc.toLowerCase();
+    if (userLoc.city && l.includes(userLoc.city.toLowerCase())) return 2;
+    if (userLoc.state && l.includes(userLoc.state.toLowerCase())) return 1;
+    return 0;
+  };
+
   // What to show in the list
   const showFeatured = !search.trim();
-  const listItems: PickedCharity[] = showFeatured
+  const sortedResults = results.slice().sort((a, b) => locationScore(b.location) - locationScore(a.location));
+  const listItems: (PickedCharity & { location?: string })[] = showFeatured
     ? CHARITIES.map((c) => ({ name: c.name, ein: c.ein ?? "", category: c.category }))
-    : results.map((r) => ({ name: r.name, ein: r.ein, category: "" }));
+    : sortedResults.map((r) => ({ name: r.name, ein: r.ein, category: "", location: r.location }));
 
   return (
     <div className="rounded-[10px] border border-border bg-white p-[26px]" style={{ borderTop: "3px solid var(--color-coral)" }}>
@@ -146,8 +158,16 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
                       Featured
                     </span>
                   )}
+                  {!showFeatured && !isFeatured && locationScore(c.location) > 0 && (
+                    <span className="flex-shrink-0 rounded-full bg-emerald-50 px-[6px] py-px text-[9px] font-medium text-emerald-600">
+                      Local
+                    </span>
+                  )}
                 </div>
-                {c.category && (
+                {!showFeatured && c.location && (
+                  <div className="text-[10px] text-muted">{c.location}</div>
+                )}
+                {showFeatured && c.category && (
                   <div className="text-[10px] text-muted">{c.category}</div>
                 )}
               </div>
