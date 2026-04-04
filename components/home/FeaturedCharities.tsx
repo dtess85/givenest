@@ -28,8 +28,10 @@ export default function FeaturedCharities() {
           {CHARITIES.map((c) => (
             <div
               key={c.id}
-              className="rounded-[10px] border border-border bg-white p-5"
+              className="overflow-hidden rounded-[10px] border border-border bg-white"
             >
+              <div className="h-[3px] bg-coral" />
+              <div className="p-5">
               <div className="mb-[6px] text-[10px] font-medium uppercase tracking-[0.08em] text-coral">
                 {c.category}
               </div>
@@ -43,6 +45,7 @@ export default function FeaturedCharities() {
                 <span className="text-base font-semibold text-coral">
                   {fmt(c.total)}
                 </span>
+              </div>
               </div>
             </div>
           ))}
