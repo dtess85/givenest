@@ -292,9 +292,9 @@ export default function Charities() {
           </div>
           <div>
             {[
-              { value: "$284,190", label: "Donated to charity", highlight: false },
-              { value: "41",       label: "Charities supported", highlight: false },
-              { value: "82",       label: "Closings",            highlight: false },
+              { value: "$0",  label: "Donated to charity", highlight: false },
+              { value: "0",   label: "Charities supported", highlight: false },
+              { value: "0",   label: "Closings",            highlight: false },
               { value: "100%",     label: "Donated in full, every closing", highlight: true },
             ].map(({ value: v, label, highlight }) => (
               <div key={label} className="flex items-baseline justify-between border-b border-border py-3">
