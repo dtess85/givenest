@@ -26,7 +26,7 @@ interface PickedCharity {
   category: string;
 }
 
-const FEATURED_EINS = new Set(CHARITIES.map((c) => c.ein).filter(Boolean));
+const SEED_EINS = new Set(CHARITIES.map((c) => c.ein).filter(Boolean));
 
 export default function GivingPanel({ price, variant = "property" }: GivingPanelProps) {
   const [search, setSearch] = useState("");
@@ -34,8 +34,16 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
   const [loading, setLoading] = useState(false);
   const [charity, setCharity] = useState<PickedCharity | null>(null);
   const [matched, setMatched] = useState(false);
+  const [favorites, setFavorites] = useState<Map<string, EveryOrgNonprofit>>(new Map());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userLoc = useUserLocation();
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("givenest-favorites");
+      if (saved) setFavorites(new Map(JSON.parse(saved)));
+    } catch {}
+  }, []);
 
   const commission = calcCommission(price);
   const givingPool = calcGivingPool(price);
@@ -75,12 +83,20 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
     return 0;
   };
 
-  // What to show in the list
   const showFeatured = !search.trim();
   const sortedResults = results.slice().sort((a, b) => locationScore(b.location) - locationScore(a.location));
-  const listItems: (PickedCharity & { location?: string })[] = showFeatured
-    ? CHARITIES.map((c) => ({ name: c.name, ein: c.ein ?? "", category: c.category }))
-    : sortedResults.map((r) => ({ name: r.name, ein: r.ein, category: "", location: r.location }));
+  const favoritesList = Array.from(favorites.values()).filter((f) => !SEED_EINS.has(f.ein));
+
+  type ListItem = PickedCharity & { location?: string; isSeed?: boolean; isFav?: boolean };
+  const listItems: ListItem[] = showFeatured
+    ? [
+        ...CHARITIES.map((c) => ({ name: c.name, ein: c.ein ?? "", category: c.category, isSeed: true })),
+        ...favoritesList.map((f) => ({ name: f.name, ein: f.ein, category: "", location: f.location, isFav: true })),
+      ]
+    : sortedResults.map((r) => ({
+        name: r.name, ein: r.ein, category: "", location: r.location,
+        isSeed: SEED_EINS.has(r.ein), isFav: favorites.has(r.ein),
+      }));
 
   return (
     <div className="rounded-[10px] border border-border bg-white p-[26px]" style={{ borderTop: "3px solid var(--color-coral)" }}>
@@ -138,42 +154,47 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
       </div>
 
       <div className="mb-[14px] flex max-h-[200px] flex-col gap-1 overflow-y-auto">
-        {listItems.map((c) => {
-          const isFeatured = FEATURED_EINS.has(c.ein);
+        {listItems.map((c, i) => {
           const isSelected = charity?.ein === c.ein;
+          const showFavLabel = showFeatured && c.isFav && listItems[i - 1]?.isSeed;
           return (
-            <button
-              key={c.ein || c.name}
-              onClick={() => setCharity(c)}
-              className={`flex items-center justify-between rounded-[5px] border px-[10px] py-2 text-left transition-all ${
-                isSelected
-                  ? "border-coral bg-coral/[0.08]"
-                  : "border-border bg-white hover:border-coral"
-              }`}
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-xs text-black">{c.name}</span>
-                  {!showFeatured && isFeatured && (
-                    <span className="flex-shrink-0 rounded-full bg-coral/10 px-[6px] py-px text-[9px] font-medium text-coral">
-                      Featured
-                    </span>
+            <div key={c.ein || c.name}>
+              {showFavLabel && (
+                <div className="mb-1 mt-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+                  Your saved
+                </div>
+              )}
+              <button
+                onClick={() => setCharity(c)}
+                className={`flex w-full items-center justify-between rounded-[5px] border px-[10px] py-2 text-left transition-all ${
+                  isSelected
+                    ? "border-coral bg-coral/[0.08]"
+                    : "border-border bg-white hover:border-coral"
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-xs text-black">{c.name}</span>
+                    {!showFeatured && c.isSeed && (
+                      <span className="flex-shrink-0 rounded-full bg-coral/10 px-[6px] py-px text-[9px] font-medium text-coral">Featured</span>
+                    )}
+                    {!showFeatured && c.isFav && (
+                      <span className="flex-shrink-0 rounded-full bg-coral/10 px-[6px] py-px text-[9px] font-medium text-coral">Saved</span>
+                    )}
+                    {!showFeatured && !c.isSeed && !c.isFav && locationScore(c.location) > 0 && (
+                      <span className="flex-shrink-0 rounded-full bg-emerald-50 px-[6px] py-px text-[9px] font-medium text-emerald-600">Local</span>
+                    )}
+                  </div>
+                  {!showFeatured && c.location && (
+                    <div className="text-[10px] text-muted">{c.location}</div>
                   )}
-                  {!showFeatured && !isFeatured && locationScore(c.location) > 0 && (
-                    <span className="flex-shrink-0 rounded-full bg-emerald-50 px-[6px] py-px text-[9px] font-medium text-emerald-600">
-                      Local
-                    </span>
+                  {showFeatured && c.category && (
+                    <div className="text-[10px] text-muted">{c.category}</div>
                   )}
                 </div>
-                {!showFeatured && c.location && (
-                  <div className="text-[10px] text-muted">{c.location}</div>
-                )}
-                {showFeatured && c.category && (
-                  <div className="text-[10px] text-muted">{c.category}</div>
-                )}
-              </div>
-              {isSelected && <span className="ml-2 flex-shrink-0 text-[13px] text-coral">&#10003;</span>}
-            </button>
+                {isSelected && <span className="ml-2 flex-shrink-0 text-[13px] text-coral">&#10003;</span>}
+              </button>
+            </div>
           );
         })}
         {!showFeatured && !loading && results.length === 0 && (

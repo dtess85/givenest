@@ -16,10 +16,18 @@ interface EveryOrgNonprofit {
 
 const SEED_EINS = new Set(CHARITIES.map((c) => c.ein).filter(Boolean) as string[]);
 
-function StarIcon({ filled }: { filled: boolean }) {
+function StarIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
+function HeartIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
   );
 }
@@ -28,28 +36,28 @@ export default function Charities() {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<EveryOrgNonprofit[]>([]);
   const [loading, setLoading] = useState(false);
-  const [starred, setStarred] = useState<Map<string, EveryOrgNonprofit>>(() => {
-    if (typeof window === "undefined") return new Map();
-    try {
-      const saved = localStorage.getItem("givenest-starred");
-      if (saved) return new Map(JSON.parse(saved));
-    } catch {}
-    return new Map();
-  });
+  const [favorites, setFavorites] = useState<Map<string, EveryOrgNonprofit>>(new Map());
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userLoc = useUserLocation();
 
   useEffect(() => {
     try {
-      localStorage.setItem("givenest-starred", JSON.stringify(Array.from(starred.entries())));
+      const saved = localStorage.getItem("givenest-favorites");
+      if (saved) setFavorites(new Map(JSON.parse(saved)));
     } catch {}
-  }, [starred]);
+    setFavoritesLoaded(true);
+  }, []);
 
-  const isFeatured = (ein: string) => SEED_EINS.has(ein) || starred.has(ein);
+  useEffect(() => {
+    if (!favoritesLoaded) return;
+    try {
+      localStorage.setItem("givenest-favorites", JSON.stringify(Array.from(favorites.entries())));
+    } catch {}
+  }, [favorites, favoritesLoaded]);
 
-  const toggleStar = (r: EveryOrgNonprofit) => {
-    if (SEED_EINS.has(r.ein)) return;
-    setStarred((prev) => {
+  const toggleFavorite = (r: EveryOrgNonprofit) => {
+    setFavorites((prev) => {
       const next = new Map(prev);
       if (next.has(r.ein)) next.delete(r.ein);
       else next.set(r.ein, r);
@@ -88,12 +96,11 @@ export default function Charities() {
   }, [search]);
 
   const isSearching = !!search.trim();
+  const favoritesList = Array.from(favorites.values());
 
   const sortedResults = results
     .slice()
     .sort((a, b) => locationScore(b.location) - locationScore(a.location));
-
-  const starredList = Array.from(starred.values());
 
   return (
     <div>
@@ -123,7 +130,7 @@ export default function Charities() {
 
       <div className="mx-auto max-w-[1100px] px-8 py-11">
 
-        {/* Featured charities — always visible */}
+        {/* Featured charities — Givenest-curated, admin only */}
         <div className="mb-10">
           <div className="mb-5 flex items-baseline justify-between">
             <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
@@ -141,7 +148,7 @@ export default function Charities() {
                 <div className="px-5 py-[18px]">
                   <div className="mb-[5px] flex items-center justify-between">
                     <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-coral">{c.category}</span>
-                    <span className="text-coral"><StarIcon filled /></span>
+                    <span className="text-coral"><StarIcon /></span>
                   </div>
                   <div className="mb-[2px] text-sm font-medium">{c.name}</div>
                   <div className="mb-[14px] text-xs text-muted">{c.city}</div>
@@ -162,31 +169,47 @@ export default function Charities() {
                 </div>
               </div>
             ))}
-
-            {starredList.map((r) => (
-              <div key={r.ein} className="overflow-hidden rounded-[10px] border border-border bg-white">
-                <div className="h-[3px] bg-coral" />
-                <div className="px-5 py-[18px]">
-                  <div className="mb-[5px] flex items-center justify-between">
-                    <span className="rounded-full bg-coral/10 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-coral">Featured</span>
-                    <button
-                      onClick={() => toggleStar(r)}
-                      className="text-coral transition-colors hover:text-coral/60"
-                      title="Remove from featured"
-                    >
-                      <StarIcon filled />
-                    </button>
-                  </div>
-                  <div className="mb-[2px] text-sm font-medium">{r.name}</div>
-                  {r.location && <div className="mb-[6px] text-xs text-muted">{r.location}</div>}
-                  {r.description && (
-                    <div className="line-clamp-2 text-xs font-light leading-[1.6] text-muted">{r.description}</div>
-                  )}
-                </div>
-              </div>
-            ))}
           </div>
         </div>
+
+        {/* User favorites — only shown when non-empty */}
+        {favoritesList.length > 0 && (
+          <div className="mb-10">
+            <div className="mb-5 flex items-baseline justify-between">
+              <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
+                Your saved charities
+              </h2>
+              <span className="text-[13px] font-light text-muted">
+                Saved by you
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
+              {favoritesList.map((r) => (
+                <div key={r.ein} className="overflow-hidden rounded-[10px] border border-border bg-white">
+                  <div className="h-[3px] bg-coral" />
+                  <div className="px-5 py-[18px]">
+                    <div className="mb-[5px] flex items-center justify-between">
+                      <span className="rounded-full bg-coral/10 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-coral">Saved</span>
+                      <button
+                        onClick={() => toggleFavorite(r)}
+                        className="text-coral transition-colors hover:text-coral/60"
+                        title="Remove from saved"
+                      >
+                        <HeartIcon filled />
+                      </button>
+                    </div>
+                    <div className="mb-[2px] text-sm font-medium">{r.name}</div>
+                    {r.location && <div className="mb-[6px] text-xs text-muted">{r.location}</div>}
+                    {r.description && (
+                      <div className="line-clamp-2 text-xs font-light leading-[1.6] text-muted">{r.description}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Search results */}
         {isSearching && (
@@ -204,17 +227,20 @@ export default function Charities() {
 
             <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
               {sortedResults.map((r) => {
-                const featured = isFeatured(r.ein);
-                const isLocal = !featured && locationScore(r.location) > 0;
                 const isSeed = SEED_EINS.has(r.ein);
+                const isFavorited = favorites.has(r.ein);
+                const isLocal = !isSeed && !isFavorited && locationScore(r.location) > 0;
                 return (
                   <div key={r.ein || r.name} className="overflow-hidden rounded-[10px] border border-border bg-white">
                     <div className="h-[3px] bg-coral" />
                     <div className="px-5 py-[18px]">
                       <div className="mb-[5px] flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          {featured && (
+                          {isSeed && (
                             <span className="rounded-full bg-coral/10 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-coral">Featured</span>
+                          )}
+                          {isFavorited && (
+                            <span className="rounded-full bg-coral/10 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-coral">Saved</span>
                           )}
                           {isLocal && (
                             <span className="rounded-full bg-emerald-50 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-emerald-600">Local</span>
@@ -222,11 +248,11 @@ export default function Charities() {
                         </div>
                         {!isSeed && (
                           <button
-                            onClick={() => toggleStar(r)}
-                            className={`transition-colors ${featured ? "text-coral hover:text-coral/60" : "text-muted hover:text-coral"}`}
-                            title={featured ? "Remove from featured" : "Add to featured"}
+                            onClick={() => toggleFavorite(r)}
+                            className={`transition-colors ${isFavorited ? "text-coral hover:text-coral/60" : "text-muted hover:text-coral"}`}
+                            title={isFavorited ? "Remove from saved" : "Save charity"}
                           >
-                            <StarIcon filled={featured} />
+                            <HeartIcon filled={isFavorited} />
                           </button>
                         )}
                       </div>
