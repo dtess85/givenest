@@ -9,7 +9,7 @@ const team = [
     title: "Co-Founder · Salesperson",
     email: "kyndall@givenest.com",
     phone: "(480) 400-8690",
-    instagram: "https://instagram.com/kyndall.yates",
+    instagram: "https://www.instagram.com/kdyates/",
   },
   {
     initials: "DT",
@@ -17,7 +17,7 @@ const team = [
     title: "Co-Founder · Designated Broker",
     email: "dustin@givenest.com",
     phone: "(480) 779-7204",
-    instagram: "https://instagram.com/dustin.tessendorf",
+    instagram: "https://www.instagram.com/dtess/",
   },
 ];
 
