@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { calcCommission, calcGivingPool } from "@/lib/commission";
 import { fmt } from "@/lib/utils";
 import { CHARITIES } from "@/lib/mock-data";
+import { useUserLocation } from "@/lib/useUserLocation";
 
 interface EveryOrgNonprofit {
   name: string;
@@ -37,6 +38,7 @@ export default function Sell() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [favorites, setFavorites] = useState<Map<string, EveryOrgNonprofit>>(new Map());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userLoc = useUserLocation();
 
   const num = parseFloat(value.replace(/[^0-9.]/g, "")) || 0;
   const commission = calcCommission(num);
@@ -73,10 +75,21 @@ export default function Sell() {
   const isSearching = !!search.trim();
   const favoritesList = Array.from(favorites.values());
 
+  const locationScore = (loc?: string) => {
+    if (!loc || !userLoc) return 0;
+    const l = loc.toLowerCase();
+    if (userLoc.city && l.includes(userLoc.city.toLowerCase())) return 2;
+    if (userLoc.stateCode && l.includes(userLoc.stateCode.toLowerCase())) return 1;
+    if (userLoc.state && l.includes(userLoc.state.toLowerCase())) return 1;
+    return 0;
+  };
+
+  const sortedResults = results.slice().sort((a, b) => locationScore(b.location) - locationScore(a.location));
+
   type ListItem = PickedCharity & { category?: string; city?: string; location?: string; isSeed?: boolean; isFav?: boolean };
 
   const listItems: ListItem[] = isSearching
-    ? results.map((r) => ({
+    ? sortedResults.map((r) => ({
         name: r.name, ein: r.ein, location: r.location,
         isSeed: SEED_EINS.has(r.ein), isFav: favorites.has(r.ein),
       }))
