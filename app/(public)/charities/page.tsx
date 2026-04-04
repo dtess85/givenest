@@ -131,7 +131,7 @@ export default function Charities() {
       <div className="mx-auto max-w-[1100px] px-8 py-11">
 
         {/* Featured charities — Givenest-curated, admin only */}
-        <div className="mb-10">
+        {!isSearching && <div className="mb-10">
           <div className="mb-5 flex items-baseline justify-between">
             <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
               Featured charities
@@ -170,10 +170,10 @@ export default function Charities() {
               </div>
             ))}
           </div>
-        </div>
+        </div>}
 
-        {/* User favorites — only shown when non-empty */}
-        {favoritesList.length > 0 && (
+        {/* User favorites — only shown when non-empty and not searching */}
+        {!isSearching && favoritesList.length > 0 && (
           <div className="mb-10">
             <div className="mb-5 flex items-baseline justify-between">
               <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
