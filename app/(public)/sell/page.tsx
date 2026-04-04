@@ -1,24 +1,94 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { calcCommission, calcGivingPool } from "@/lib/commission";
 import { fmt } from "@/lib/utils";
-import { CHARITIES, type CharityItem } from "@/lib/mock-data";
+import { CHARITIES } from "@/lib/mock-data";
+
+interface EveryOrgNonprofit {
+  name: string;
+  ein: string;
+  location?: string;
+  description?: string;
+  profileUrl?: string;
+}
+
+interface PickedCharity {
+  name: string;
+  ein: string;
+}
+
+const SEED_EINS = new Set(CHARITIES.map((c) => c.ein).filter(Boolean));
+
+function HeartIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+  );
+}
 
 export default function Sell() {
   const [value, setValue] = useState("");
   const [search, setSearch] = useState("");
-  const [charity, setCharity] = useState<CharityItem | null>(null);
+  const [charity, setCharity] = useState<PickedCharity | null>(null);
+  const [results, setResults] = useState<EveryOrgNonprofit[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [favorites, setFavorites] = useState<Map<string, EveryOrgNonprofit>>(new Map());
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const num = parseFloat(value.replace(/[^0-9.]/g, "")) || 0;
   const commission = calcCommission(num);
   const givingPool = calcGivingPool(num);
 
-  const filtered = CHARITIES.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.category.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("givenest-favorites");
+      if (saved) setFavorites(new Map(JSON.parse(saved)));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!search.trim()) { setResults([]); return; }
+
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const key = process.env.NEXT_PUBLIC_EVERY_ORG_KEY;
+        const res = await fetch(
+          `https://partners.every.org/v0.2/search/${encodeURIComponent(search.trim())}?apiKey=${key}&take=8`
+        );
+        const data = await res.json();
+        setResults(data.nonprofits ?? []);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
+  }, [search]);
+
+  const isSearching = !!search.trim();
+  const favoritesList = Array.from(favorites.values());
+
+  type ListItem = PickedCharity & { category?: string; city?: string; location?: string; isSeed?: boolean; isFav?: boolean };
+
+  const listItems: ListItem[] = isSearching
+    ? results.map((r) => ({
+        name: r.name, ein: r.ein, location: r.location,
+        isSeed: SEED_EINS.has(r.ein), isFav: favorites.has(r.ein),
+      }))
+    : showFavorites
+    ? favoritesList.map((f) => ({ name: f.name, ein: f.ein, location: f.location, isFav: true }))
+    : CHARITIES.map((c) => ({ name: c.name, ein: c.ein ?? "", category: c.category, city: c.city, isSeed: true }));
+
+  const listLabel = isSearching
+    ? loading ? "Searching…" : `${results.length} results`
+    : showFavorites
+    ? `${favoritesList.length} saved`
+    : "Featured charities";
 
   return (
     <div>
@@ -96,34 +166,71 @@ export default function Sell() {
           <h3 className="mb-[18px] font-serif text-[17px] font-medium tracking-[-0.01em]">
             Choose a charity
           </h3>
-          <input
-            className="mb-2 w-full rounded-md border border-border bg-white px-[14px] py-[11px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-            placeholder="Search nonprofits..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+
+          {/* Search + favorites toggle */}
+          <div className="mb-2 flex gap-2">
+            <input
+              className="flex-1 rounded-md border border-border bg-white px-[14px] py-[11px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+              placeholder="Search nonprofits..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); if (e.target.value.trim()) setShowFavorites(false); }}
+            />
+            <button
+              onClick={() => { setShowFavorites((v) => !v); setSearch(""); }}
+              title={showFavorites ? "Show all" : "Show saved"}
+              className={`flex items-center justify-center rounded-md border px-3 transition-colors ${
+                showFavorites ? "border-coral bg-coral/[0.08] text-coral" : "border-border bg-white text-muted hover:border-coral hover:text-coral"
+              }`}
+            >
+              <HeartIcon filled={showFavorites} />
+            </button>
+          </div>
+
+          {/* List label */}
+          <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+            {listLabel}
+          </div>
+
           <div className="mb-[14px] flex flex-col gap-[5px]">
-            {filtered.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setCharity(c)}
-                className={`flex items-center gap-3 rounded-md border px-3 py-[10px] text-left transition-all ${
-                  charity?.id === c.id
-                    ? "border-coral bg-[#fff8f7]"
-                    : "border-border bg-white hover:border-coral"
-                }`}
-              >
-                <div className="flex-1">
-                  <div className="text-[13px] font-medium">{c.name}</div>
-                  <div className="text-[11px] text-muted">
-                    {c.category} · {c.city}
+            {listItems.map((c) => {
+              const isSelected = charity?.ein === c.ein;
+              return (
+                <button
+                  key={c.ein || c.name}
+                  onClick={() => setCharity({ name: c.name, ein: c.ein })}
+                  className={`flex items-center gap-3 rounded-md border px-3 py-[10px] text-left transition-all ${
+                    isSelected
+                      ? "border-coral bg-[#fff8f7]"
+                      : "border-border bg-white hover:border-coral"
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-[13px] font-medium">{c.name}</span>
+                      {c.isSeed && !isSearching && (
+                        <span className="flex-shrink-0 rounded-full bg-coral/10 px-[6px] py-px text-[9px] font-medium text-coral">Featured</span>
+                      )}
+                      {isSearching && c.isSeed && (
+                        <span className="flex-shrink-0 rounded-full bg-coral/10 px-[6px] py-px text-[9px] font-medium text-coral">Featured</span>
+                      )}
+                      {isSearching && c.isFav && !c.isSeed && (
+                        <span className="flex-shrink-0 rounded-full bg-coral/10 px-[6px] py-px text-[9px] font-medium text-coral">Saved</span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-muted">
+                      {c.category && c.city ? `${c.category} · ${c.city}` : c.location ?? ""}
+                    </div>
                   </div>
-                </div>
-                {charity?.id === c.id && (
-                  <span className="text-[13px] text-coral">&#10003;</span>
-                )}
-              </button>
-            ))}
+                  {isSelected && <span className="text-[13px] text-coral flex-shrink-0">&#10003;</span>}
+                </button>
+              );
+            })}
+            {isSearching && !loading && results.length === 0 && (
+              <div className="py-3 text-center text-xs text-muted">No results found</div>
+            )}
+            {showFavorites && !isSearching && favoritesList.length === 0 && (
+              <div className="py-3 text-center text-xs text-muted">No saved charities yet</div>
+            )}
           </div>
 
           {charity && num > 0 && (
