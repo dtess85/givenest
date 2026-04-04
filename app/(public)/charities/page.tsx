@@ -16,12 +16,29 @@ interface EveryOrgNonprofit {
 
 const FEATURED_EINS = new Set(CHARITIES.map((c) => c.ein).filter(Boolean));
 
+// Display label → { every.org cause slug, internal category match }
+const CATEGORIES = [
+  { label: "All",           slug: null,             match: null },
+  { label: "Education",     slug: "education",       match: "Education" },
+  { label: "Housing",       slug: "human-services",  match: "Housing" },
+  { label: "International", slug: "international",   match: "International" },
+  { label: "Health",        slug: "health",          match: "Health" },
+  { label: "Environment",   slug: "environment",     match: "Environment" },
+  { label: "Animals",       slug: "animals",         match: "Animals" },
+  { label: "Faith",         slug: "religion",        match: "Faith" },
+  { label: "Community",     slug: "community",       match: "Community" },
+  { label: "Arts",          slug: "arts-culture",    match: "Arts" },
+];
+
 export default function Charities() {
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
   const [results, setResults] = useState<EveryOrgNonprofit[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userLoc = useUserLocation();
+
+  const activeCat = CATEGORIES.find((c) => c.label === activeCategory)!;
 
   const locationScore = (loc?: string) => {
     if (!loc || !userLoc) return 0;
@@ -31,7 +48,9 @@ export default function Charities() {
     return 0;
   };
 
-  const sortedResults = results.slice().sort((a, b) => locationScore(b.location) - locationScore(a.location));
+  const sortedResults = results
+    .slice()
+    .sort((a, b) => locationScore(b.location) - locationScore(a.location));
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -41,8 +60,9 @@ export default function Charities() {
       setLoading(true);
       try {
         const key = process.env.NEXT_PUBLIC_EVERY_ORG_KEY;
+        const causeParam = activeCat.slug ? `&causes=${activeCat.slug}` : "";
         const res = await fetch(
-          `https://partners.every.org/v0.2/search/${encodeURIComponent(search.trim())}?apiKey=${key}&take=12`
+          `https://partners.every.org/v0.2/search/${encodeURIComponent(search.trim())}?apiKey=${key}&take=12${causeParam}`
         );
         const data = await res.json();
         setResults(data.nonprofits ?? []);
@@ -52,9 +72,14 @@ export default function Charities() {
         setLoading(false);
       }
     }, 350);
-  }, [search]);
+  }, [search, activeCategory]); // re-fetch when category changes
 
   const isSearching = !!search.trim();
+
+  const featuredFiltered =
+    activeCategory === "All"
+      ? CHARITIES
+      : CHARITIES.filter((c) => c.category === activeCat.match);
 
   return (
     <div>
@@ -67,6 +92,8 @@ export default function Charities() {
             1.8M+ charities.{" "}
             <em className="text-coral">Your choice.</em>
           </h1>
+
+          {/* Search + filters */}
           <div className="flex max-w-[460px]">
             <input
               className="flex-1 rounded-l-md border border-r-0 border-border bg-white px-[14px] py-[11px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
@@ -78,63 +105,81 @@ export default function Charities() {
               Search
             </button>
           </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.label}
+                onClick={() => setActiveCategory(cat.label)}
+                className={`rounded-full px-[14px] py-[7px] text-[11px] font-medium uppercase tracking-[0.06em] transition-colors ${
+                  activeCategory === cat.label
+                    ? "bg-coral text-white"
+                    : "bg-border text-muted hover:text-black"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-[1100px] px-8 py-11">
 
-        {/* Featured charities — always visible */}
-        <div className="mb-10">
-          <div className="mb-5 flex items-baseline justify-between">
-            <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
-              Featured charities
-            </h2>
-            <span className="text-[13px] font-light text-muted">
-              Nonprofits that givenest has donated to
-            </span>
-          </div>
+        {/* Featured charities — always visible, filtered by category */}
+        {featuredFiltered.length > 0 && (
+          <div className="mb-10">
+            <div className="mb-5 flex items-baseline justify-between">
+              <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
+                Featured charities
+              </h2>
+              <span className="text-[13px] font-light text-muted">
+                Nonprofits that givenest has donated to
+              </span>
+            </div>
 
-          <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
-            {CHARITIES.map((c) => (
-              <div
-                key={c.id}
-                className="overflow-hidden rounded-[10px] border border-border bg-white"
-              >
-                <div className="h-[3px] bg-coral" />
-                <div className="px-5 py-[18px]">
-                  <div className="mb-[5px] text-[10px] font-medium uppercase tracking-[0.08em] text-coral">
-                    {c.category}
-                  </div>
-                  <div className="mb-[2px] text-sm font-medium">{c.name}</div>
-                  <div className="mb-[14px] text-xs text-muted">{c.city}</div>
-                  <div className="mb-3 h-px bg-border" />
-                  <div className="mb-3 grid grid-cols-2 gap-[10px]">
-                    <div>
-                      <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">
-                        Received
+            <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
+              {featuredFiltered.map((c) => (
+                <div
+                  key={c.id}
+                  className="overflow-hidden rounded-[10px] border border-border bg-white"
+                >
+                  <div className="h-[3px] bg-coral" />
+                  <div className="px-5 py-[18px]">
+                    <div className="mb-[5px] text-[10px] font-medium uppercase tracking-[0.08em] text-coral">
+                      {c.category}
+                    </div>
+                    <div className="mb-[2px] text-sm font-medium">{c.name}</div>
+                    <div className="mb-[14px] text-xs text-muted">{c.city}</div>
+                    <div className="mb-3 h-px bg-border" />
+                    <div className="mb-3 grid grid-cols-2 gap-[10px]">
+                      <div>
+                        <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">
+                          Received
+                        </div>
+                        <div className="text-base font-semibold text-coral">
+                          {fmt(c.total)}
+                        </div>
                       </div>
-                      <div className="text-base font-semibold text-coral">
-                        {fmt(c.total)}
+                      <div>
+                        <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">
+                          Closings
+                        </div>
+                        <div className="text-base font-semibold">{c.closings}</div>
                       </div>
                     </div>
-                    <div>
-                      <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">
-                        Closings
-                      </div>
-                      <div className="text-base font-semibold">{c.closings}</div>
+                    <div className="h-[3px] overflow-hidden rounded-sm bg-border">
+                      <div
+                        className="h-full rounded-sm bg-coral"
+                        style={{ width: `${Math.min(100, (c.total / 65000) * 100)}%` }}
+                      />
                     </div>
-                  </div>
-                  <div className="h-[3px] overflow-hidden rounded-sm bg-border">
-                    <div
-                      className="h-full rounded-sm bg-coral"
-                      style={{ width: `${Math.min(100, (c.total / 65000) * 100)}%` }}
-                    />
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Search results */}
         {isSearching && (
