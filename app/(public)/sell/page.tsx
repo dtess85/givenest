@@ -403,7 +403,7 @@ export default function Sell() {
                           : "border-border hover:border-coral hover:text-coral"
                       }`}
                     >
-                      {isSubmitted ? "✓ Sent" : "Request"}
+                      {isSubmitted ? "✓ Sent" : "Contact"}
                     </button>
                   </div>
 
