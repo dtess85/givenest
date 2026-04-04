@@ -37,6 +37,7 @@ export default function Sell() {
   const [loading, setLoading] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [favorites, setFavorites] = useState<Map<string, EveryOrgNonprofit>>(new Map());
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userLoc = useUserLocation();
 
@@ -49,7 +50,24 @@ export default function Sell() {
       const saved = localStorage.getItem("givenest-favorites");
       if (saved) setFavorites(new Map(JSON.parse(saved)));
     } catch {}
+    setFavoritesLoaded(true);
   }, []);
+
+  useEffect(() => {
+    if (!favoritesLoaded) return;
+    try {
+      localStorage.setItem("givenest-favorites", JSON.stringify(Array.from(favorites.entries())));
+    } catch {}
+  }, [favorites, favoritesLoaded]);
+
+  const toggleFavorite = (r: EveryOrgNonprofit) => {
+    setFavorites((prev) => {
+      const next = new Map(prev);
+      if (next.has(r.ein)) next.delete(r.ein);
+      else next.set(r.ein, r);
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -207,35 +225,49 @@ export default function Sell() {
           <div className="mb-[14px] flex flex-col gap-[5px]">
             {listItems.map((c) => {
               const isSelected = charity?.ein === c.ein;
+              const isFavorited = favorites.has(c.ein);
+              const isLocal = !c.isSeed && !isFavorited && locationScore(c.location) > 0;
+              const favoritableObj: EveryOrgNonprofit = { name: c.name, ein: c.ein, location: c.location };
               return (
-                <button
+                <div
                   key={c.ein || c.name}
-                  onClick={() => setCharity({ name: c.name, ein: c.ein })}
-                  className={`flex items-center gap-3 rounded-md border px-3 py-[10px] text-left transition-all ${
-                    isSelected
-                      ? "border-coral bg-[#fff8f7]"
-                      : "border-border bg-white hover:border-coral"
+                  className={`flex items-center gap-2 rounded-md border px-3 py-[10px] transition-all ${
+                    isSelected ? "border-coral bg-[#fff8f7]" : "border-border bg-white hover:border-coral"
                   }`}
                 >
-                  <div className="flex-1 min-w-0">
+                  <button
+                    onClick={() => setCharity({ name: c.name, ein: c.ein })}
+                    className="flex-1 min-w-0 text-left"
+                  >
                     <div className="flex items-center gap-2">
                       <span className="truncate text-[13px] font-medium">{c.name}</span>
-                      {c.isSeed && !isSearching && (
+                      {c.isSeed && (
                         <span className="flex-shrink-0 rounded-full bg-coral/10 px-[6px] py-px text-[9px] font-medium text-coral">Featured</span>
                       )}
-                      {isSearching && c.isSeed && (
-                        <span className="flex-shrink-0 rounded-full bg-coral/10 px-[6px] py-px text-[9px] font-medium text-coral">Featured</span>
-                      )}
-                      {isSearching && c.isFav && !c.isSeed && (
+                      {!c.isSeed && isFavorited && (
                         <span className="flex-shrink-0 rounded-full bg-coral/10 px-[6px] py-px text-[9px] font-medium text-coral">Saved</span>
+                      )}
+                      {isLocal && (
+                        <span className="flex-shrink-0 rounded-full bg-emerald-50 px-[6px] py-px text-[9px] font-medium text-emerald-600">Local</span>
                       )}
                     </div>
                     <div className="text-[11px] text-muted">
                       {c.category && c.city ? `${c.category} · ${c.city}` : c.location ?? ""}
                     </div>
+                  </button>
+                  <div className="flex flex-shrink-0 items-center gap-2">
+                    {isSelected && <span className="text-[13px] text-coral">&#10003;</span>}
+                    {!c.isSeed && (
+                      <button
+                        onClick={() => toggleFavorite(favoritableObj)}
+                        title={isFavorited ? "Remove from saved" : "Save charity"}
+                        className={`transition-colors ${isFavorited ? "text-coral hover:text-coral/60" : "text-muted hover:text-coral"}`}
+                      >
+                        <HeartIcon filled={isFavorited} />
+                      </button>
+                    )}
                   </div>
-                  {isSelected && <span className="text-[13px] text-coral flex-shrink-0">&#10003;</span>}
-                </button>
+                </div>
               );
             })}
             {isSearching && !loading && results.length === 0 && (
