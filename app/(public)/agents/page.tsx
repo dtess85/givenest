@@ -42,46 +42,17 @@ export default function Agents() {
   return (
     <div>
       {/* Hero */}
-      <div style={{ background: "#FFFFFF", padding: "52px 48px 72px" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "#E36858",
-              marginBottom: "16px",
-            }}
-          >
+      <div className="bg-white px-8 pb-[72px] pt-[52px]">
+        <div className="mx-auto max-w-[1100px]">
+          <span className="mb-3 inline-block rounded-full bg-coral/[0.08] px-[10px] py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
             The team
-          </div>
-          <h1
-            style={{
-              fontFamily: "Lora, serif",
-              fontSize: "clamp(36px, 5vw, 60px)",
-              fontWeight: 600,
-              lineHeight: 1.1,
-              color: "#0C0D0D",
-              letterSpacing: "-0.02em",
-              margin: "0 0 16px",
-              maxWidth: "640px",
-            }}
-          >
+          </span>
+          <h1 className="mb-4 max-w-[640px] font-serif text-[clamp(36px,5vw,60px)] font-medium leading-[1.1] tracking-[-0.02em] text-black">
             The team behind
             <br />
-            <em style={{ color: "#E36858" }}>the impact.</em>
+            <em className="text-coral">the impact.</em>
           </h1>
-          <p
-            style={{
-              fontSize: "17px",
-              fontWeight: 300,
-              color: "#6B6860",
-              maxWidth: "480px",
-              lineHeight: 1.75,
-              margin: 0,
-            }}
-          >
+          <p className="max-w-[480px] text-[17px] font-light leading-[1.75] text-muted">
             Every Givenest closing is handled by licensed agents — bringing care,
             expertise, and meaning to every transaction.
           </p>
@@ -89,103 +60,40 @@ export default function Agents() {
       </div>
 
       {/* Team cards */}
-      <div style={{ background: "#F4F3EE", padding: "72px 48px" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-              gap: "24px",
-            }}
-          >
+      <div className="bg-pampas px-8 py-[72px]">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {team.map((agent) => (
               <div
                 key={agent.name}
-                style={{
-                  background: "#FFFFFF",
-                  borderRadius: "12px",
-                  border: "1px solid #E3DED6",
-                  overflow: "hidden",
-                }}
+                className="overflow-hidden rounded-[12px] border border-border bg-white"
               >
-                <div style={{ padding: "28px 28px 28px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "16px",
-                      marginBottom: "20px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "56px",
-                        height: "56px",
-                        borderRadius: "50%",
-                        background: "#E36858",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "16px",
-                        fontWeight: 500,
-                        color: "#FFFFFF",
-                        flexShrink: 0,
-                      }}
-                    >
+                <div className="h-[3px] bg-coral" />
+                <div className="p-7">
+                  <div className="mb-5 flex items-center gap-4">
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-coral text-base font-medium text-white">
                       {agent.initials}
                     </div>
                     <div>
-                      <div
-                        style={{
-                          fontFamily: "Lora, serif",
-                          fontSize: "19px",
-                          fontWeight: 600,
-                          color: "#0C0D0D",
-                          marginBottom: "3px",
-                        }}
-                      >
+                      <div className="mb-[3px] font-serif text-[19px] font-medium text-black">
                         {agent.name}
                       </div>
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          color: "#6B6860",
-                          fontWeight: 300,
-                        }}
-                      >
+                      <div className="text-xs font-light text-muted">
                         {agent.title}
                       </div>
                     </div>
                   </div>
-                  <div
-                    style={{
-                      height: "1px",
-                      background: "#E3DED6",
-                      marginBottom: "16px",
-                    }}
-                  />
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: "6px" }}
-                  >
+                  <div className="mb-4 h-px bg-border" />
+                  <div className="flex flex-col gap-[6px]">
                     <a
                       href={`mailto:${agent.email}`}
-                      style={{
-                        fontSize: "13px",
-                        fontWeight: 300,
-                        color: "#E36858",
-                        textDecoration: "none",
-                      }}
+                      className="text-[13px] font-light text-coral hover:underline"
                     >
                       {agent.email}
                     </a>
                     <a
                       href={`tel:${agent.phone.replace(/\D/g, "")}`}
-                      style={{
-                        fontSize: "13px",
-                        fontWeight: 300,
-                        color: "#6B6860",
-                        textDecoration: "none",
-                      }}
+                      className="text-[13px] font-light text-muted hover:text-black"
                     >
                       {agent.phone}
                     </a>
@@ -198,41 +106,16 @@ export default function Agents() {
       </div>
 
       {/* Why Givenest agents */}
-      <div style={{ background: "#FFFFFF", padding: "72px 48px" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "80px",
-              alignItems: "start",
-            }}
-          >
+      <div className="bg-white px-8 py-[72px]">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="grid grid-cols-1 items-start gap-[80px] md:grid-cols-2">
             <div>
-              <h2
-                style={{
-                  fontFamily: "Lora, serif",
-                  fontSize: "clamp(26px, 3vw, 38px)",
-                  fontWeight: 600,
-                  lineHeight: 1.2,
-                  letterSpacing: "-0.02em",
-                  color: "#0C0D0D",
-                  margin: "0 0 16px",
-                }}
-              >
+              <h2 className="mb-4 font-serif text-[clamp(26px,3vw,38px)] font-medium leading-[1.2] tracking-[-0.02em] text-black">
                 What makes our
                 <br />
-                <em style={{ color: "#E36858" }}>agents</em> different.
+                <em className="text-coral">agents</em> different.
               </h2>
-              <p
-                style={{
-                  fontSize: "15px",
-                  fontWeight: 300,
-                  color: "#6B6860",
-                  lineHeight: 1.85,
-                  margin: 0,
-                }}
-              >
+              <p className="text-[15px] font-light leading-[1.85] text-muted">
                 Every Givenest agent is committed to more than just closing deals
                 — they make every closing meaningful. They represent your
                 interests, and the impact your transaction creates.
@@ -242,42 +125,14 @@ export default function Agents() {
               {differentiators.map(({ title, desc }) => (
                 <div
                   key={title}
-                  style={{
-                    display: "flex",
-                    gap: "14px",
-                    padding: "16px 0",
-                    borderBottom: "1px solid #E3DED6",
-                  }}
+                  className="flex gap-[14px] border-b border-border py-4"
                 >
-                  <div
-                    style={{
-                      width: "6px",
-                      height: "6px",
-                      borderRadius: "50%",
-                      background: "#E36858",
-                      flexShrink: 0,
-                      marginTop: "7px",
-                    }}
-                  />
+                  <div className="mt-[7px] h-[6px] w-[6px] flex-shrink-0 rounded-full bg-coral" />
                   <div>
-                    <div
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "#0C0D0D",
-                        marginBottom: "4px",
-                      }}
-                    >
+                    <div className="mb-1 text-sm font-semibold text-black">
                       {title}
                     </div>
-                    <div
-                      style={{
-                        fontSize: "13px",
-                        fontWeight: 300,
-                        color: "#6B6860",
-                        lineHeight: 1.7,
-                      }}
-                    >
+                    <div className="text-[13px] font-light leading-[1.7] text-muted">
                       {desc}
                     </div>
                   </div>
@@ -289,81 +144,28 @@ export default function Agents() {
       </div>
 
       {/* Join CTA */}
-      <div style={{ background: "#F4F3EE", padding: "80px 48px" }}>
-        <div
-          style={{ maxWidth: "640px", margin: "0 auto", textAlign: "center" }}
-        >
-          <div
-            style={{
-              width: "48px",
-              height: "3px",
-              background: "#E36858",
-              margin: "0 auto 32px",
-            }}
-          />
-          <h2
-            style={{
-              fontFamily: "Lora, serif",
-              fontSize: "clamp(28px, 3.5vw, 44px)",
-              fontWeight: 600,
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
-              color: "#0C0D0D",
-              margin: "0 0 16px",
-            }}
-          >
+      <div className="bg-pampas px-8 py-[80px]">
+        <div className="mx-auto max-w-[640px] text-center">
+          <div className="mx-auto mb-8 h-[3px] w-12 bg-coral" />
+          <h2 className="mb-4 font-serif text-[clamp(28px,3.5vw,44px)] font-medium leading-[1.15] tracking-[-0.02em] text-black">
             A career worth
             <br />
-            <em style={{ color: "#E36858" }}>talking about.</em>
+            <em className="text-coral">talking about.</em>
           </h2>
-          <p
-            style={{
-              fontSize: "16px",
-              fontWeight: 300,
-              color: "#6B6860",
-              lineHeight: 1.85,
-              margin: "0 0 40px",
-            }}
-          >
+          <p className="mb-10 text-base font-light leading-[1.85] text-muted">
             We&apos;re selective by design. If you believe real estate can do
             more than close deals, you&apos;ll fit right in.
           </p>
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              justifyContent: "center",
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="flex flex-wrap justify-center gap-3">
             <a
               href="mailto:dustin@givenest.com"
-              style={{
-                background: "#E36858",
-                color: "#FFFFFF",
-                padding: "14px 36px",
-                fontSize: "15px",
-                fontWeight: 500,
-                borderRadius: "6px",
-                textDecoration: "none",
-                display: "inline-block",
-              }}
+              className="inline-block rounded-md bg-coral px-9 py-[14px] text-[15px] font-medium text-white transition-colors hover:bg-[#d4574a]"
             >
               Apply to join
             </a>
             <Link
               href="/buy"
-              style={{
-                background: "transparent",
-                color: "#6B6860",
-                border: "1px solid #E3DED6",
-                padding: "14px 36px",
-                fontSize: "15px",
-                fontWeight: 400,
-                borderRadius: "6px",
-                textDecoration: "none",
-                display: "inline-block",
-              }}
+              className="inline-block rounded-md border border-border px-9 py-[14px] text-[15px] font-light text-muted transition-colors hover:border-coral hover:text-coral"
             >
               See how it works
             </Link>
