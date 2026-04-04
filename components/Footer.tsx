@@ -12,19 +12,12 @@ export default function Footer() {
       }}
     >
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1fr 1fr 1fr",
-            gap: 44,
-            marginBottom: 36,
-          }}
-        >
-          <div>
+        <div className="mb-9 grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-[2fr_1fr_1fr_1fr] sm:gap-11">
+          <div className="col-span-2 sm:col-span-1">
             <div style={{ marginBottom: 12 }}>
               <Wordmark size={17} dark />
             </div>
-            <p style={{ color: "#999999", fontSize: 13, lineHeight: 1.8, maxWidth: 250 }}>
+            <p style={{ color: "#999999", fontSize: 13, lineHeight: 1.8, maxWidth: 260 }}>
               Arizona&apos;s giving brokerage. Every home we close funds a cause
               — donated directly by Givenest, at no extra cost.
             </p>
