@@ -373,7 +373,7 @@ export default function Sell() {
       <div className="border-t border-border bg-white px-8 py-12">
         <div className="mx-auto max-w-[1100px]">
           <h3 className="mb-[14px] font-serif text-[17px] font-medium tracking-[-0.01em]">givenest agents</h3>
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {AGENTS.map((a) => {
               const isActive = activeAgent === a.initials;
               const isSubmitted = submittedAgents.has(a.initials);
