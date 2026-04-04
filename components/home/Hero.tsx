@@ -38,11 +38,11 @@ export default function Hero() {
         <div className="mb-5 inline-block rounded-full bg-coral px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-white">
           Arizona&apos;s giving brokerage
         </div>
-        <h1 className="mb-5 max-w-[700px] font-serif text-[clamp(38px,5vw,68px)] font-semibold leading-[1.1] tracking-[-0.02em] text-white">
+        <h1 className="mb-5 max-w-[700px] font-serif text-[clamp(38px,5vw,68px)] font-semibold leading-[1.1] tracking-[-0.02em] text-white" style={{ textShadow: "0 2px 16px rgba(0,0,0,0.7)" }}>
           Every home funds a cause{" "}
           <em className="text-coral">you choose.</em>
         </h1>
-        <p className="mb-10 max-w-[460px] text-[17px] font-normal leading-[1.8] text-white" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.6)" }}>
+        <p className="mb-10 max-w-[460px] text-[17px] font-normal leading-[1.8] text-white" style={{ textShadow: "0 2px 12px rgba(0,0,0,0.75)" }}>
           Buy or sell on givenest and we donate to a charity of your choice at
           closing — at no extra cost.
         </p>
