@@ -88,7 +88,6 @@ export default function About() {
                 </div>
                 <div>
                   <div className="font-medium">{a.name}</div>
-                  <div className="text-[12px] text-muted">{a.markets}</div>
                   <a href={`mailto:${a.email}`} className="text-[12px] text-coral hover:underline">{a.email}</a>
                 </div>
               </div>
