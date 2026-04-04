@@ -28,6 +28,7 @@ export interface AgentItem {
   initials: string;
   email: string;
   phone: string;
+  instagram: string;
 }
 
 export const PROPERTIES: Property[] = [
@@ -41,7 +42,7 @@ export const CHARITIES: CharityItem[] = [
 ];
 
 export const AGENTS: AgentItem[] = [
-  { name: "Kyndall Yates", markets: "Gilbert · Mesa · Chandler", closings: 0, initials: "KY", email: "kyndall@givenest.com", phone: "(480) 400-8690" },
+  { name: "Kyndall Yates", markets: "Gilbert · Mesa · Chandler", closings: 0, initials: "KY", email: "kyndall@givenest.com", phone: "(480) 400-8690", instagram: "https://instagram.com/kyndall.yates" },
 ];
 
 export function getPropertyBySlug(slug: string): Property | undefined {

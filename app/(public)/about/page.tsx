@@ -94,7 +94,9 @@ export default function About() {
                 </div>
                 <div>
                   <div className="font-medium">{a.name}</div>
-                  <a href={`mailto:${a.email}`} className="text-[12px] text-coral hover:underline">{a.email}</a>
+                  <a href={`mailto:${a.email}`} className="block text-[12px] text-coral hover:underline">{a.email}</a>
+                  <a href={`tel:${a.phone.replace(/\D/g, "")}`} className="block text-[12px] text-muted hover:text-black">{a.phone}</a>
+                  <a href={a.instagram} target="_blank" rel="noopener noreferrer" className="block text-[12px] text-muted hover:text-black">Instagram</a>
                 </div>
               </div>
             ))}

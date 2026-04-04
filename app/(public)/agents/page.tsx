@@ -9,6 +9,7 @@ const team = [
     title: "Co-Founder · Salesperson",
     email: "kyndall@givenest.com",
     phone: "(480) 400-8690",
+    instagram: "https://instagram.com/kyndall.yates",
   },
   {
     initials: "DT",
@@ -16,6 +17,7 @@ const team = [
     title: "Co-Founder · Designated Broker",
     email: "dustin@givenest.com",
     phone: "(480) 779-7204",
+    instagram: "https://instagram.com/dustin.tessendorf",
   },
 ];
 
@@ -96,6 +98,14 @@ export default function Agents() {
                       className="text-[13px] font-light text-muted hover:text-black"
                     >
                       {agent.phone}
+                    </a>
+                    <a
+                      href={agent.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[13px] font-light text-muted hover:text-black"
+                    >
+                      Instagram
                     </a>
                   </div>
                 </div>
