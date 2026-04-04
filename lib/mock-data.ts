@@ -18,6 +18,7 @@ export interface CharityItem {
   city: string;
   total: number;
   closings: number;
+  ein?: string;
 }
 
 export interface AgentItem {
@@ -32,9 +33,9 @@ export const PROPERTIES: Property[] = [
 ];
 
 export const CHARITIES: CharityItem[] = [
-  { id: 1, name: "Gilbert Christian Schools", category: "Education", city: "Gilbert, AZ", total: 0, closings: 0 },
-  { id: 2, name: "Orchard: Africa", category: "International", city: "South Africa", total: 0, closings: 0 },
-  { id: 3, name: "House of Refuge", category: "Housing", city: "Mesa, AZ", total: 0, closings: 0 },
+  { id: 1, name: "Gilbert Christian Schools", category: "Education", city: "Gilbert, AZ", total: 0, closings: 0, ein: "86-0878481" },
+  { id: 2, name: "Orchard: Africa", category: "International", city: "South Africa", total: 0, closings: 0, ein: "82-1339324" },
+  { id: 3, name: "House of Refuge", category: "Housing", city: "Mesa, AZ", total: 0, closings: 0, ein: "86-0671519" },
 ];
 
 export const AGENTS: AgentItem[] = [
