@@ -30,15 +30,21 @@ export default function About() {
               Why we built this
             </span>
             <h2 className="mb-5 font-serif text-[clamp(26px,3.5vw,38px)] font-medium leading-[1.15] tracking-[-0.02em]">
-              Tired of transactions that don&apos;t mean anything.
+              If we&apos;re moving hundreds of thousands of dollars in every transaction, why doesn&apos;t any of that go somewhere that matters?
             </h2>
           </div>
-          <div className="flex flex-col justify-center">
-            <p className="mb-5 text-[15px] font-light leading-[1.8] text-muted">
-              Dustin Tessendorf founded Givenest in the Phoenix metro after years in real estate. He kept asking the same question: we&apos;re moving hundreds of thousands of dollars on every deal — why doesn&apos;t any of that go somewhere that matters?
+          <div className="flex flex-col justify-center gap-5">
+            <p className="text-[15px] font-light leading-[1.8] text-muted">
+              Givenest was founded by Dustin Tessendorf and Kyndall Yates in the Phoenix metro with a simple question.
             </p>
             <p className="text-[15px] font-light leading-[1.8] text-muted">
-              The answer was to build a brokerage where giving isn&apos;t an afterthought — it&apos;s the model. At every closing, Givenest donates 25% of its commission directly to a charity you choose. No extra cost. No marketing gimmick. Just a different way of doing real estate.
+              Dustin, who grew up in South Africa, saw firsthand the impact that giving can have — and wanted to build something that made it part of everyday life. Kyndall shared that vision: a desire to help people through one of the biggest transactions of their lives while being part of something bigger than herself.
+            </p>
+            <p className="text-[15px] font-light leading-[1.8] text-muted">
+              At every closing, Givenest donates 25% of its commission to a charity chosen by the client. No extra cost. No gimmicks. Just a different way to buy and sell real estate.
+            </p>
+            <p className="text-[15px] font-light leading-[1.8] text-muted">
+              Beyond the transaction, their mission is simple: to empower agents to build meaningful careers — providing for their families while making a real impact with every closing.
             </p>
           </div>
         </div>
