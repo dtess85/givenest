@@ -28,7 +28,6 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
 
   const rows = [
     { label: variant === "seller" ? "Home value" : "List price", value: fmt(price), highlight: false },
-    { label: "Estimated commission", value: fmt(commission), highlight: false },
     { label: "Estimated donation (25%)", value: fmt(givingPool), highlight: true },
   ];
 
