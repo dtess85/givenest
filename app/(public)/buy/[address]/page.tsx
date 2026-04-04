@@ -82,8 +82,10 @@ export default function PropertyDetail() {
                     <div className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
                       {a.initials}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-medium">{a.name}</div>
+                      <a href={`mailto:${a.email}`} className="block text-[11px] text-coral hover:underline">{a.email}</a>
+                      <a href={`tel:${a.phone.replace(/\D/g, "")}`} className="block text-[11px] text-muted hover:text-black">{a.phone}</a>
                     </div>
                     <button
                       onClick={() => {
