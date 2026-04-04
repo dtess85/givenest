@@ -1,23 +1,47 @@
 "use client";
 
-import { useState } from "react";
-
+import { useState, useEffect, useRef } from "react";
 import { CHARITIES } from "@/lib/mock-data";
 import { fmt } from "@/lib/utils";
 
+interface EveryOrgNonprofit {
+  name: string;
+  ein: string;
+  description?: string;
+  profileUrl?: string;
+  logoUrl?: string;
+}
+
+const FEATURED_EINS = new Set(CHARITIES.map((c) => c.ein).filter(Boolean));
+
 export default function Charities() {
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [results, setResults] = useState<EveryOrgNonprofit[]>([]);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const CATEGORIES = ["All", ...Array.from(new Set(CHARITIES.map((c) => c.category)))];
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!search.trim()) { setResults([]); return; }
 
-  const filtered = CHARITIES.filter((c) => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.category.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = activeCategory === "All" || c.category === activeCategory;
-    return matchesSearch && matchesCategory;
-  });
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const key = process.env.NEXT_PUBLIC_EVERY_ORG_KEY;
+        const res = await fetch(
+          `https://partners.every.org/v0.2/search/${encodeURIComponent(search.trim())}?apiKey=${key}&take=12`
+        );
+        const data = await res.json();
+        setResults(data.nonprofits ?? []);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
+  }, [search]);
+
+  const isSearching = !!search.trim();
 
   return (
     <div>
@@ -45,73 +69,119 @@ export default function Charities() {
       </div>
 
       <div className="mx-auto max-w-[1100px] px-8 py-11">
-        <div className="mb-6 flex items-baseline justify-between">
-          <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
-            Featured charities
-          </h2>
-          <span className="text-[13px] font-light text-muted">
-            Nonprofits that givenest has donated to
-          </span>
-        </div>
 
-        <div className="mb-6 flex flex-wrap gap-2">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`rounded-full px-[14px] py-[7px] text-[11px] font-medium uppercase tracking-[0.06em] transition-colors ${
-                activeCategory === cat
-                  ? "bg-coral text-white"
-                  : "bg-border text-muted hover:text-black"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {/* Featured charities — always visible */}
+        <div className="mb-10">
+          <div className="mb-5 flex items-baseline justify-between">
+            <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
+              Featured charities
+            </h2>
+            <span className="text-[13px] font-light text-muted">
+              Nonprofits that givenest has donated to
+            </span>
+          </div>
 
-        <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c) => (
-            <div
-              key={c.id}
-              className="overflow-hidden rounded-[10px] border border-border bg-white"
-            >
-              <div className="h-[3px] bg-coral" />
-              <div className="px-5 py-[18px]">
-                <div className="mb-[5px] text-[10px] font-medium uppercase tracking-[0.08em] text-coral">
-                  {c.category}
-                </div>
-                <div className="mb-[2px] text-sm font-medium">{c.name}</div>
-                <div className="mb-[14px] text-xs text-muted">{c.city}</div>
-                <div className="mb-3 h-px bg-border" />
-                <div className="mb-3 grid grid-cols-2 gap-[10px]">
-                  <div>
-                    <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">
-                      Received
+          <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
+            {CHARITIES.map((c) => (
+              <div
+                key={c.id}
+                className="overflow-hidden rounded-[10px] border border-border bg-white"
+              >
+                <div className="h-[3px] bg-coral" />
+                <div className="px-5 py-[18px]">
+                  <div className="mb-[5px] text-[10px] font-medium uppercase tracking-[0.08em] text-coral">
+                    {c.category}
+                  </div>
+                  <div className="mb-[2px] text-sm font-medium">{c.name}</div>
+                  <div className="mb-[14px] text-xs text-muted">{c.city}</div>
+                  <div className="mb-3 h-px bg-border" />
+                  <div className="mb-3 grid grid-cols-2 gap-[10px]">
+                    <div>
+                      <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">
+                        Received
+                      </div>
+                      <div className="text-base font-semibold text-coral">
+                        {fmt(c.total)}
+                      </div>
                     </div>
-                    <div className="text-base font-semibold text-coral">
-                      {fmt(c.total)}
+                    <div>
+                      <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">
+                        Closings
+                      </div>
+                      <div className="text-base font-semibold">{c.closings}</div>
                     </div>
                   </div>
-                  <div>
-                    <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">
-                      Closings
-                    </div>
-                    <div className="text-base font-semibold">{c.closings}</div>
+                  <div className="h-[3px] overflow-hidden rounded-sm bg-border">
+                    <div
+                      className="h-full rounded-sm bg-coral"
+                      style={{ width: `${Math.min(100, (c.total / 65000) * 100)}%` }}
+                    />
                   </div>
-                </div>
-                <div className="h-[3px] overflow-hidden rounded-sm bg-border">
-                  <div
-                    className="h-full rounded-sm bg-coral"
-                    style={{
-                      width: `${Math.min(100, (c.total / 65000) * 100)}%`,
-                    }}
-                  />
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+
+        {/* Search results */}
+        {isSearching && (
+          <div className="mb-10">
+            <div className="mb-5 flex items-baseline justify-between">
+              <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
+                {loading ? "Searching…" : `${results.length} results`}
+              </h2>
+              <span className="text-[13px] font-light text-muted">
+                Powered by every.org
+              </span>
+            </div>
+
+            {!loading && results.length === 0 && (
+              <p className="py-6 text-center text-sm text-muted">No results found</p>
+            )}
+
+            <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
+              {results.map((r) => {
+                const isFeatured = FEATURED_EINS.has(r.ein);
+                return (
+                  <div
+                    key={r.ein || r.name}
+                    className="overflow-hidden rounded-[10px] border border-border bg-white"
+                  >
+                    <div className="h-[3px] bg-coral" />
+                    <div className="px-5 py-[18px]">
+                      <div className="mb-[5px] flex items-center gap-2">
+                        {isFeatured && (
+                          <span className="rounded-full bg-coral/10 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-coral">
+                            Featured
+                          </span>
+                        )}
+                        {r.ein && (
+                          <span className="text-[10px] text-muted">EIN {r.ein}</span>
+                        )}
+                      </div>
+                      <div className="mb-[2px] text-sm font-medium">{r.name}</div>
+                      {r.description && (
+                        <div className="mb-[14px] line-clamp-2 text-xs font-light leading-[1.6] text-muted">
+                          {r.description}
+                        </div>
+                      )}
+                      {r.profileUrl && (
+                        <a
+                          href={r.profileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-coral hover:underline"
+                        >
+                          View on every.org →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Giving commitment */}
         <div className="mt-[52px] grid grid-cols-1 gap-11 rounded-xl bg-white p-6 md:grid-cols-2 md:p-11">
@@ -140,14 +210,8 @@ export default function Charities() {
                 key={label}
                 className="flex items-baseline justify-between border-b border-border py-3"
               >
-                <span className="text-[13px] font-light text-muted">
-                  {label}
-                </span>
-                <span
-                  className={`text-base font-semibold ${
-                    highlight ? "text-coral" : "text-black"
-                  }`}
-                >
+                <span className="text-[13px] font-light text-muted">{label}</span>
+                <span className={`text-base font-semibold ${highlight ? "text-coral" : "text-black"}`}>
                   {v}
                 </span>
               </div>
