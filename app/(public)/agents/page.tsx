@@ -167,7 +167,7 @@ export default function Agents() {
             </a>
             <Link
               href="/buy"
-              className="inline-block rounded-md border border-border px-9 py-[14px] text-[15px] font-light text-muted transition-colors hover:border-coral hover:text-coral"
+              className="inline-block rounded-md bg-black px-9 py-[14px] text-[15px] font-medium text-white transition-colors hover:bg-neutral-800"
             >
               See how it works
             </Link>
