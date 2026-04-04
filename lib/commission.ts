@@ -1,5 +1,5 @@
 export const COMMISSION_RATE = 0.025;
-export const GIVING_POOL_RATE = 0.30;
+export const GIVING_POOL_RATE = 0.25;
 
 export const calcCommission = (price: number): number =>
   price * COMMISSION_RATE;
