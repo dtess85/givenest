@@ -47,10 +47,10 @@ export default function Footer() {
               Company
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              <Link href="#" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>About</Link>
-              <Link href="#" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Giving</Link>
-              <Link href="#" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Press</Link>
-              <Link href="#" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Contact</Link>
+              <Link href="/about" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>About</Link>
+              <Link href="/giving" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Giving</Link>
+              <Link href="/press" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Press</Link>
+              <Link href="/contact" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Contact</Link>
             </div>
           </div>
 
@@ -59,10 +59,10 @@ export default function Footer() {
               Legal
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              <Link href="#" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Privacy</Link>
-              <Link href="#" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Terms</Link>
-              <Link href="#" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Licensing</Link>
-              <Link href="#" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>FAQ</Link>
+              <Link href="/privacy" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Privacy</Link>
+              <Link href="/terms" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Terms</Link>
+              <Link href="/licensing" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Licensing</Link>
+              <Link href="/faq" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>FAQ</Link>
             </div>
           </div>
         </div>
