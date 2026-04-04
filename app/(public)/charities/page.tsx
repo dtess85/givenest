@@ -92,7 +92,8 @@ export default function Charities() {
       setLoading(true);
       try {
         const key = process.env.NEXT_PUBLIC_EVERY_ORG_KEY;
-        const causeParam = activeCat.slug ? `&causes=${activeCat.slug}` : "";
+        const slug = CATEGORIES.find((c) => c.label === activeCategory)?.slug;
+        const causeParam = slug ? `&causes=${slug}` : "";
         const res = await fetch(
           `https://partners.every.org/v0.2/search/${encodeURIComponent(search.trim())}?apiKey=${key}&take=12${causeParam}`
         );
