@@ -21,9 +21,9 @@ export default function FinalCTA() {
           </Link>
           <Link
             href="/agents"
-            className="rounded-md border border-border px-[22px] py-[11px] text-sm font-normal text-black transition-all hover:border-coral hover:text-coral"
+            className="rounded-md bg-black px-[22px] py-[11px] text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
-            Join as agent
+            Learn more
           </Link>
         </div>
       </div>
