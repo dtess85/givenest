@@ -136,7 +136,7 @@ export default function Charities() {
           <div className="flex max-w-[460px] overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
             <input
               className="min-w-0 flex-1 border-none bg-white px-[18px] py-[15px] text-[15px] font-light outline-none placeholder:text-[#c0bdb6]"
-              placeholder="Search any 501(c)(3)..."
+              placeholder="Search any organization..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
