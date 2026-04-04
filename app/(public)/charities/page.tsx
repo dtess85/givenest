@@ -112,6 +112,7 @@ export default function Charities() {
             src="/images/charities-family.png"
             alt=""
             fill
+            unoptimized
             className="object-cover object-center"
             priority
           />
