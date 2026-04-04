@@ -38,6 +38,10 @@ export default function Sell() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [favorites, setFavorites] = useState<Map<string, EveryOrgNonprofit>>(new Map());
   const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userLoc = useUserLocation();
 
@@ -293,12 +297,71 @@ export default function Sell() {
           )}
 
           <button
+            onClick={() => { if (charity && !submitted) setShowForm(true); }}
             className={`w-full rounded-md bg-coral py-3 text-sm font-medium text-white transition-colors hover:bg-[#d4574a] ${
-              !charity ? "cursor-default opacity-40" : "cursor-pointer"
+              !charity || submitted ? "cursor-default opacity-40" : "cursor-pointer"
             }`}
           >
-            Get matched with an agent
+            {submitted ? "✓ Request sent" : "Get matched with an agent"}
           </button>
+
+          {showForm && !submitted && (
+            <div className="mt-3 rounded-md border border-border bg-white p-4">
+              <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">Your contact info</div>
+              <div className="flex flex-col gap-2">
+                <input
+                  className="w-full rounded-md border border-border bg-white px-[14px] py-[10px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                  placeholder="Full name"
+                  value={formData.name}
+                  onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
+                />
+                <input
+                  type="email"
+                  className="w-full rounded-md border border-border bg-white px-[14px] py-[10px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                  placeholder="Email address"
+                  value={formData.email}
+                  onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+                />
+                <input
+                  type="tel"
+                  className="w-full rounded-md border border-border bg-white px-[14px] py-[10px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                  placeholder="Phone (optional)"
+                  value={formData.phone}
+                  onChange={(e) => setFormData((f) => ({ ...f, phone: e.target.value }))}
+                />
+                <button
+                  onClick={async () => {
+                    if (!formData.name || !formData.email) return;
+                    setSending(true);
+                    try {
+                      await fetch("/api/contact", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          name: formData.name,
+                          email: formData.email,
+                          phone: formData.phone,
+                          charity: charity?.name,
+                          homeValue: num > 0 ? fmt(num) : "",
+                          givingAmount: num > 0 ? fmt(givingPool) : "",
+                        }),
+                      });
+                    } finally {
+                      setSending(false);
+                      setSubmitted(true);
+                      setShowForm(false);
+                    }
+                  }}
+                  disabled={!formData.name || !formData.email || sending}
+                  className={`w-full rounded-md bg-coral py-[10px] text-sm font-medium text-white transition-colors hover:bg-[#d4574a] ${
+                    !formData.name || !formData.email || sending ? "cursor-default opacity-40" : "cursor-pointer"
+                  }`}
+                >
+                  {sending ? "Sending…" : "Send request"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
