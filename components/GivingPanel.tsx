@@ -33,7 +33,10 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
   const [results, setResults] = useState<EveryOrgNonprofit[]>([]);
   const [loading, setLoading] = useState(false);
   const [charity, setCharity] = useState<PickedCharity | null>(null);
-  const [matched, setMatched] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const [favorites, setFavorites] = useState<Map<string, EveryOrgNonprofit>>(new Map());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userLoc = useUserLocation();
@@ -202,29 +205,73 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
         )}
       </div>
 
-      {/* Match prompt */}
-      {charity && !matched && (
-        <div className="mb-[10px] rounded-md border border-border bg-white p-3">
-          <div className="mb-2 text-xs font-light leading-[1.6] text-muted">
-            Want to add a personal donation on top of{" "}
-            <span className="text-coral">{fmt(givingPool)}</span> to{" "}
-            {charity.name}? See our FAQ for details.
-          </div>
-          <button className="w-full rounded-md border border-border px-2 py-2 text-xs transition-all hover:border-coral hover:text-coral">
-            I&apos;d like to match
-          </button>
-        </div>
-      )}
-
       {/* CTA */}
       <button
-        onClick={() => charity && setMatched(true)}
+        onClick={() => { if (charity && !submitted) setShowForm(true); }}
         className={`w-full rounded-md bg-coral py-[13px] text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a] ${
-          !charity ? "cursor-default opacity-40" : "cursor-pointer"
+          !charity || submitted ? "cursor-default opacity-40" : "cursor-pointer"
         }`}
       >
-        {matched ? "\u2713 Request sent" : "Get matched with an agent"}
+        {submitted ? "\u2713 Request sent" : "Get matched with an agent"}
       </button>
+
+      {showForm && !submitted && (
+        <div className="mt-3 rounded-md border border-border bg-white p-3">
+          <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">Your contact info</div>
+          <div className="flex flex-col gap-[6px]">
+            <input
+              className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+              placeholder="Full name"
+              value={formData.name}
+              onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
+            />
+            <input
+              type="email"
+              className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+              placeholder="Email address"
+              value={formData.email}
+              onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+            />
+            <input
+              type="tel"
+              className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+              placeholder="Phone (optional)"
+              value={formData.phone}
+              onChange={(e) => setFormData((f) => ({ ...f, phone: e.target.value }))}
+            />
+            <button
+              onClick={async () => {
+                if (!formData.name || !formData.email) return;
+                setSending(true);
+                try {
+                  await fetch("/api/contact", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      name: formData.name,
+                      email: formData.email,
+                      phone: formData.phone,
+                      charity: charity?.name,
+                      homeValue: fmt(price),
+                      givingAmount: fmt(givingPool),
+                    }),
+                  });
+                } finally {
+                  setSending(false);
+                  setSubmitted(true);
+                  setShowForm(false);
+                }
+              }}
+              disabled={!formData.name || !formData.email || sending}
+              className={`w-full rounded-md bg-coral py-[8px] text-xs font-medium text-white transition-colors hover:bg-[#d4574a] ${
+                !formData.name || !formData.email || sending ? "cursor-default opacity-40" : "cursor-pointer"
+              }`}
+            >
+              {sending ? "Sending…" : "Send request"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
