@@ -26,6 +26,8 @@ export interface AgentItem {
   markets: string;
   closings: number;
   initials: string;
+  email: string;
+  phone: string;
 }
 
 export const PROPERTIES: Property[] = [
@@ -39,8 +41,8 @@ export const CHARITIES: CharityItem[] = [
 ];
 
 export const AGENTS: AgentItem[] = [
-  { name: "Kyndall Yates", markets: "Gilbert · Mesa · Chandler", closings: 0, initials: "KY" },
-  { name: "Dustin Tessendorf", markets: "Scottsdale · Phoenix · Paradise Valley", closings: 0, initials: "DT" },
+  { name: "Kyndall Yates", markets: "Gilbert · Mesa · Chandler", closings: 0, initials: "KY", email: "kyndall@givenest.com", phone: "(480) 400-8690" },
+  { name: "Dustin Tessendorf", markets: "Scottsdale · Phoenix · Paradise Valley", closings: 0, initials: "DT", email: "dustin@givenest.com", phone: "(480) 779-7204" },
 ];
 
 export function getPropertyBySlug(slug: string): Property | undefined {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getPropertyBySlug, AGENTS } from "@/lib/mock-data";
@@ -9,6 +10,11 @@ import GivingPanel from "@/components/GivingPanel";
 export default function PropertyDetail() {
   const params = useParams();
   const property = getPropertyBySlug(params.address as string);
+
+  const [activeAgent, setActiveAgent] = useState<string | null>(null);
+  const [submittedAgents, setSubmittedAgents] = useState<Set<string>>(new Set());
+  const [sending, setSending] = useState(false);
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
 
   if (!property) {
     return (
@@ -67,22 +73,100 @@ export default function PropertyDetail() {
             givenest agents
           </h3>
           <div className="flex flex-col gap-2">
-            {AGENTS.map((a) => (
-              <div
-                key={a.initials}
-                className="flex items-center gap-[14px] rounded-[10px] border border-border bg-white p-[14px_18px]"
-              >
-                <div className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
-                  {a.initials}
+            {AGENTS.map((a) => {
+              const isActive = activeAgent === a.initials;
+              const isSubmitted = submittedAgents.has(a.initials);
+              return (
+                <div key={a.initials}>
+                  <div className="flex items-center gap-[14px] rounded-[10px] border border-border bg-white p-[14px_18px]">
+                    <div className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                      {a.initials}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[13px] font-medium">{a.name}</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!isSubmitted) {
+                          setActiveAgent(isActive ? null : a.initials);
+                          setFormData({ name: "", email: "", phone: "" });
+                        }
+                      }}
+                      className={`rounded-md border px-[14px] py-[7px] text-xs transition-all ${
+                        isSubmitted
+                          ? "border-border text-muted cursor-default"
+                          : isActive
+                          ? "border-coral text-coral"
+                          : "border-border hover:border-coral hover:text-coral"
+                      }`}
+                    >
+                      {isSubmitted ? "✓ Sent" : "Request"}
+                    </button>
+                  </div>
+
+                  {isActive && !isSubmitted && (
+                    <div className="mt-1 rounded-md border border-border bg-white p-3">
+                      <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+                        Your contact info
+                      </div>
+                      <div className="flex flex-col gap-[6px]">
+                        <input
+                          className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                          placeholder="Full name"
+                          value={formData.name}
+                          onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
+                        />
+                        <input
+                          type="email"
+                          className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                          placeholder="Email address"
+                          value={formData.email}
+                          onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+                        />
+                        <input
+                          type="tel"
+                          className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                          placeholder="Phone (optional)"
+                          value={formData.phone}
+                          onChange={(e) => setFormData((f) => ({ ...f, phone: e.target.value }))}
+                        />
+                        <button
+                          onClick={async () => {
+                            if (!formData.name || !formData.email) return;
+                            setSending(true);
+                            try {
+                              await fetch("/api/agent-request", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  name: formData.name,
+                                  email: formData.email,
+                                  phone: formData.phone,
+                                  agentName: a.name,
+                                  propertyAddress: property.address,
+                                }),
+                              });
+                            } finally {
+                              setSending(false);
+                              setSubmittedAgents((prev) => new Set(prev).add(a.initials));
+                              setActiveAgent(null);
+                            }
+                          }}
+                          disabled={!formData.name || !formData.email || sending}
+                          className={`w-full rounded-md bg-coral py-[8px] text-xs font-medium text-white transition-colors hover:bg-[#d4574a] ${
+                            !formData.name || !formData.email || sending
+                              ? "cursor-default opacity-40"
+                              : "cursor-pointer"
+                          }`}
+                        >
+                          {sending ? "Sending…" : "Send request"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1">
-                  <div className="text-[13px] font-medium">{a.name}</div>
-                </div>
-                <button className="rounded-md border border-border px-[14px] py-[7px] text-xs transition-all hover:border-coral hover:text-coral">
-                  Request
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
