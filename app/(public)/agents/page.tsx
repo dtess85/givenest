@@ -166,7 +166,7 @@ export default function Agents() {
               Apply to join
             </a>
             <Link
-              href="/buy"
+              href="/about"
               className="inline-block rounded-md bg-black px-9 py-[14px] text-[15px] font-medium text-white transition-colors hover:bg-neutral-800"
             >
               See how it works
