@@ -10,7 +10,7 @@ export default function FinalCTA() {
           fund a <em className="text-coral">cause.</em>
         </h2>
         <p className="mb-7 text-sm font-light leading-[1.8] text-muted">
-          Search homes, estimate your giving, or join as a partner agent.
+          Search homes, estimate your giving, or learn more about us.
         </p>
         <div className="flex justify-center gap-[10px]">
           <Link
