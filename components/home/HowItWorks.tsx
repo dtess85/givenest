@@ -61,11 +61,11 @@ export default function HowItWorks() {
       </div>
     </section>
     <div className="bg-coral px-8 py-[18px]">
-      <div className="mx-auto max-w-[960px] flex items-center gap-5">
+      <div className="mx-auto max-w-[960px] flex items-center justify-between gap-5">
         <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">
           Every home does good. Built to create impact with every closing.
         </span>
-        <Link href="/about" className="text-[12px] font-medium text-white transition-colors hover:text-white/80 self-end">
+        <Link href="/about" className="flex-shrink-0 text-[15px] font-medium text-white transition-opacity hover:opacity-70">
           Learn more →
         </Link>
       </div>
