@@ -30,15 +30,15 @@ export default function About() {
               Why we built this
             </span>
             <h2 className="mb-5 font-serif text-[clamp(26px,3.5vw,38px)] font-medium leading-[1.15] tracking-[-0.02em]">
-              Tired of transactions that don't mean anything.
+              Tired of transactions that don&apos;t mean anything.
             </h2>
           </div>
           <div className="flex flex-col justify-center">
             <p className="mb-5 text-[15px] font-light leading-[1.8] text-muted">
-              Dustin Tessendorf founded Givenest in the Phoenix metro after years in real estate. He kept asking the same question: we're moving hundreds of thousands of dollars on every deal — why doesn't any of that go somewhere that matters?
+              Dustin Tessendorf founded Givenest in the Phoenix metro after years in real estate. He kept asking the same question: we&apos;re moving hundreds of thousands of dollars on every deal — why doesn&apos;t any of that go somewhere that matters?
             </p>
             <p className="text-[15px] font-light leading-[1.8] text-muted">
-              The answer was to build a brokerage where giving isn't an afterthought — it's the model. At every closing, Givenest donates 25% of its commission directly to a charity you choose. No extra cost. No marketing gimmick. Just a different way of doing real estate.
+              The answer was to build a brokerage where giving isn&apos;t an afterthought — it&apos;s the model. At every closing, Givenest donates 25% of its commission directly to a charity you choose. No extra cost. No marketing gimmick. Just a different way of doing real estate.
             </p>
           </div>
         </div>
@@ -54,7 +54,7 @@ export default function About() {
             {[
               { n: "01", title: "You choose your charity", body: "Pick from 1.8M+ nonprofits registered with the IRS — from a local food bank to a global relief org." },
               { n: "02", title: "We handle the donation", body: "At closing, Givenest donates 25% of its commission directly to your chosen charity. No paperwork for you." },
-              { n: "03", title: "You pay nothing extra", body: "The donation comes from Givenest's side — your commission structure and closing costs stay the same." },
+              { n: "03", title: "You pay nothing extra", body: "The donation comes from Givenest&apos;s side — your commission structure and closing costs stay the same." },
             ].map((item) => (
               <div key={item.n} className="rounded-[10px] border border-border bg-white p-6">
                 <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.06em] text-coral">{item.n}</div>

@@ -13,7 +13,7 @@ export default function Privacy() {
         <div className="flex flex-col gap-10 text-[15px] font-light leading-[1.8] text-[#3a3834]">
           <section>
             <h2 className="mb-3 font-serif text-[20px] font-medium text-black">Overview</h2>
-            <p>Givenest ("we," "our," or "us") is an Arizona-licensed real estate brokerage. This Privacy Policy describes how we collect, use, and protect information you provide when using our website at givenest.com or contacting us directly. By using our site, you agree to the practices described here.</p>
+            <p>Givenest (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is an Arizona-licensed real estate brokerage. This Privacy Policy describes how we collect, use, and protect information you provide when using our website at givenest.com or contacting us directly. By using our site, you agree to the practices described here.</p>
           </section>
 
           <div className="h-px bg-border" />

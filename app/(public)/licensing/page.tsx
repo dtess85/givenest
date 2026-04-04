@@ -51,8 +51,8 @@ export default function Licensing() {
           <div className="h-px bg-border" />
 
           <section>
-            <h2 className="mb-3 font-serif text-[20px] font-medium text-black">Commissioner's Standards</h2>
-            <p>All Givenest agents are licensed by the Arizona Department of Real Estate and adhere to the Arizona Commissioner's Rules and the Code of Ethics of the National Association of REALTORS®. For information about filing a complaint or verifying a license, visit the Arizona Department of Real Estate at:</p>
+            <h2 className="mb-3 font-serif text-[20px] font-medium text-black">Commissioner&apos;s Standards</h2>
+            <p>All Givenest agents are licensed by the Arizona Department of Real Estate and adhere to the Arizona Commissioner&apos;s Rules and the Code of Ethics of the National Association of REALTORS®. For information about filing a complaint or verifying a license, visit the Arizona Department of Real Estate at:</p>
             <div className="mt-3">
               <a
                 href="https://azre.gov"

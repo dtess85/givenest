@@ -14,7 +14,7 @@ export default function Giving() {
             <em className="text-coral">works.</em>
           </h1>
           <p className="max-w-[520px] text-[17px] font-light leading-[1.8] text-muted">
-            At every Givenest closing, 25% of our commission goes directly to a charity you choose — before, during, or at closing. Here's exactly how it works.
+            At every Givenest closing, 25% of our commission goes directly to a charity you choose — before, during, or at closing. Here&apos;s exactly how it works.
           </p>
         </div>
       </div>
@@ -79,11 +79,11 @@ export default function Giving() {
             {[
               {
                 q: "Is the donation tax-deductible for me?",
-                a: "The donation is made by Givenest, not by you directly — so it's not deductible on your personal return. However, you're choosing where a meaningful gift goes, at no cost to you.",
+                a: "The donation is made by Givenest, not by you directly — so it&apos;s not deductible on your personal return. However, you&apos;re choosing where a meaningful gift goes, at no cost to you.",
               },
               {
-                q: "What if I can't decide on a charity?",
-                a: "Take your time. You can choose any time before closing. If you don't select one, we'll work with you to find a cause that resonates. We won't close without a charity selected.",
+                q: "What if I can&apos;t decide on a charity?",
+                a: "Take your time. You can choose any time before closing. If you don&apos;t select one, we&apos;ll work with you to find a cause that resonates. We won&apos;t close without a charity selected.",
               },
               {
                 q: "What charities qualify?",
@@ -91,7 +91,7 @@ export default function Giving() {
               },
               {
                 q: "When does the donation actually happen?",
-                a: "The donation is processed at closing, funded from Givenest's commission. You'll receive a confirmation of the donation with the nonprofit's details.",
+                a: "The donation is processed at closing, funded from Givenest's commission. You&apos;ll receive a confirmation of the donation with the nonprofit's details.",
               },
               {
                 q: "Can I change my charity before closing?",

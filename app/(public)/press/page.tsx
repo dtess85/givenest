@@ -30,7 +30,7 @@ export default function Press() {
             <em className="text-coral">the news.</em>
           </h1>
           <p className="max-w-[480px] text-[17px] font-light leading-[1.8] text-muted">
-            We're just getting started. Press coverage and media appearances coming soon — check back as we grow.
+            We&apos;re just getting started. Press coverage and media appearances coming soon — check back as we grow.
           </p>
         </div>
       </div>

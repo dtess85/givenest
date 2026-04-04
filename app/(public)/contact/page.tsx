@@ -35,7 +35,7 @@ export default function Contact() {
             <em className="text-coral">touch.</em>
           </h1>
           <p className="max-w-[460px] text-[17px] font-light leading-[1.8] text-muted">
-            Questions about buying, selling, or our giving model? We'd love to hear from you.
+            Questions about buying, selling, or our giving model? We&apos;d love to hear from you.
           </p>
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function Contact() {
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <div className="mb-3 text-[32px]">✓</div>
                 <div className="mb-2 font-serif text-[22px] font-medium">Message sent</div>
-                <p className="text-[14px] font-light text-muted">We'll get back to you within one business day.</p>
+                <p className="text-[14px] font-light text-muted">We&apos;ll get back to you within one business day.</p>
               </div>
             ) : (
               <>

@@ -27,10 +27,10 @@ export default function Terms() {
 
           <section>
             <h2 className="mb-3 font-serif text-[20px] font-medium text-black">The giving model</h2>
-            <p className="mb-3">Givenest's charitable giving program works as follows:</p>
+            <p className="mb-3">Givenest&apos;s charitable giving program works as follows:</p>
             <ul className="ml-5 list-disc space-y-1">
               <li>At each successfully closed real estate transaction, Givenest donates 25% of its earned commission to a nonprofit organization selected by the client.</li>
-              <li>Donation amounts are based on Givenest's actual earned commission and may vary by transaction.</li>
+              <li>Donation amounts are based on Givenest&apos;s actual earned commission and may vary by transaction.</li>
               <li>Givenest makes no guarantee of a minimum donation amount.</li>
               <li>Donations are made by Givenest, not by the client. Clients should not claim these donations as personal charitable deductions without consulting a tax professional.</li>
               <li>Charitable donations are facilitated through Every.org, a registered 501(c)(3) fiscal sponsor and giving platform.</li>
@@ -48,7 +48,7 @@ export default function Terms() {
 
           <section>
             <h2 className="mb-3 font-serif text-[20px] font-medium text-black">Limitation of liability</h2>
-            <p>Givenest's website and tools are provided "as is" without warranties of any kind. Estimated donation amounts shown on our platform are illustrative only and do not constitute a contractual commitment. To the maximum extent permitted by Arizona law, Givenest shall not be liable for any indirect, incidental, or consequential damages arising from your use of the site.</p>
+            <p>Givenest&apos;s website and tools are provided &quot;as is&quot; without warranties of any kind. Estimated donation amounts shown on our platform are illustrative only and do not constitute a contractual commitment. To the maximum extent permitted by Arizona law, Givenest shall not be liable for any indirect, incidental, or consequential damages arising from your use of the site.</p>
           </section>
 
           <div className="h-px bg-border" />
