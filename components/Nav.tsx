@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import Wordmark from "./Wordmark";
 
 const links = [
-  { href: "/", label: "Home" },
   { href: "/buy", label: "Buy" },
   { href: "/sell", label: "Sell" },
   { href: "/charities", label: "Charities" },
