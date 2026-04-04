@@ -48,7 +48,7 @@ export default function Hero() {
         </p>
 
         {/* Search bar */}
-        <div className="flex w-full max-w-[580px] overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
+        <div className="flex w-full max-w-[800px] overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -58,9 +58,25 @@ export default function Hero() {
           />
           <button
             onClick={handleSearch}
-            className="whitespace-nowrap bg-coral px-[30px] py-[18px] font-sans text-[15px] font-medium text-white transition-colors hover:bg-[#d4574a]"
+            className="flex items-center justify-center bg-coral px-[20px] py-[18px] font-sans text-[15px] font-medium text-white transition-colors hover:bg-[#d4574a] md:px-[30px]"
           >
-            Search homes
+            {/* Magnifying glass on mobile, text on desktop */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="md:hidden"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span className="hidden whitespace-nowrap md:inline">Search homes</span>
           </button>
         </div>
 
