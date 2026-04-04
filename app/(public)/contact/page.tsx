@@ -64,7 +64,7 @@ export default function Contact() {
               <div>
                 <div className="mb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">Location</div>
                 <div className="text-[15px]">Gilbert, Arizona</div>
-                <div className="text-[13px] text-muted">Serving the greater Phoenix metro</div>
+                <div className="text-[13px] text-muted">Serving Arizona</div>
               </div>
               <div>
                 <div className="mb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">Press inquiries</div>

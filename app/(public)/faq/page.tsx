@@ -30,7 +30,7 @@ const FAQS = [
   },
   {
     q: "What markets does Givenest serve?",
-    a: "We currently serve the greater Phoenix metropolitan area, including Gilbert, Mesa, Chandler, Scottsdale, Tempe, Phoenix, and surrounding communities. We're growing — reach out if you're in a neighboring area.",
+    a: "We currently serve Arizona. We're growing — reach out if you're in a neighboring area.",
   },
   {
     q: "How do I get started?",

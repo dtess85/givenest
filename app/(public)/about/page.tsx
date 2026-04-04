@@ -35,7 +35,7 @@ export default function About() {
           </div>
           <div className="flex flex-col justify-center gap-5">
             <p className="text-[15px] font-light leading-[1.8] text-muted">
-              Givenest was founded by Dustin Tessendorf and Kyndall Yates in the Phoenix metro with a simple question.
+              Givenest was founded by Dustin Tessendorf and Kyndall Yates in Arizona with a simple question.
             </p>
             <p className="text-[15px] font-light leading-[1.8] text-muted">
               Dustin, who grew up in South Africa, saw firsthand the impact that giving can have — and wanted to build something that made it part of everyday life. Kyndall shared that vision: a desire to help people through one of the biggest transactions of their lives while being part of something bigger than herself.

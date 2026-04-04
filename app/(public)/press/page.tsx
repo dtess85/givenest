@@ -71,7 +71,7 @@ export default function Press() {
             {[
               { label: "Founded", value: "2024" },
               { label: "Headquartered", value: "Gilbert, AZ" },
-              { label: "Markets served", value: "Greater Phoenix metro" },
+              { label: "Markets served", value: "Arizona" },
               { label: "Commission to charity", value: "25% at every closing" },
             ].map((item) => (
               <div key={item.label} className="border-t-2 border-coral pt-3">

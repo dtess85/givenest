@@ -20,7 +20,7 @@ export default function Terms() {
 
           <section>
             <h2 className="mb-3 font-serif text-[20px] font-medium text-black">Service description</h2>
-            <p>Givenest is a licensed Arizona real estate brokerage. Our website provides information about buying and selling real estate in the greater Phoenix metropolitan area, as well as tools to browse charities and estimate potential charitable donations at closing. Givenest is not a law firm, financial advisor, or tax advisor. Nothing on this site constitutes legal, financial, or tax advice.</p>
+            <p>Givenest is a licensed Arizona real estate brokerage. Our website provides information about buying and selling real estate in Arizona, as well as tools to browse charities and estimate potential charitable donations at closing. Givenest is not a law firm, financial advisor, or tax advisor. Nothing on this site constitutes legal, financial, or tax advice.</p>
           </section>
 
           <div className="h-px bg-border" />
