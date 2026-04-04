@@ -34,7 +34,7 @@ export default function Giving() {
               {
                 icon: "→",
                 title: "We handle the donation",
-                body: "Givenest donates 25% of our commission directly to your chosen nonprofit at closing via Every.org, a trusted giving platform.",
+                body: "Givenest donates 25% of our commission directly to your chosen nonprofit at closing.",
               },
               {
                 icon: "$0",
