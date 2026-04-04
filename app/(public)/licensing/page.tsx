@@ -18,7 +18,7 @@ export default function Licensing() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {[
                   { label: "Brokerage name", value: "Givenest" },
-                  { label: "AZ DRE License #", value: "[License number — update before launch]" },
+                  { label: "AZ DRE License #", value: "LC721695000" },
                   { label: "Designated broker", value: "Dustin Tessendorf" },
                   { label: "State", value: "Arizona" },
                 ].map((item) => (
