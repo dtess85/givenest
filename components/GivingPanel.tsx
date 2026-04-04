@@ -37,9 +37,9 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
         Giving panel
       </span>
       <h3 className="mb-5 font-serif text-xl font-medium leading-[1.2] tracking-[-0.02em] text-black">
-        Your closing.
+        Every closing
         <br />
-        Their cause.
+        gives back.
       </h3>
 
       {/* Math breakdown */}
