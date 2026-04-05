@@ -282,8 +282,8 @@ export default function PropertyDetail() {
             </div>
           </div>
 
-          {/* ── Listed by ── */}
-          <div className="border-t border-border pt-5 pb-4">
+          {/* ── Listed by — hidden on small screens, shown inline on lg ── */}
+          <div className="hidden lg:block border-t border-border pt-5 pb-4">
             <p className="mb-4 text-[13px] text-muted">
               Listed by <span className="font-medium text-[#2a2825]">Kyndall Yates</span>
               <span className="mx-2 text-border">•</span>
@@ -444,6 +444,57 @@ export default function PropertyDetail() {
           <GivingPanel price={property.price} variant="property" />
         </div>
 
+      </div>
+    </div>
+
+    {/* ── Listed by — shown below sidebar on small screens only ── */}
+    <div className="lg:hidden mx-auto max-w-[1200px] px-6 pb-8">
+      <div className="border-t border-border pt-5 pb-4">
+        <p className="mb-4 text-[13px] text-muted">
+          Listed by <span className="font-medium text-[#2a2825]">Kyndall Yates</span>
+          <span className="mx-2 text-border">•</span>
+          <span className="font-medium text-[#2a2825]">Givenest</span>
+        </p>
+        <div className="flex flex-col gap-[6px] text-[12px] text-muted">
+          {listingUpdated && (
+            <div className="flex items-center gap-2">
+              <span className="text-[#b0ada6]">
+                <svg className="inline h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </span>
+              <span>Listing updated: <span className="text-[#4a4845]">{listingUpdated}</span></span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <span className="text-[#b0ada6]">
+              <svg className="inline h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
+            <span>Last checked: <span className="text-[#4a4845]">{today}</span></span>
+          </div>
+          {property.mlsNumber && (
+            <div className="flex items-center gap-2">
+              <span className="text-[#b0ada6]">
+                <svg className="inline h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z" />
+                </svg>
+              </span>
+              <span>Source: <span className="text-[#4a4845]">Arizona MLS #{property.mlsNumber}</span></span>
+            </div>
+          )}
+          {property.daysOnMarket != null && (
+            <div className="flex items-center gap-2">
+              <span className="text-[#b0ada6]">
+                <svg className="inline h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </span>
+              <span><span className="text-[#4a4845] font-medium">{property.daysOnMarket} days</span> on market</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
 
