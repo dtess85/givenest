@@ -207,9 +207,9 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
 
       {/* CTA */}
       <button
-        onClick={() => { if (charity && !submitted) setShowForm(true); }}
+        onClick={() => { if (!submitted) setShowForm((v) => !v); }}
         className={`w-full rounded-md bg-coral py-[13px] text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a] ${
-          !charity || submitted ? "cursor-default opacity-40" : "cursor-pointer"
+          submitted ? "cursor-default opacity-40" : "cursor-pointer"
         }`}
       >
         {submitted ? "\u2713 Request sent" : "Get matched with an agent"}
