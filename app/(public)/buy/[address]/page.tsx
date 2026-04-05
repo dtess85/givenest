@@ -193,7 +193,7 @@ export default function PropertyDetail() {
                   <iframe
                     src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=10&iwloc=near`}
                     className="pointer-events-none"
-                    style={{ width: "100%", height: "151px", marginTop: "-35px" }}
+                    style={{ width: "100%", height: "176px", marginTop: "-60px" }}
                     loading="lazy"
                     title="Mini map"
                   />
