@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider signInUrl="/charity/login" signInFallbackRedirectUrl="/charity/dashboard">
       <html lang="en">
         <body className={`${lora.variable} ${dmSans.variable} font-sans antialiased`}>
           {children}
