@@ -189,11 +189,11 @@ export default function PropertyDetail() {
                   style={{ width: 130, height: 96 }}
                   aria-label="View map"
                 >
-                  {/* iframe taller than container to crop Google watermark */}
+                  {/* iframe oversized to crop 'Maps' label at top and watermark at bottom */}
                   <iframe
-                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=12`}
+                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=14`}
                     className="pointer-events-none"
-                    style={{ width: "100%", height: "116px", marginBottom: "-20px" }}
+                    style={{ width: "100%", height: "151px", marginTop: "-35px" }}
                     loading="lazy"
                     title="Mini map"
                   />
@@ -327,11 +327,11 @@ export default function PropertyDetail() {
                   className="group relative block w-full overflow-hidden rounded-[12px] border border-border cursor-pointer"
                   aria-label="View map"
                 >
-                  {/* iframe taller than container to crop Google watermark */}
+                  {/* iframe oversized to crop 'Maps' label at top and watermark at bottom */}
                   <iframe
-                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=12`}
+                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=14`}
                     className="pointer-events-none w-full"
-                    style={{ height: "240px", marginBottom: "-20px" }}
+                    style={{ height: "275px", marginTop: "-35px" }}
                     loading="lazy"
                     title="Property location map"
                   />
