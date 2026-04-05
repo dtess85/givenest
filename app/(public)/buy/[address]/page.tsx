@@ -214,7 +214,11 @@ export default function PropertyDetail() {
             return (
               <div className="border-t border-border pt-6">
                 <h2 className="mb-3 font-serif text-[20px] font-medium tracking-[-0.01em]">About this home</h2>
-                <p className="text-[14px] leading-relaxed text-[#4a4845]">{displayed}</p>
+                <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-[#4a4845]">
+                  {displayed.split("\n\n").map((para, i) => (
+                    <p key={i}>{para}</p>
+                  ))}
+                </div>
                 {isLong && (
                   <button
                     onClick={() => setDescExpanded((e) => !e)}
