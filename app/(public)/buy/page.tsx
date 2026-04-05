@@ -62,11 +62,6 @@ export default function Buy() {
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     />
                   )}
-                  <div className="absolute bottom-0 left-0 px-[18px] py-[12px]">
-                    <div className={`text-[10px] uppercase tracking-[0.06em] ${h.images?.[0] ? "rounded-full bg-black/40 px-2 py-[3px] text-white backdrop-blur-sm" : "text-muted"}`}>
-                      {h.type}
-                    </div>
-                  </div>
                 </div>
                 <div className="px-[18px] py-4">
                   <div className="mb-px text-[15px] font-semibold">
