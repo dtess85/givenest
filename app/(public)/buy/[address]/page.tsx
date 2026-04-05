@@ -128,53 +128,87 @@ export default function PropertyDetail() {
           })()}
 
           {/* Address + stats bar */}
-          <div>
-            {property.status ? (
-              <span className={`mb-2 inline-flex items-center gap-[5px] rounded-full border px-2 py-[3px] text-[10px] font-medium uppercase tracking-[0.07em] ${
-                property.status === "For Sale"    ? "border-green-200 bg-green-50 text-green-700" :
-                property.status === "Pending"     ? "border-yellow-200 bg-yellow-50 text-yellow-700" :
-                property.status === "Contingent"  ? "border-orange-200 bg-orange-50 text-orange-700" :
-                property.status === "Coming Soon" ? "border-blue-200 bg-blue-50 text-blue-700" :
-                property.status === "Sold"        ? "border-red-200 bg-red-50 text-red-700" :
-                "border-border bg-[#F0EDE7] text-muted"
-              }`}>
-                <span className={`h-[6px] w-[6px] rounded-full ${
-                  property.status === "For Sale"    ? "bg-green-500" :
-                  property.status === "Pending"     ? "bg-yellow-500" :
-                  property.status === "Contingent"  ? "bg-orange-500" :
-                  property.status === "Coming Soon" ? "bg-blue-500" :
-                  property.status === "Sold"        ? "bg-red-500" :
-                  "bg-muted"
-                }`} />
-                {property.status}
-              </span>
-            ) : (
-              <div className="mb-2 inline-block rounded-full bg-[#F0EDE7] px-2 py-[3px] text-[10px] font-medium uppercase tracking-[0.07em] text-muted">
-                {property.type}
-              </div>
-            )}
-            <h1 className="mb-[2px] font-serif text-[28px] font-medium tracking-[-0.02em] leading-tight">
-              {property.address}
-            </h1>
-            <p className="mb-4 text-[14px] text-muted">{property.city}</p>
-
-            {/* Stat pills */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {[
-                ["Price", fmt(property.price)],
-                ["Beds", String(property.beds)],
-                ["Baths", String(property.baths)],
-                ["Sqft", property.sqft.toLocaleString()],
-              ].map(([label, value], i, arr) => (
-                <div key={label} className="flex items-center gap-5">
-                  <div>
-                    <div className="text-[10px] font-medium uppercase tracking-[0.07em] text-muted">{label}</div>
-                    <div className="text-[15px] font-semibold">{value}</div>
-                  </div>
-                  {i < arr.length - 1 && <div className="h-6 w-px bg-border" />}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              {property.status ? (
+                <span className={`mb-2 inline-flex items-center gap-[5px] rounded-full border px-2 py-[3px] text-[10px] font-medium uppercase tracking-[0.07em] ${
+                  property.status === "For Sale"    ? "border-green-200 bg-green-50 text-green-700" :
+                  property.status === "Pending"     ? "border-yellow-200 bg-yellow-50 text-yellow-700" :
+                  property.status === "Contingent"  ? "border-orange-200 bg-orange-50 text-orange-700" :
+                  property.status === "Coming Soon" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                  property.status === "Sold"        ? "border-red-200 bg-red-50 text-red-700" :
+                  "border-border bg-[#F0EDE7] text-muted"
+                }`}>
+                  <span className={`h-[6px] w-[6px] rounded-full ${
+                    property.status === "For Sale"    ? "bg-green-500" :
+                    property.status === "Pending"     ? "bg-yellow-500" :
+                    property.status === "Contingent"  ? "bg-orange-500" :
+                    property.status === "Coming Soon" ? "bg-blue-500" :
+                    property.status === "Sold"        ? "bg-red-500" :
+                    "bg-muted"
+                  }`} />
+                  {property.status}
+                </span>
+              ) : (
+                <div className="mb-2 inline-block rounded-full bg-[#F0EDE7] px-2 py-[3px] text-[10px] font-medium uppercase tracking-[0.07em] text-muted">
+                  {property.type}
                 </div>
-              ))}
+              )}
+              <h1 className="mb-[2px] font-serif text-[28px] font-medium tracking-[-0.02em] leading-tight">
+                {property.address}
+              </h1>
+              <p className="mb-4 text-[14px] text-muted">{property.city}</p>
+
+              {/* Stat pills */}
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                {[
+                  ["Price", fmt(property.price)],
+                  ["Beds", String(property.beds)],
+                  ["Baths", String(property.baths)],
+                  ["Sqft", property.sqft.toLocaleString()],
+                ].map(([label, value], i, arr) => (
+                  <div key={label} className="flex items-center gap-5">
+                    <div>
+                      <div className="text-[10px] font-medium uppercase tracking-[0.07em] text-muted">{label}</div>
+                      <div className="text-[15px] font-semibold">{value}</div>
+                    </div>
+                    {i < arr.length - 1 && <div className="h-6 w-px bg-border" />}
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* Mini map thumbnail */}
+            {(() => {
+              const mapsQuery = encodeURIComponent(`${property.address}, ${property.city}`);
+              const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+              return (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative hidden sm:block flex-shrink-0 overflow-hidden rounded-[10px] border border-border shadow-sm"
+                  style={{ width: 130, height: 96 }}
+                  aria-label="View on Google Maps"
+                >
+                  <iframe
+                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=15`}
+                    className="h-full w-full pointer-events-none"
+                    loading="lazy"
+                    title="Mini map"
+                  />
+                  {/* Coral pin */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <svg className="h-7 w-7 drop-shadow" viewBox="0 0 24 32" fill="none">
+                      <path d="M12 0C5.373 0 0 5.373 0 12c0 8 12 20 12 20S24 20 24 12C24 5.373 18.627 0 12 0z" fill="#E0604E"/>
+                      <circle cx="12" cy="12" r="4" fill="white"/>
+                    </svg>
+                  </div>
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                </a>
+              );
+            })()}
           </div>
 
           {/* ── About this home ── */}
