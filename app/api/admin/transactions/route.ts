@@ -1,12 +1,11 @@
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createTransaction } from "@/lib/db/transactions";
 import { recalcCharityTotals } from "@/lib/db/charities";
 
 export async function POST(req: Request) {
-  const { userId, sessionClaims } = await auth();
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
-  if (!userId || role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await currentUser();
+  if (!user || user.publicMetadata?.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const data = await req.json();
   if (!data.charity_id || !data.amount) {

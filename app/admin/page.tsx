@@ -1,12 +1,12 @@
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAllCharities } from "@/lib/db/charities";
 import { fmt } from "@/lib/utils";
 
 export default async function AdminDashboard() {
-  const { userId, sessionClaims } = await auth();
-  if (!userId || (sessionClaims?.metadata as { role?: string })?.role !== "admin") {
+  const user = await currentUser();
+  if (!user || user.publicMetadata?.role !== "admin") {
     redirect("/");
   }
 

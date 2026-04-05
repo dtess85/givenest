@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCharityByClerkUserId } from "@/lib/db/charities";
@@ -11,8 +11,9 @@ function formatDate(d?: string) {
 }
 
 export default async function CharityDashboard() {
-  const { userId } = await auth();
-  if (!userId) redirect("/charity/login");
+  const user = await currentUser();
+  if (!user) redirect("/charity/login");
+  const userId = user.id;
 
   const charity = await getCharityByClerkUserId(userId);
   if (!charity) {
