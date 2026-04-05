@@ -197,13 +197,6 @@ export default function PropertyDetail() {
                     loading="lazy"
                     title="Mini map"
                   />
-                  {/* Coral pin */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <svg className="h-7 w-7 drop-shadow" viewBox="0 0 24 32" fill="none">
-                      <path d="M12 0C5.373 0 0 5.373 0 12c0 8 12 20 12 20S24 20 24 12C24 5.373 18.627 0 12 0z" fill="#E0604E"/>
-                      <circle cx="12" cy="12" r="4" fill="white"/>
-                    </svg>
-                  </div>
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
                 </button>
@@ -335,13 +328,6 @@ export default function PropertyDetail() {
                     loading="lazy"
                     title="Property location map"
                   />
-                  {/* Coral pin overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <svg className="h-9 w-9 drop-shadow-md" viewBox="0 0 24 32" fill="none">
-                      <path d="M12 0C5.373 0 0 5.373 0 12c0 8 12 20 12 20S24 20 24 12C24 5.373 18.627 0 12 0z" fill="#E0604E"/>
-                      <circle cx="12" cy="12" r="4.5" fill="white"/>
-                    </svg>
-                  </div>
                   {/* "Expand map" pill */}
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/60 bg-white/90 px-3 py-[5px] text-[11px] font-medium text-[#2a2825] shadow-sm backdrop-blur-sm transition-colors group-hover:bg-white">
                     View full map
@@ -603,13 +589,6 @@ export default function PropertyDetail() {
                 className="h-full w-full"
                 title="Full property map"
               />
-              {/* Coral pin */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <svg className="h-10 w-10 drop-shadow-lg" viewBox="0 0 24 32" fill="none">
-                  <path d="M12 0C5.373 0 0 5.373 0 12c0 8 12 20 12 20S24 20 24 12C24 5.373 18.627 0 12 0z" fill="#E0604E"/>
-                  <circle cx="12" cy="12" r="4.5" fill="white"/>
-                </svg>
-              </div>
             </div>
             {/* Agent card */}
             <div className="hidden w-[280px] flex-shrink-0 lg:block">
