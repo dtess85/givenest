@@ -15,6 +15,7 @@ export default function PropertyDetail() {
 
   const [descExpanded, setDescExpanded] = useState(false);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [mapModalOpen, setMapModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
 
@@ -181,19 +182,18 @@ export default function PropertyDetail() {
             {/* Mini map thumbnail */}
             {(() => {
               const mapsQuery = encodeURIComponent(`${property.address}, ${property.city}`);
-              const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
               return (
-                <a
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative hidden sm:block flex-shrink-0 overflow-hidden rounded-[10px] border border-border shadow-sm"
+                <button
+                  onClick={() => setMapModalOpen(true)}
+                  className="group relative hidden sm:flex-shrink-0 sm:self-center sm:block overflow-hidden rounded-[10px] border border-border shadow-sm cursor-pointer"
                   style={{ width: 130, height: 96 }}
-                  aria-label="View on Google Maps"
+                  aria-label="View map"
                 >
+                  {/* iframe taller than container to crop Google watermark */}
                   <iframe
-                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=15`}
-                    className="h-full w-full pointer-events-none"
+                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=12`}
+                    className="pointer-events-none"
+                    style={{ width: "100%", height: "116px", marginBottom: "-20px" }}
                     loading="lazy"
                     title="Mini map"
                   />
@@ -206,7 +206,7 @@ export default function PropertyDetail() {
                   </div>
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
-                </a>
+                </button>
               );
             })()}
           </div>
@@ -319,20 +319,19 @@ export default function PropertyDetail() {
           {/* ── Map ── */}
           {(() => {
             const mapsQuery = encodeURIComponent(`${property.address}, ${property.city}`);
-            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
             return (
               <div className="border-t border-border pt-6">
                 <h2 className="mb-4 font-serif text-[20px] font-medium tracking-[-0.01em]">Location</h2>
-                <a
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative block overflow-hidden rounded-[12px] border border-border"
-                  aria-label="View on Google Maps"
+                <button
+                  onClick={() => setMapModalOpen(true)}
+                  className="group relative block w-full overflow-hidden rounded-[12px] border border-border cursor-pointer"
+                  aria-label="View map"
                 >
+                  {/* iframe taller than container to crop Google watermark */}
                   <iframe
-                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=15`}
-                    className="h-[220px] w-full pointer-events-none"
+                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=12`}
+                    className="pointer-events-none w-full"
+                    style={{ height: "240px", marginBottom: "-20px" }}
                     loading="lazy"
                     title="Property location map"
                   />
@@ -343,11 +342,11 @@ export default function PropertyDetail() {
                       <circle cx="12" cy="12" r="4.5" fill="white"/>
                     </svg>
                   </div>
-                  {/* "View on Google Maps" pill */}
+                  {/* "Expand map" pill */}
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/60 bg-white/90 px-3 py-[5px] text-[11px] font-medium text-[#2a2825] shadow-sm backdrop-blur-sm transition-colors group-hover:bg-white">
-                    View on Google Maps ↗
+                    View full map
                   </div>
-                </a>
+                </button>
               </div>
             );
           })()}
@@ -567,6 +566,76 @@ export default function PropertyDetail() {
         </div>
       </div>
     </div>
+
+    {/* Map modal — same style as photo modal */}
+    {mounted && mapModalOpen && createPortal(
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", zIndex: 9999, background: "rgba(245,244,242,0.97)", display: "flex" }} onClick={() => setMapModalOpen(false)}>
+        <div className="flex flex-1 flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          {/* Header */}
+          <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-white px-6 py-4">
+            <div>
+              <div className="font-serif text-[15px] font-medium tracking-[-0.01em]">{property.address}</div>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.address}, ${property.city}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[12px] text-coral hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View on Google Maps ↗
+              </a>
+            </div>
+            <button
+              onClick={() => setMapModalOpen(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-white text-muted transition-colors hover:border-coral hover:text-coral"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {/* Body */}
+          <div className="flex flex-1 gap-6 overflow-hidden p-6">
+            {/* Full map */}
+            <div className="relative flex-1 overflow-hidden rounded-[12px] border border-border">
+              <iframe
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(`${property.address}, ${property.city}`)}&output=embed&z=14`}
+                className="h-full w-full"
+                title="Full property map"
+              />
+              {/* Coral pin */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <svg className="h-10 w-10 drop-shadow-lg" viewBox="0 0 24 32" fill="none">
+                  <path d="M12 0C5.373 0 0 5.373 0 12c0 8 12 20 12 20S24 20 24 12C24 5.373 18.627 0 12 0z" fill="#E0604E"/>
+                  <circle cx="12" cy="12" r="4.5" fill="white"/>
+                </svg>
+              </div>
+            </div>
+            {/* Agent card */}
+            <div className="hidden w-[280px] flex-shrink-0 lg:block">
+              <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
+                <div className="border-b border-border px-4 py-3">
+                  <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Contact an agent</h3>
+                </div>
+                {AGENTS.map((a) => (
+                  <div key={a.initials} className="flex items-center gap-3 px-4 py-4">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                      {a.initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-medium">{a.name}</div>
+                      <a href={`mailto:${a.email}`} className="block truncate text-[11px] text-coral hover:underline" onClick={(e) => e.stopPropagation()}>{a.email}</a>
+                      <a href={`tel:${a.phone.replace(/\D/g, "")}`} className="block text-[11px] text-muted hover:text-black" onClick={(e) => e.stopPropagation()}>{a.phone}</a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
 
     {/* Photo modal — rendered via portal to escape stacking context */}
     {mounted && photoModalOpen && (property.images?.length ?? 0) > 0 && createPortal(
