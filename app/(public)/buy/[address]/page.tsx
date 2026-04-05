@@ -185,8 +185,8 @@ export default function PropertyDetail() {
               return (
                 <button
                   onClick={() => setMapModalOpen(true)}
-                  className="group relative hidden sm:flex-shrink-0 sm:self-center sm:block overflow-hidden rounded-[10px] border border-border shadow-sm cursor-pointer"
-                  style={{ width: 130, height: 96 }}
+                  className="group relative flex-shrink-0 self-end overflow-hidden rounded-2xl border border-border shadow-sm cursor-pointer"
+                  style={{ width: 120, height: 88 }}
                   aria-label="View map"
                 >
                   {/* iframe oversized to crop 'Maps' label at top and watermark at bottom */}
