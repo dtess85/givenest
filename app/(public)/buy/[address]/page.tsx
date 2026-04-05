@@ -282,6 +282,42 @@ export default function PropertyDetail() {
             </div>
           </div>
 
+          {/* ── Map ── */}
+          {(() => {
+            const mapsQuery = encodeURIComponent(`${property.address}, ${property.city}`);
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+            return (
+              <div className="border-t border-border pt-6">
+                <h2 className="mb-4 font-serif text-[20px] font-medium tracking-[-0.01em]">Location</h2>
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative block overflow-hidden rounded-[12px] border border-border"
+                  aria-label="View on Google Maps"
+                >
+                  <iframe
+                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=15`}
+                    className="h-[220px] w-full pointer-events-none"
+                    loading="lazy"
+                    title="Property location map"
+                  />
+                  {/* Coral pin overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <svg className="h-9 w-9 drop-shadow-md" viewBox="0 0 24 32" fill="none">
+                      <path d="M12 0C5.373 0 0 5.373 0 12c0 8 12 20 12 20S24 20 24 12C24 5.373 18.627 0 12 0z" fill="#E0604E"/>
+                      <circle cx="12" cy="12" r="4.5" fill="white"/>
+                    </svg>
+                  </div>
+                  {/* "View on Google Maps" pill */}
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/60 bg-white/90 px-3 py-[5px] text-[11px] font-medium text-[#2a2825] shadow-sm backdrop-blur-sm transition-colors group-hover:bg-white">
+                    View on Google Maps ↗
+                  </div>
+                </a>
+              </div>
+            );
+          })()}
+
           {/* ── Listed by — hidden on small screens, shown inline on lg ── */}
           <div className="hidden lg:block border-t border-border pt-5 pb-4">
             <p className="mb-4 text-[13px] text-muted">
