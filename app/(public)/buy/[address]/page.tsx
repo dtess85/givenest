@@ -191,7 +191,7 @@ export default function PropertyDetail() {
                 >
                   {/* iframe oversized to crop 'Maps' label at top and watermark at bottom */}
                   <iframe
-                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=10`}
+                    src={`https://maps.google.com/maps?q=${mapsQuery}&output=embed&z=10&iwloc=near`}
                     className="pointer-events-none"
                     style={{ width: "100%", height: "151px", marginTop: "-35px" }}
                     loading="lazy"
