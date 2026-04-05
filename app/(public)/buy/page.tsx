@@ -53,9 +53,19 @@ export default function Buy() {
                 href={`/buy/${h.slug}`}
                 className="group overflow-hidden rounded-[10px] border border-border bg-white transition-all hover:shadow-md"
               >
-                <div className="flex h-[130px] items-end bg-[#F5F4F2] px-[18px] py-[14px]">
-                  <div className="text-[10px] uppercase tracking-[0.06em] text-muted">
-                    {h.type}
+                <div className="relative h-[180px] overflow-hidden bg-[#F5F4F2]">
+                  {h.images?.[0] && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={h.images[0]}
+                      alt={h.address}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                    />
+                  )}
+                  <div className="absolute bottom-0 left-0 px-[18px] py-[12px]">
+                    <div className={`text-[10px] uppercase tracking-[0.06em] ${h.images?.[0] ? "rounded-full bg-black/40 px-2 py-[3px] text-white backdrop-blur-sm" : "text-muted"}`}>
+                      {h.type}
+                    </div>
                   </div>
                 </div>
                 <div className="px-[18px] py-4">
