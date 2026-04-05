@@ -9,7 +9,7 @@
 ## What You're Building
 
 Givenest is a licensed Arizona real estate brokerage where every home sale funds a
-charity. At closing, 30% of the buyer agent commission goes to a 501(c)(3) of the
+charity. At closing, Givenest donates 30% of the brokerage commission to a 501(c)(3) of the
 client's choice — 100% of it, no deductions, no admin fees, nothing extra from the
 client. The giving comes out of the standard commission structure that was always there.
 
@@ -27,14 +27,14 @@ The platform serves four audiences:
 
 ```js
 // utils/commission.js
-export const COMMISSION_RATE  = 0.025;  // buyer agent commission (2.5%)
+export const COMMISSION_RATE  = 0.025;  // brokerage commission (2.5%)
 export const GIVING_POOL_RATE = 0.30;   // 30% of commission → charity
 export const calcCommission   = (price) => price * COMMISSION_RATE;
 export const calcGivingPool   = (price) => calcCommission(price) * GIVING_POOL_RATE;
 export const calcDistribution = (price) => calcGivingPool(price); // 100% donated directly to charity
 ```
 
-The giving pool is **always 30% of the buyer agent commission**. Never 1% of home price.
+The giving pool is **always 30% of the brokerage commission**. Never 1% of home price.
 Never a fixed dollar amount. Never less than 100% to Givenest. These are not
 configurable — they are the brand promise.
 
@@ -374,7 +374,7 @@ givenest/
 │  Giving panel                   │
 │                                 │
 │  List price          $550,000   │
-│  Commission (2.5%)   $13,750    │
+│  Brokerage commission (2.5%)   $13,750    │
 │  Giving pool (30%)   $4,125     │  ← coral, large
 │                                 │
 │  100% to charity — no deductions│
@@ -767,6 +767,9 @@ Build in this sequence. Each phase should be fully working before starting the n
 8. **Givenest donations are not Givenest revenue.** Never show them in revenue
    dashboards. They are pass-through — donated directly to charity.
 
+9. **Always lowercase "givenest."** The brand name is never capitalized — not at the
+   start of a sentence, not in headings, not anywhere. Always `givenest`.
+
 ---
 
 ## Guiding Principles
@@ -774,7 +777,7 @@ Build in this sequence. Each phase should be fully working before starting the n
 - The giving panel is the emotional core of every page. Give it space and make the
   dollar amount prominent. It should never feel like a footnote.
 - Lead with dollar amounts, never percentages. "$4,125 to St. Mary's Food Bank" not
-  "30% of the buyer agent commission."
+  "30% of the brokerage commission."
 - Performance matters — buyers search on mobile. Property pages must load fast.
 - The admin dashboard is an internal tool — prioritize function over form.
 - Every automated email represents Givenest. Tone is warm, precise, and grateful.

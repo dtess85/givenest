@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "givenest",
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["/Users/dustin/Desktop/givenest/node_modules/.bin/next", "dev"],
+      "port": 3000
+    }
+  ]
+}

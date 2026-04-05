@@ -56,7 +56,7 @@ This is a strategic choice as much as a generous one. "100% to charity" is a hea
 
 | | Calculation | Result |
 |---|---|---|
-| Agent commission | sale price × 2.5% | e.g. $13,750 on $550K home |
+| Brokerage commission | sale price × 2.5% | e.g. $13,750 on $550K home |
 | Giving pool | commission × 30% | $4,125 |
 | Givenest donation | giving pool × 100% | $4,125 donated to charity |
 
@@ -155,7 +155,7 @@ Agents sign up free, list their profile and market areas, receive matched leads,
 
 ### Giving Panel
 Lives on every property detail page. Shows:
-- List price → commission (2.5%) → Givenest donates (30% of commission, 100% to charity)
+- List price → brokerage commission (2.5%) → Givenest donates (30% of commission, 100% to charity)
 - Charity typeahead search
 - Optional match prompt once charity is selected
 - "Get Matched with an Agent" CTA
