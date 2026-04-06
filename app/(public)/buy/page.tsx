@@ -165,6 +165,11 @@ export default function Buy() {
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     />
                   )}
+                  <div className="absolute left-3 top-3">
+                    <span className="rounded-full bg-coral px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm">
+                      Listed by Givenest
+                    </span>
+                  </div>
                 </div>
                 <div className="px-[18px] py-4">
                   <div className="mb-px text-[15px] font-semibold">
