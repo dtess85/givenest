@@ -56,8 +56,8 @@ export default function Buy() {
             Find your home.{" "}
             <em className="text-coral">Fund a cause.</em>
           </h1>
-          <p className="mb-[22px] max-w-[520px] text-[14px] leading-relaxed text-muted">
-            Every Givenest closing donates a portion of the commission directly to a charity of your choice — at no extra cost to you.
+          <p className="mb-[22px] max-w-[560px] text-[15px] leading-relaxed text-muted">
+            Browse exclusive listings represented by Givenest agents across the East Valley. Filter by location and price to find the right fit — then choose the charity your closing will support.
           </p>
 
           {/* Search bar */}
@@ -107,6 +107,9 @@ export default function Buy() {
               Search
             </button>
           </div>
+          <p className="mt-3 text-[12px] text-muted">
+            Every closing donates a portion of the commission to your chosen charity — at no extra cost to you.
+          </p>
         </div>
       </div>
 
