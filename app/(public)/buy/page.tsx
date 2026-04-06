@@ -8,24 +8,54 @@ import { fmt } from "@/lib/utils";
 
 const PRICE_OPTIONS = [
   { label: "No min", value: 0 },
-  { label: "$500K", value: 500_000 },
+  { label: "$50k", value: 50_000 },
+  { label: "$75k", value: 75_000 },
+  { label: "$100k", value: 100_000 },
+  { label: "$125k", value: 125_000 },
+  { label: "$150k", value: 150_000 },
+  { label: "$175k", value: 175_000 },
+  { label: "$200k", value: 200_000 },
+  { label: "$250k", value: 250_000 },
+  { label: "$300k", value: 300_000 },
+  { label: "$400k", value: 400_000 },
+  { label: "$500k", value: 500_000 },
+  { label: "$600k", value: 600_000 },
+  { label: "$700k", value: 700_000 },
+  { label: "$800k", value: 800_000 },
+  { label: "$900k", value: 900_000 },
   { label: "$1M", value: 1_000_000 },
+  { label: "$1.25M", value: 1_250_000 },
+  { label: "$1.5M", value: 1_500_000 },
   { label: "$2M", value: 2_000_000 },
   { label: "$3M", value: 3_000_000 },
   { label: "$5M", value: 5_000_000 },
-  { label: "$7.5M", value: 7_500_000 },
-  { label: "$10M", value: 10_000_000 },
 ];
 
 const PRICE_MAX_OPTIONS = [
   { label: "No max", value: Infinity },
+  { label: "$50k", value: 50_000 },
+  { label: "$75k", value: 75_000 },
+  { label: "$100k", value: 100_000 },
+  { label: "$125k", value: 125_000 },
+  { label: "$150k", value: 150_000 },
+  { label: "$175k", value: 175_000 },
+  { label: "$200k", value: 200_000 },
+  { label: "$250k", value: 250_000 },
+  { label: "$300k", value: 300_000 },
+  { label: "$400k", value: 400_000 },
+  { label: "$500k", value: 500_000 },
+  { label: "$600k", value: 600_000 },
+  { label: "$700k", value: 700_000 },
+  { label: "$800k", value: 800_000 },
+  { label: "$900k", value: 900_000 },
   { label: "$1M", value: 1_000_000 },
+  { label: "$1.25M", value: 1_250_000 },
+  { label: "$1.5M", value: 1_500_000 },
   { label: "$2M", value: 2_000_000 },
   { label: "$3M", value: 3_000_000 },
   { label: "$5M", value: 5_000_000 },
   { label: "$7.5M", value: 7_500_000 },
-  { label: "$10M", value: 10_000_000 },
-  { label: "$15M+", value: Infinity },
+  { label: "$10M+", value: Infinity },
 ];
 
 export default function Buy() {
@@ -53,7 +83,8 @@ export default function Buy() {
             Buyer portal
           </span>
           <h1 className="mb-2 font-serif text-[clamp(26px,3.5vw,44px)] font-medium leading-[1.2] tracking-[-0.02em]">
-            Houses for sale near you.
+            Find your home.{" "}
+            <em className="text-coral">Fund a cause.</em>
           </h1>
           <p className="mb-[22px] max-w-[560px] text-[15px] leading-relaxed text-muted">
             Find houses for sale near you. View photos, open house information, and property details for nearby real estate.
