@@ -53,11 +53,10 @@ export default function Buy() {
             Buyer portal
           </span>
           <h1 className="mb-2 font-serif text-[clamp(26px,3.5vw,44px)] font-medium leading-[1.2] tracking-[-0.02em]">
-            Find your home.{" "}
-            <em className="text-coral">Fund a cause.</em>
+            Houses for sale near you.
           </h1>
           <p className="mb-[22px] max-w-[560px] text-[15px] leading-relaxed text-muted">
-            Browse exclusive listings represented by Givenest agents across the East Valley. Filter by location and price to find the right fit — then choose the charity your closing will support.
+            Find houses for sale near you. View photos, open house information, and property details for nearby real estate.
           </p>
 
           {/* Search bar */}
