@@ -76,7 +76,7 @@ export default function ListingCardMedia({ thumbnails, address, aboveFold, pills
               setInteracted(true);
               setPhotoIndex((i) => (i - 1 + thumbnails.length) % thumbnails.length);
             }}
-            className="absolute left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 shadow-sm hover:bg-white"
+            className="absolute left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[rgba(255,255,255,0.85)] shadow-sm hover:bg-white"
             aria-label="Previous photo"
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -90,7 +90,7 @@ export default function ListingCardMedia({ thumbnails, address, aboveFold, pills
               setInteracted(true);
               setPhotoIndex((i) => (i + 1) % thumbnails.length);
             }}
-            className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 shadow-sm hover:bg-white"
+            className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[rgba(255,255,255,0.85)] shadow-sm hover:bg-white"
             aria-label="Next photo"
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -102,7 +102,7 @@ export default function ListingCardMedia({ thumbnails, address, aboveFold, pills
 
       {/* Photo counter (desktop only, after first arrow click, multi-photo) */}
       {hasMultiple && interacted && !touchDevice && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-[8px] py-[3px] text-[10px] text-white">
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-[rgba(0,0,0,0.5)] px-[8px] py-[3px] text-[10px] text-white">
           {photoIndex + 1} / {thumbnails.length}
         </div>
       )}
