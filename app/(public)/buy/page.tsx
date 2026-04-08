@@ -186,6 +186,37 @@ function SkeletonCard() {
   );
 }
 
+/** Returns "NEW X HRS AGO" / "NEW X DAYS AGO" if listed recently, null otherwise */
+function getNewLabel(listingDate: string | undefined): string | null {
+  if (!listingDate) return null;
+  const ms = Date.now() - new Date(listingDate).getTime();
+  const hours = ms / (1000 * 60 * 60);
+  if (hours <= 1) return "NEW";
+  if (hours <= 24) return `NEW ${Math.round(hours)} HR${Math.round(hours) !== 1 ? "S" : ""} AGO`;
+  const days = Math.floor(hours / 24);
+  if (days <= 7) return `NEW ${days} DAY${days !== 1 ? "S" : ""} AGO`;
+  return null;
+}
+
+/** Formats the next upcoming open house as "OPEN SAT, 11AM-2PM" */
+function getOpenHouseLabel(openHouses: Property["openHouses"]): string | null {
+  if (!openHouses?.length) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcoming = openHouses
+    .filter((oh) => new Date(oh.date + "T00:00:00") >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (!upcoming) return null;
+  const day = new Date(upcoming.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
+  const fmt = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    const period = h >= 12 ? "PM" : "AM";
+    const hour = h % 12 || 12;
+    return m === 0 ? `${hour}${period}` : `${hour}:${String(m).padStart(2, "0")}${period}`;
+  };
+  return `OPEN ${day}, ${fmt(upcoming.startTime)}-${fmt(upcoming.endTime)}`;
+}
+
 // Icon for city suggestions
 function MapPinIcon() {
   return (
@@ -1085,25 +1116,49 @@ export default function Buy() {
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                         />
                       )}
-                      <div className="absolute left-3 top-3 flex flex-wrap gap-1">
-                        {isGivenest && (
-                          <span className="rounded-full bg-coral px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm">
-                            Listed by Givenest
-                          </span>
-                        )}
-                        {h.status && !(isGivenest && h.status === "For Sale") && (
-                          <span className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm ${
-                            h.status === "For Sale" ? "bg-emerald-500" :
-                            h.status === "Coming Soon" ? "bg-blue-500" :
-                            h.status === "Pending" ? "bg-amber-500" :
-                            h.status === "Contingent" ? "bg-orange-500" :
-                            h.status === "For Rent" ? "bg-purple-500" :
-                            "bg-[#6b6865]"
-                          }`}>
-                            {h.status}
-                          </span>
-                        )}
-                      </div>
+                      {(() => {
+                        const newLabel = getNewLabel(h.listingDate);
+                        const openLabel = getOpenHouseLabel(h.openHouses);
+                        const isBackOnMarket = !!h.backOnMarketDate &&
+                          (Date.now() - new Date(h.backOnMarketDate).getTime()) < 30 * 24 * 60 * 60 * 1000;
+                        // Primary status pill: "new" or "back on market" replaces "For Sale"
+                        const primaryLabel =
+                          h.status === "For Sale" && newLabel ? newLabel :
+                          h.status === "For Sale" && isBackOnMarket ? "BACK ON MARKET" :
+                          null;
+                        const showStatusPill = h.status && !(isGivenest && h.status === "For Sale") && !primaryLabel;
+                        return (
+                          <div className="absolute left-3 top-3 flex flex-wrap gap-1">
+                            {isGivenest && (
+                              <span className="rounded-full bg-coral px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm">
+                                Listed by Givenest
+                              </span>
+                            )}
+                            {primaryLabel && (
+                              <span className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm ${isBackOnMarket && !newLabel ? "bg-blue-500" : "bg-emerald-600"}`}>
+                                {primaryLabel}
+                              </span>
+                            )}
+                            {showStatusPill && (
+                              <span className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm ${
+                                h.status === "For Sale" ? "bg-emerald-500" :
+                                h.status === "Coming Soon" ? "bg-blue-500" :
+                                h.status === "Pending" ? "bg-amber-500" :
+                                h.status === "Contingent" ? "bg-orange-500" :
+                                h.status === "For Rent" ? "bg-purple-500" :
+                                "bg-[#6b6865]"
+                              }`}>
+                                {h.status}
+                              </span>
+                            )}
+                            {openLabel && (
+                              <span className="rounded-full bg-emerald-600 px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm">
+                                {openLabel}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className="px-[18px] py-4">
                       <div className="mb-px text-[15px] font-semibold">

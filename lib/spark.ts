@@ -24,13 +24,21 @@ const FIELDS = [
   "LotSizeAcres",
   "AssociationFee",
   "GarageSpaces",
-  "ListDate",
+  "ListingContractDate",
   "ListOfficeName",
   "ListAgentFullName",
   "Latitude",
   "Longitude",
   "SubdivisionName",
+  "BackOnMarketDate",
 ].join(",");
+
+export interface SparkOpenHouse {
+  Date: string;       // "2025-04-18"
+  StartTime: string;  // "11:00:00"
+  EndTime: string;    // "14:00:00"
+  Type?: string;      // "Public" | "Appointment Only" | etc.
+}
 
 export interface SparkPhoto {
   Id: string;
@@ -64,13 +72,15 @@ export interface SparkStandardFields {
   LotSizeAcres: number | null;
   AssociationFee: number | null;
   GarageSpaces: number | null;
-  ListDate: string | null;
+  ListingContractDate: string | null;
   ListOfficeName: string | null;
   ListAgentFullName: string | null;
   Latitude: number | null;
   Longitude: number | null;
   SubdivisionName: string | null;
+  BackOnMarketDate?: string | null;
   Photos?: SparkPhoto[];
+  OpenHouses?: SparkOpenHouse[];
 }
 
 export interface SparkListing {
@@ -159,11 +169,15 @@ export function sparkToProperty(listing: SparkListing): Property {
       ? `${Math.round(num(f.GarageSpaces)!)}-car garage`
       : undefined,
     mlsNumber: f.ListingId ?? undefined,
-    listingDate: f.ListDate ?? undefined,
+    listingDate: f.ListingContractDate ?? undefined,
     listOfficeName: f.ListOfficeName ?? undefined,
     latitude: num(f.Latitude) ?? undefined,
     longitude: num(f.Longitude) ?? undefined,
     neighborhood: f.SubdivisionName ?? undefined,
+    backOnMarketDate: f.BackOnMarketDate ?? undefined,
+    openHouses: f.OpenHouses
+      ?.filter((oh) => oh.Type !== "Appointment Only")
+      .map((oh) => ({ date: oh.Date, startTime: oh.StartTime, endTime: oh.EndTime })),
   };
 }
 
@@ -228,7 +242,7 @@ export async function fetchSparkListings(
   orderby = "-ListingContractDate"
 ): Promise<{ listings: Property[]; total: number; totalPages: number }> {
   const url = new URL(`${SPARK_BASE}/listings`);
-  url.searchParams.set("_expand", "Photos");
+  url.searchParams.set("_expand", "Photos,OpenHouses");
   url.searchParams.set("_select", FIELDS);
   url.searchParams.set("_limit", String(limit));
   url.searchParams.set("_page", String(page));
@@ -260,7 +274,7 @@ export async function fetchSparkListing(
   key: string
 ): Promise<Property | null> {
   const url = new URL(`${SPARK_BASE}/listings/${key}`);
-  url.searchParams.set("_expand", "Photos");
+  url.searchParams.set("_expand", "Photos,OpenHouses");
   url.searchParams.set("_select", FIELDS);
 
   const res = await fetch(url.toString(), {

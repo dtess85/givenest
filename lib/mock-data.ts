@@ -24,6 +24,8 @@ export interface Property {
   longitude?: number;
   thumbnails?: string[]; // Uri640 — optimized for listing cards (~30% smaller than Uri800)
   neighborhood?: string; // SubdivisionName — community / planned subdivision name
+  backOnMarketDate?: string; // ISO date — set when a listing is relisted after withdrawal
+  openHouses?: Array<{ date: string; startTime: string; endTime: string }>; // upcoming open houses
 }
 
 export interface CharityItem {
