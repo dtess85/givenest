@@ -59,7 +59,7 @@ export default function ListingCardMedia({ thumbnails, address, aboveFold, pills
           decoding="async"
           // @ts-expect-error — fetchpriority is a valid HTML attribute, React types lag behind
           fetchpriority={aboveFold ? "high" : "auto"}
-          className={`h-full w-full object-cover transition-transform duration-300 ${!interacted ? "group-hover:scale-[1.03]" : ""}`}
+          className="h-full w-full object-cover"
         />
       )}
 
