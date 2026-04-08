@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { fetchSparkListing } from "@/lib/spark";
 import { getManualListingById, manualListingToProperty } from "@/lib/db/listings";
 
+
 export async function GET(
   _request: Request,
   { params }: { params: { key: string } }
@@ -15,6 +16,16 @@ export async function GET(
       const row = await getManualListingById(id);
       if (!row) {
         return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+      }
+      // If a Spark listing key has been linked (e.g. once the listing goes Active),
+      // serve live data from Spark so the URL stays the same after Coming Soon ends.
+      if (row.spark_listing_key) {
+        const live = await fetchSparkListing(row.spark_listing_key);
+        if (live) {
+          return NextResponse.json({ listing: live }, {
+            headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=1800" },
+          });
+        }
       }
       return NextResponse.json({ listing: manualListingToProperty(row) }, {
         headers: { "Cache-Control": "no-store" },
