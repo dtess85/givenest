@@ -1042,14 +1042,14 @@ export default function Buy() {
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                         />
                       )}
-                      <div className="absolute left-3 top-3">
-                        {isGivenest ? (
+                      <div className="absolute left-3 top-3 flex flex-wrap gap-1">
+                        {isGivenest && (
                           <span className="rounded-full bg-coral px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm">
                             Listed by Givenest
                           </span>
-                        ) : h.status ? (
+                        )}
+                        {h.status && h.status !== "For Sale" && (
                           <span className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm ${
-                            h.status === "For Sale" ? "bg-emerald-500" :
                             h.status === "Coming Soon" ? "bg-blue-500" :
                             h.status === "Pending" ? "bg-amber-500" :
                             h.status === "Contingent" ? "bg-orange-500" :
@@ -1058,7 +1058,7 @@ export default function Buy() {
                           }`}>
                             {h.status}
                           </span>
-                        ) : null}
+                        )}
                       </div>
                     </div>
                     <div className="px-[18px] py-4">

@@ -129,10 +129,19 @@ export default function PropertyDetail() {
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={src} alt={i === 0 ? property.address : ""} className="h-full w-full object-cover" />
-                        {i === 0 && isGivenest && (
-                          <span className="absolute left-3 top-3 rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
-                            Listed by Givenest
-                          </span>
+                        {i === 0 && (isGivenest || property.status === "Coming Soon") && (
+                          <div className="absolute left-3 top-3 flex flex-wrap gap-1">
+                            {isGivenest && (
+                              <span className="rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
+                                Listed by Givenest
+                              </span>
+                            )}
+                            {property.status === "Coming Soon" && (
+                              <span className="rounded-full bg-blue-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
+                                Coming Soon
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     )) : (
@@ -170,10 +179,19 @@ export default function PropertyDetail() {
                     <div className="relative cursor-pointer" onClick={() => setPhotoModalOpen(true)}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={imgs[0]} alt={property.address} className="h-full w-full object-cover" />
-                      {isGivenest && (
-                        <span className="absolute left-3 top-3 rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
-                          Listed by Givenest
-                        </span>
+                      {(isGivenest || property.status === "Coming Soon") && (
+                        <div className="absolute left-3 top-3 flex flex-wrap gap-1">
+                          {isGivenest && (
+                            <span className="rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
+                              Listed by Givenest
+                            </span>
+                          )}
+                          {property.status === "Coming Soon" && (
+                            <span className="rounded-full bg-blue-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
+                              Coming Soon
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="grid grid-rows-2 gap-1">
@@ -217,10 +235,19 @@ export default function PropertyDetail() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={imgs[0]} alt={property.address} className="h-full w-full object-cover" />
                     ) : null}
-                    {isGivenest && (
-                      <span className="absolute left-3 top-3 rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
-                        Listed by Givenest
-                      </span>
+                    {(isGivenest || property.status === "Coming Soon") && (
+                      <div className="absolute left-3 top-3 flex flex-wrap gap-1">
+                        {isGivenest && (
+                          <span className="rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
+                            Listed by Givenest
+                          </span>
+                        )}
+                        {property.status === "Coming Soon" && (
+                          <span className="rounded-full bg-blue-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
+                            Coming Soon
+                          </span>
+                        )}
+                      </div>
                     )}
                     {!imgs[0] && (
                       <div className="flex h-full items-center justify-center">
