@@ -94,6 +94,28 @@ const MLS_STATUS_MAP: Record<string, Property["status"]> = {
   "Rented": "For Rent",
 };
 
+/**
+ * Convert ALL-CAPS street names from ARMLS to title case.
+ * Keeps known abbreviations (N, S, E, W, Dr, St, Ave…) in their correct form.
+ */
+function titleCaseStreet(str: string | null | undefined): string | null {
+  if (!str) return null;
+  // Abbreviations that should stay as-is (case-insensitive match → fixed output)
+  const ABBR: Record<string, string> = {
+    n: "N", s: "S", e: "E", w: "W",
+    ne: "NE", nw: "NW", se: "SE", sw: "SW",
+    st: "St", ave: "Ave", dr: "Dr", blvd: "Blvd", ln: "Ln",
+    ct: "Ct", pl: "Pl", way: "Way", rd: "Rd", cir: "Cir",
+    pkwy: "Pkwy", hwy: "Hwy", fwy: "Fwy", expy: "Expy",
+    trl: "Trl", trce: "Trce", pt: "Pt", cv: "Cv", pass: "Pass",
+  };
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map((word) => ABBR[word] ?? word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 /** Return null for Spark restricted fields that come back as "********" */
 function num(val: unknown): number | null {
   if (val === null || val === undefined) return null;
@@ -104,7 +126,7 @@ function num(val: unknown): number | null {
 
 export function sparkToProperty(listing: SparkListing): Property {
   const f = listing.StandardFields;
-  const address = [f.StreetNumber, f.StreetName, f.StreetSuffix]
+  const address = [f.StreetNumber, titleCaseStreet(f.StreetName), titleCaseStreet(f.StreetSuffix)]
     .filter(Boolean)
     .join(" ");
 
