@@ -146,10 +146,11 @@ export default function Sell() {
       <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-16 px-8 py-11 md:grid-cols-[1fr_480px]">
         {/* Left — estimate calculator */}
         <div>
-          <h3 className="mb-[18px] font-serif text-[17px] font-medium tracking-[-0.01em]">
-            Estimate your giving
-          </h3>
-          <div className="rounded-[10px] border border-border bg-white p-6">
+          <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
+            <div className="border-b border-border px-4 py-3">
+              <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Estimate your giving</h3>
+            </div>
+          <div className="p-6">
             <label className="mb-[7px] block text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
               Estimated home value
             </label>
@@ -198,13 +199,117 @@ export default function Sell() {
               </div>
             )}
           </div>
+          </div>
         </div>
 
-        {/* Right — charity selection */}
+        {/* Right — agents + charity selection */}
         <div>
-          <h3 className="mb-[18px] font-serif text-[17px] font-medium tracking-[-0.01em]">
-            Choose a charity
-          </h3>
+          {/* Agents */}
+          <div className="mb-4 overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
+            <div className="border-b border-border px-4 py-3">
+              <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Contact an Agent</h3>
+            </div>
+            <div className="flex flex-col divide-y divide-border">
+            {AGENTS.map((a) => {
+              const isActive = activeAgent === a.initials;
+              const isSubmitted = submittedAgents.has(a.initials);
+              return (
+                <div key={a.initials}>
+                  <div className="flex items-center gap-[14px] px-4 py-3">
+                    <div className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                      {a.initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium">{a.name}</div>
+                      <a href={`mailto:${a.email}`} className="block text-[11px] text-coral hover:underline">{a.email}</a>
+                      <a href={`tel:${a.phone.replace(/\D/g, "")}`} className="block text-[11px] text-muted hover:text-black">{a.phone}</a>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!isSubmitted) {
+                          setActiveAgent(isActive ? null : a.initials);
+                          setAgentFormData({ name: "", email: "", phone: "" });
+                        }
+                      }}
+                      className={`rounded-md border px-[14px] py-[7px] text-xs transition-all ${
+                        isSubmitted
+                          ? "border-border text-muted cursor-default"
+                          : isActive
+                          ? "border-coral text-coral"
+                          : "border-border hover:border-coral hover:text-coral"
+                      }`}
+                    >
+                      {isSubmitted ? "✓ Sent" : "Contact"}
+                    </button>
+                  </div>
+
+                  {isActive && !isSubmitted && (
+                    <div className="border-t border-border bg-[#FAFAF8] px-4 py-3">
+                      <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">Your contact info</div>
+                      <div className="flex flex-col gap-[6px]">
+                        <input
+                          className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                          placeholder="Full name"
+                          value={agentFormData.name}
+                          onChange={(e) => setAgentFormData((f) => ({ ...f, name: e.target.value }))}
+                        />
+                        <input
+                          type="email"
+                          className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                          placeholder="Email address"
+                          value={agentFormData.email}
+                          onChange={(e) => setAgentFormData((f) => ({ ...f, email: e.target.value }))}
+                        />
+                        <input
+                          type="tel"
+                          className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                          placeholder="Phone (optional)"
+                          value={agentFormData.phone}
+                          onChange={(e) => setAgentFormData((f) => ({ ...f, phone: e.target.value }))}
+                        />
+                        <button
+                          onClick={async () => {
+                            if (!agentFormData.name || !agentFormData.email) return;
+                            setAgentSending(true);
+                            try {
+                              await fetch("/api/agent-request", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  name: agentFormData.name,
+                                  email: agentFormData.email,
+                                  phone: agentFormData.phone,
+                                  agentName: a.name,
+                                  propertyAddress: "Sell page inquiry",
+                                }),
+                              });
+                            } finally {
+                              setAgentSending(false);
+                              setSubmittedAgents((prev) => new Set(prev).add(a.initials));
+                              setActiveAgent(null);
+                            }
+                          }}
+                          disabled={!agentFormData.name || !agentFormData.email || agentSending}
+                          className={`w-full rounded-md bg-coral py-[8px] text-xs font-medium text-white transition-colors hover:bg-[#d4574a] ${
+                            !agentFormData.name || !agentFormData.email || agentSending ? "cursor-default opacity-40" : "cursor-pointer"
+                          }`}
+                        >
+                          {agentSending ? "Sending…" : "Send request"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
+            <div className="border-b border-border px-4 py-3">
+              <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Choose a charity</h3>
+            </div>
+            <div className="p-4">
 
           {/* Search + favorites toggle */}
           <div className="mb-2 flex gap-2">
@@ -366,109 +471,13 @@ export default function Sell() {
               </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Agents section */}
-      <div className="border-t border-border bg-white px-8 py-12">
-        <div className="mx-auto max-w-[1100px]">
-          <h3 className="mb-[14px] font-serif text-[17px] font-medium tracking-[-0.01em]">givenest agents</h3>
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {AGENTS.map((a) => {
-              const isActive = activeAgent === a.initials;
-              const isSubmitted = submittedAgents.has(a.initials);
-              return (
-                <div key={a.initials}>
-                  <div className="flex items-center gap-[14px] rounded-[10px] border border-border bg-white p-[14px_18px]">
-                    <div className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
-                      {a.initials}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-medium">{a.name}</div>
-                      <a href={`mailto:${a.email}`} className="block text-[11px] text-coral hover:underline">{a.email}</a>
-                      <a href={`tel:${a.phone.replace(/\D/g, "")}`} className="block text-[11px] text-muted hover:text-black">{a.phone}</a>
-                    </div>
-                    <button
-                      onClick={() => {
-                        if (!isSubmitted) {
-                          setActiveAgent(isActive ? null : a.initials);
-                          setAgentFormData({ name: "", email: "", phone: "" });
-                        }
-                      }}
-                      className={`rounded-md border px-[14px] py-[7px] text-xs transition-all ${
-                        isSubmitted
-                          ? "border-border text-muted cursor-default"
-                          : isActive
-                          ? "border-coral text-coral"
-                          : "border-border hover:border-coral hover:text-coral"
-                      }`}
-                    >
-                      {isSubmitted ? "✓ Sent" : "Contact"}
-                    </button>
-                  </div>
-
-                  {isActive && !isSubmitted && (
-                    <div className="mt-1 rounded-md border border-border bg-white p-3">
-                      <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">Your contact info</div>
-                      <div className="flex flex-col gap-[6px]">
-                        <input
-                          className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-                          placeholder="Full name"
-                          value={agentFormData.name}
-                          onChange={(e) => setAgentFormData((f) => ({ ...f, name: e.target.value }))}
-                        />
-                        <input
-                          type="email"
-                          className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-                          placeholder="Email address"
-                          value={agentFormData.email}
-                          onChange={(e) => setAgentFormData((f) => ({ ...f, email: e.target.value }))}
-                        />
-                        <input
-                          type="tel"
-                          className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-                          placeholder="Phone (optional)"
-                          value={agentFormData.phone}
-                          onChange={(e) => setAgentFormData((f) => ({ ...f, phone: e.target.value }))}
-                        />
-                        <button
-                          onClick={async () => {
-                            if (!agentFormData.name || !agentFormData.email) return;
-                            setAgentSending(true);
-                            try {
-                              await fetch("/api/agent-request", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  name: agentFormData.name,
-                                  email: agentFormData.email,
-                                  phone: agentFormData.phone,
-                                  agentName: a.name,
-                                  propertyAddress: "Sell page inquiry",
-                                }),
-                              });
-                            } finally {
-                              setAgentSending(false);
-                              setSubmittedAgents((prev) => new Set(prev).add(a.initials));
-                              setActiveAgent(null);
-                            }
-                          }}
-                          disabled={!agentFormData.name || !agentFormData.email || agentSending}
-                          className={`w-full rounded-md bg-coral py-[8px] text-xs font-medium text-white transition-colors hover:bg-[#d4574a] ${
-                            !agentFormData.name || !agentFormData.email || agentSending ? "cursor-default opacity-40" : "cursor-pointer"
-                          }`}
-                        >
-                          {agentSending ? "Sending…" : "Send request"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            </div>
           </div>
+
         </div>
       </div>
+
     </div>
   );
 }

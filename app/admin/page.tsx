@@ -21,7 +21,10 @@ export default async function AdminDashboard() {
             <span className="text-white/30">|</span>
             <span className="text-[13px] text-white/60">Admin</span>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-3">
+            <Link href="/admin/listings" className="rounded-md border border-white/20 px-4 py-2 text-[13px] font-medium text-white hover:bg-white/10">
+              Listings
+            </Link>
             <Link href="/admin/transactions/new" className="rounded-md bg-coral px-4 py-2 text-[13px] font-medium text-white hover:bg-[#d4574a]">
               + Log closing
             </Link>

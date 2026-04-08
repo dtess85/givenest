@@ -9,7 +9,7 @@ export interface Property {
   type: string;
   slug: string;
   donation?: number; // optional override for estimated donation
-  status?: "For Sale" | "Pending" | "Contingent" | "Sold" | "Coming Soon";
+  status?: "For Sale" | "Pending" | "Contingent" | "Sold" | "Coming Soon" | "For Rent";
   images?: string[]; // paths relative to /public
   description?: string;
   yearBuilt?: number;
@@ -19,6 +19,11 @@ export interface Property {
   mlsNumber?: string;
   listingDate?: string; // ISO date string
   daysOnMarket?: number;
+  listOfficeName?: string; // Listing brokerage (IDX attribution)
+  latitude?: number;
+  longitude?: number;
+  thumbnails?: string[]; // Uri640 — optimized for listing cards (~30% smaller than Uri800)
+  neighborhood?: string; // SubdivisionName — community / planned subdivision name
 }
 
 export interface CharityItem {

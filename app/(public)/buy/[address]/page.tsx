@@ -2,16 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getPropertyBySlug, AGENTS } from "@/lib/mock-data";
+import { AGENTS } from "@/lib/mock-data";
+import type { Property } from "@/lib/mock-data";
 import { fmt } from "@/lib/utils";
 import { calcGivingPool } from "@/lib/commission";
 import GivingPanel from "@/components/GivingPanel";
+import IdxAttribution from "@/components/IdxAttribution";
 
 export default function PropertyDetail() {
   const params = useParams();
-  const property = getPropertyBySlug(params.address as string);
+  const router = useRouter();
+
+  // undefined = loading, null = not found, Property = loaded
+  const [property, setProperty] = useState<Property | null | undefined>(undefined);
 
   const [descExpanded, setDescExpanded] = useState(false);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
@@ -24,13 +29,36 @@ export default function PropertyDetail() {
   const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
 
-  if (!property) {
+  // Fetch listing from Spark API
+  useEffect(() => {
+    const key = params.address as string;
+    if (!key) { setProperty(null); return; }
+    fetch(`/api/listings/${key}`)
+      .then((r) => r.json())
+      .then((d) => setProperty(d.listing ?? null))
+      .catch(() => setProperty(null));
+  }, [params.address]);
+
+  // Loading state
+  if (property === undefined) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-6 py-20 text-center">
+        <svg className="mx-auto h-6 w-6 animate-spin text-coral" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+        <p className="mt-4 text-sm text-muted">Loading listing…</p>
+      </div>
+    );
+  }
+
+  if (property === null) {
     return (
       <div className="mx-auto max-w-[1100px] px-8 py-20 text-center">
         <h1 className="font-serif text-2xl font-medium">Property not found</h1>
-        <Link href="/buy" className="mt-4 inline-block text-sm text-coral hover:underline">
+        <button onClick={() => router.back()} className="mt-4 inline-block text-sm text-coral hover:underline">
           ← Back to search
-        </Link>
+        </button>
       </div>
     );
   }
@@ -47,12 +75,12 @@ export default function PropertyDetail() {
   return (
     <>
     <div className="mx-auto max-w-[1200px] px-6 py-8">
-      <Link
-        href="/buy"
+      <button
+        onClick={() => router.back()}
         className="mb-5 inline-block text-[13px] text-muted transition-colors hover:text-black"
       >
         ← Back to search
-      </Link>
+      </button>
 
       {/* Two-column grid: content left, GivingPanel right */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_360px]">
@@ -72,6 +100,11 @@ export default function PropertyDetail() {
                     <div className="relative cursor-pointer" onClick={() => setPhotoModalOpen(true)}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={imgs[0]} alt={property.address} className="h-full w-full object-cover" />
+                      {property.listOfficeName?.toLowerCase().includes("givenest") && (
+                        <span className="absolute left-3 top-3 rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
+                          Listed by Givenest
+                        </span>
+                      )}
                     </div>
                     <div className="grid grid-rows-2 gap-1">
                       <div className="grid grid-cols-2 gap-1">
@@ -113,7 +146,13 @@ export default function PropertyDetail() {
                     {imgs[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={imgs[0]} alt={property.address} className="h-full w-full object-cover" />
-                    ) : (
+                    ) : null}
+                    {property.listOfficeName?.toLowerCase().includes("givenest") && (
+                      <span className="absolute left-3 top-3 rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
+                        Listed by Givenest
+                      </span>
+                    )}
+                    {!imgs[0] && (
                       <div className="flex h-full items-center justify-center">
                         <svg className="h-10 w-10 text-[#C4C0B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -344,9 +383,11 @@ export default function PropertyDetail() {
           {/* ── Listed by — hidden on small screens, shown inline on lg ── */}
           <div className="hidden lg:block border-t border-border pt-5 pb-4">
             <p className="mb-4 text-[13px] text-muted">
-              Listed by <span className="font-medium text-[#2a2825]">Kyndall Yates</span>
-              <span className="mx-2 text-border">•</span>
-              <span className="font-medium text-[#2a2825]">Givenest</span>
+              {property.listOfficeName ? (
+                <>Listing courtesy of <span className="font-medium text-[#2a2825]">{property.listOfficeName}</span> via <span className="font-medium text-[#2a2825]">ARMLS</span></>
+              ) : (
+                <>Listed by <span className="font-medium text-[#2a2825]">Kyndall Yates</span><span className="mx-2 text-border">•</span><span className="font-medium text-[#2a2825]">Givenest</span></>
+              )}
             </p>
 
             {/* Listing metadata */}
@@ -653,9 +694,9 @@ export default function PropertyDetail() {
                 />
               ))}
             </div>
-            {/* Agent card */}
-            <div className="hidden w-[280px] flex-shrink-0 lg:block">
-              <div className="sticky top-0 overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
+            {/* Right sidebar: agent card + giving panel */}
+            <div className="hidden w-[300px] flex-shrink-0 lg:flex lg:flex-col lg:gap-4 overflow-y-auto">
+              <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
                 <div className="border-b border-border px-4 py-3">
                   <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Contact an agent</h3>
                 </div>
@@ -672,12 +713,18 @@ export default function PropertyDetail() {
                   </div>
                 ))}
               </div>
+              <GivingPanel price={property.price} variant="property" />
             </div>
           </div>
         </div>
       </div>,
       document.body
     )}
+
+    {/* IDX Attribution */}
+    <div className="mx-auto max-w-[1200px] px-6 pb-10">
+      <IdxAttribution />
+    </div>
     </>
   );
 }

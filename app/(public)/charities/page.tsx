@@ -15,6 +15,8 @@ interface EveryOrgNonprofit {
 }
 
 const SEED_EINS = new Set(CHARITIES.map((c) => c.ein).filter(Boolean) as string[]);
+const CATEGORIES = Array.from(new Set(CHARITIES.map((c) => c.category)));
+const LOCATIONS = Array.from(new Set(CHARITIES.map((c) => c.city)));
 
 function StarIcon() {
   return (
@@ -38,7 +40,11 @@ export default function Charities() {
   const [loading, setLoading] = useState(false);
   const [favorites, setFavorites] = useState<Map<string, EveryOrgNonprofit>>(new Map());
   const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
   const userLoc = useUserLocation();
 
   useEffect(() => {
@@ -55,6 +61,17 @@ export default function Charities() {
       localStorage.setItem("givenest-favorites", JSON.stringify(Array.from(favorites.entries())));
     } catch {}
   }, [favorites, favoritesLoaded]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleMouseDown(e: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, []);
 
   const toggleFavorite = (r: EveryOrgNonprofit) => {
     setFavorites((prev) => {
@@ -97,10 +114,23 @@ export default function Charities() {
 
   const isSearching = !!search.trim();
   const favoritesList = Array.from(favorites.values());
+  const activeFilterCount = (selectedCategory ? 1 : 0) + (selectedLocation ? 1 : 0);
 
   const sortedResults = results
     .slice()
     .sort((a, b) => locationScore(b.location) - locationScore(a.location));
+
+  // Apply filters
+  const filteredCharities = CHARITIES.filter((c) => {
+    if (selectedCategory && c.category !== selectedCategory) return false;
+    if (selectedLocation && c.city !== selectedLocation) return false;
+    return true;
+  });
+
+  const filteredResults = sortedResults.filter((r) => {
+    if (selectedLocation && !r.location?.toLowerCase().includes(selectedLocation.split(",")[0].toLowerCase())) return false;
+    return true;
+  });
 
   return (
     <div>
@@ -124,21 +154,109 @@ export default function Charities() {
             1.8M+ charities.{" "}
             <em className="text-coral">Your choice.</em>
           </h1>
-          <div className="flex max-w-[460px] overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
-            <input
-              className="flex-1 border-none bg-white px-[18px] py-[16px] text-[15px] font-light outline-none placeholder:text-[#c0bdb6]"
-              placeholder="Search any organization..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button className="bg-coral px-[22px] py-[16px] text-sm font-medium text-white transition-colors hover:bg-[#d4574a]">
-              Search
-            </button>
+          <div className="flex max-w-[560px] items-start gap-2">
+            {/* Search pill */}
+            <div className="flex flex-1 overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
+              <input
+                className="flex-1 border-none bg-white px-[18px] py-[16px] text-[15px] font-light outline-none placeholder:text-[#c0bdb6]"
+                placeholder="Search any organization..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button className="bg-coral px-[22px] py-[16px] text-sm font-medium text-white transition-colors hover:bg-[#d4574a]">
+                Search
+              </button>
+            </div>
+
+            {/* Filter button + dropdown */}
+            <div className="relative hidden" ref={filterRef}>
+              <button
+                onClick={() => setFilterOpen((v) => !v)}
+                className={`flex items-center gap-[6px] whitespace-nowrap rounded-lg border px-4 py-[16px] text-sm font-medium shadow-[0_4px_32px_rgba(0,0,0,0.2)] transition-colors ${filterOpen || activeFilterCount > 0 ? "border-coral bg-coral/[0.06] text-coral" : "border-white/60 bg-white/90 text-[#2a2825] hover:border-white hover:bg-white"}`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+                </svg>
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="rounded-full bg-coral px-[7px] py-px text-[10px] font-semibold text-white">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+
+              {filterOpen && (
+                <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-[240px] rounded-[10px] border border-border bg-white p-4 shadow-xl">
+                  <div className="mb-3">
+                    <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">Type</div>
+                    <div className="flex flex-wrap gap-[6px]">
+                      {CATEGORIES.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+                          className={`rounded-full border px-3 py-1 text-xs transition ${
+                            selectedCategory === cat
+                              ? "border-coral bg-coral/10 text-coral"
+                              : "border-border text-muted hover:border-coral"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">Location</div>
+                    <div className="flex flex-wrap gap-[6px]">
+                      {LOCATIONS.map((loc) => (
+                        <button
+                          key={loc}
+                          onClick={() => setSelectedLocation(selectedLocation === loc ? null : loc)}
+                          className={`rounded-full border px-3 py-1 text-xs transition ${
+                            selectedLocation === loc
+                              ? "border-coral bg-coral/10 text-coral"
+                              : "border-border text-muted hover:border-coral"
+                          }`}
+                        >
+                          {loc}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {(selectedCategory || selectedLocation) && (
+                    <button
+                      onClick={() => { setSelectedCategory(null); setSelectedLocation(null); }}
+                      className="mt-3 w-full rounded-md border border-border py-[6px] text-xs text-muted transition hover:text-black"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
       <div className="mx-auto max-w-[1100px] px-8 py-11">
+
+        {/* Active filter pills */}
+        {(selectedCategory || selectedLocation) && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {selectedCategory && (
+              <span className="flex items-center gap-1 rounded-full bg-coral/10 px-3 py-1 text-xs font-medium text-coral">
+                {selectedCategory}
+                <button onClick={() => setSelectedCategory(null)} className="ml-1 leading-none hover:opacity-70">×</button>
+              </span>
+            )}
+            {selectedLocation && (
+              <span className="flex items-center gap-1 rounded-full bg-coral/10 px-3 py-1 text-xs font-medium text-coral">
+                {selectedLocation}
+                <button onClick={() => setSelectedLocation(null)} className="ml-1 leading-none hover:opacity-70">×</button>
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Featured charities — Givenest-curated, admin only */}
         {!isSearching && <div className="mb-10">
@@ -151,35 +269,39 @@ export default function Charities() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
-            {CHARITIES.map((c) => (
-              <div key={c.id} className="overflow-hidden rounded-[10px] border border-border bg-white">
-                <div className="h-[3px] bg-coral" />
-                <div className="px-5 py-[18px]">
-                  <div className="mb-[5px] flex items-center justify-between">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-coral">{c.category}</span>
-                    <span className="text-coral"><StarIcon /></span>
-                  </div>
-                  <div className="mb-[2px] text-sm font-medium">{c.name}</div>
-                  <div className="mb-[14px] text-xs text-muted">{c.city}</div>
-                  <div className="mb-3 h-px bg-border" />
-                  <div className="mb-3 grid grid-cols-2 gap-[10px]">
-                    <div>
-                      <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">Received</div>
-                      <div className="text-base font-semibold text-coral">{fmt(c.total)}</div>
+          {filteredCharities.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted">No charities match the selected filters</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
+              {filteredCharities.map((c) => (
+                <div key={c.id} className="overflow-hidden rounded-[10px] border border-border bg-white">
+                  <div className="h-[3px] bg-coral" />
+                  <div className="px-5 py-[18px]">
+                    <div className="mb-[5px] flex items-center justify-between">
+                      <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-coral">{c.category}</span>
+                      <span className="text-coral"><StarIcon /></span>
                     </div>
-                    <div>
-                      <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">Closings</div>
-                      <div className="text-base font-semibold">{c.closings}</div>
+                    <div className="mb-[2px] text-sm font-medium">{c.name}</div>
+                    <div className="mb-[14px] text-xs text-muted">{c.city}</div>
+                    <div className="mb-3 h-px bg-border" />
+                    <div className="mb-3 grid grid-cols-2 gap-[10px]">
+                      <div>
+                        <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">Received</div>
+                        <div className="text-base font-semibold text-coral">{fmt(c.total)}</div>
+                      </div>
+                      <div>
+                        <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">Closings</div>
+                        <div className="text-base font-semibold">{c.closings}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="h-[3px] overflow-hidden rounded-sm bg-border">
-                    <div className="h-full rounded-sm bg-coral" style={{ width: `${Math.min(100, (c.total / 65000) * 100)}%` }} />
+                    <div className="h-[3px] overflow-hidden rounded-sm bg-border">
+                      <div className="h-full rounded-sm bg-coral" style={{ width: `${Math.min(100, (c.total / 65000) * 100)}%` }} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>}
 
         {/* User favorites — only shown when non-empty and not searching */}
@@ -226,17 +348,17 @@ export default function Charities() {
           <div className="mb-10">
             <div className="mb-5 flex items-baseline justify-between">
               <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
-                {loading ? "Searching…" : `${sortedResults.length} results`}
+                {loading ? "Searching…" : `${filteredResults.length} results`}
               </h2>
               <span className="text-[13px] font-light text-muted">Powered by every.org</span>
             </div>
 
-            {!loading && sortedResults.length === 0 && (
+            {!loading && filteredResults.length === 0 && (
               <p className="py-6 text-center text-sm text-muted">No results found</p>
             )}
 
             <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
-              {sortedResults.map((r) => {
+              {filteredResults.map((r) => {
                 const isSeed = SEED_EINS.has(r.ein);
                 const isFavorited = favorites.has(r.ein);
                 const isLocal = !isSeed && !isFavorited && locationScore(r.location) > 0;
