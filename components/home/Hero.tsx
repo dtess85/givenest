@@ -112,7 +112,7 @@ export default function Hero() {
     (citySuggestions.length > 0 || zipSuggestions.length > 0 || addressLoading || addressResults.length > 0);
 
   return (
-    <section className="relative flex min-h-[55vh] items-center overflow-hidden">
+    <section className="relative flex min-h-[55vh] items-center">
       {/* Background image */}
       <div className="pointer-events-none absolute inset-0">
         <Image
