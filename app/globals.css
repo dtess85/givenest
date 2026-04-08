@@ -8,6 +8,7 @@
   --color-warm-2: #E8E6DF;
   --color-cloudy: #B1ADA1;
   --color-coral: #E36858;
+  --color-coral-ch: 227 104 88; /* RGB channels for Tailwind opacity modifier support */
   --color-black: #0C0D0D;
   --color-muted: #6B6860;
   --color-border: #E3DED6;

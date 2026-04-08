@@ -25,6 +25,7 @@ const FIELDS = [
   "AssociationFee",
   "GarageSpaces",
   "ListingContractDate",
+  "StatusChangeTimestamp",
   "ListOfficeName",
   "ListAgentFullName",
   "Latitude",
@@ -73,6 +74,7 @@ export interface SparkStandardFields {
   AssociationFee: number | null;
   GarageSpaces: number | null;
   ListingContractDate: string | null;
+  StatusChangeTimestamp: string | null;
   ListOfficeName: string | null;
   ListAgentFullName: string | null;
   Latitude: number | null;
@@ -169,7 +171,7 @@ export function sparkToProperty(listing: SparkListing): Property {
       ? `${Math.round(num(f.GarageSpaces)!)}-car garage`
       : undefined,
     mlsNumber: f.ListingId ?? undefined,
-    listingDate: f.ListingContractDate ?? undefined,
+    listingDate: f.StatusChangeTimestamp ?? f.ListingContractDate ?? undefined,
     listOfficeName: f.ListOfficeName ?? undefined,
     latitude: num(f.Latitude) ?? undefined,
     longitude: num(f.Longitude) ?? undefined,

@@ -191,7 +191,7 @@ function getNewLabel(listingDate: string | undefined): string | null {
   if (!listingDate) return null;
   const ms = Date.now() - new Date(listingDate).getTime();
   const hours = ms / (1000 * 60 * 60);
-  if (hours <= 1) return "NEW";
+  if (hours < 1) return "NEW < 1 HR AGO";
   if (hours <= 24) return `NEW ${Math.round(hours)} HR${Math.round(hours) !== 1 ? "S" : ""} AGO`;
   const days = Math.floor(hours / 24);
   if (days <= 7) return `NEW ${days} DAY${days !== 1 ? "S" : ""} AGO`;
@@ -1130,29 +1130,29 @@ export default function Buy() {
                         return (
                           <div className="absolute left-3 top-3 flex flex-wrap gap-1">
                             {isGivenest && (
-                              <span className="rounded-full bg-coral px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm">
+                              <span className="rounded-full bg-[rgba(227,104,88,0.8)] px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm backdrop-blur-sm">
                                 Listed by Givenest
                               </span>
                             )}
                             {primaryLabel && (
-                              <span className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm ${isBackOnMarket && !newLabel ? "bg-blue-500" : "bg-emerald-600"}`}>
+                              <span className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm backdrop-blur-sm ${isBackOnMarket && !newLabel ? "bg-blue-500/80" : "bg-emerald-600/80"}`}>
                                 {primaryLabel}
                               </span>
                             )}
                             {showStatusPill && (
-                              <span className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm ${
-                                h.status === "For Sale" ? "bg-emerald-500" :
-                                h.status === "Coming Soon" ? "bg-blue-500" :
-                                h.status === "Pending" ? "bg-amber-500" :
-                                h.status === "Contingent" ? "bg-orange-500" :
-                                h.status === "For Rent" ? "bg-purple-500" :
-                                "bg-[#6b6865]"
+                              <span className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm backdrop-blur-sm ${
+                                h.status === "For Sale" ? "bg-emerald-500/80" :
+                                h.status === "Coming Soon" ? "bg-blue-500/80" :
+                                h.status === "Pending" ? "bg-amber-500/80" :
+                                h.status === "Contingent" ? "bg-orange-500/80" :
+                                h.status === "For Rent" ? "bg-purple-500/80" :
+                                "bg-[#6b6865]/80"
                               }`}>
                                 {h.status}
                               </span>
                             )}
                             {openLabel && (
-                              <span className="rounded-full bg-emerald-600 px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm">
+                              <span className="rounded-full bg-emerald-600/80 px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm backdrop-blur-sm">
                                 {openLabel}
                               </span>
                             )}

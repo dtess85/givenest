@@ -13,7 +13,7 @@ const config: Config = {
         "warm-1": "var(--color-warm-1)",
         "warm-2": "var(--color-warm-2)",
         cloudy: "var(--color-cloudy)",
-        coral: "var(--color-coral)",
+        coral: "rgb(var(--color-coral-ch) / <alpha-value>)",
         black: "var(--color-black)",
         muted: "var(--color-muted)",
         border: "var(--color-border)",
