@@ -8,6 +8,7 @@ import { calcGivingPool } from "@/lib/commission";
 import { fmt } from "@/lib/utils";
 import IdxAttribution from "@/components/IdxAttribution";
 import { AZ_LOCATIONS, POPULAR_CITIES, type LocationSuggestion } from "@/lib/az-locations";
+import ListingCardMedia from "@/components/ListingCardMedia";
 
 // Module-level client cache — survives re-renders, cleared on full page refresh.
 // Keyed by the URLSearchParams string so each unique filter+page+sort combo is cached separately.
@@ -1096,32 +1097,21 @@ export default function Buy() {
                 const isGivenest = h.listOfficeName?.toLowerCase().includes("givenest");
                 // First 6 cards are above the fold — load eagerly at high priority
                 const aboveFold = idx < 6;
-                const cardImg = h.thumbnails?.[0] ?? h.images?.[0];
                 return (
                   <Link
                     key={h.slug}
                     href={`/buy/${h.slug}`}
                     className="group overflow-hidden rounded-[10px] border border-border bg-white transition-all hover:shadow-md"
                   >
-                    <div className="relative h-[180px] overflow-hidden bg-[#F5F4F2]">
-                      {cardImg && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={cardImg}
-                          alt={h.address}
-                          loading={aboveFold ? "eager" : "lazy"}
-                          decoding="async"
-                          // @ts-expect-error — fetchpriority is a valid HTML attribute, React types lag behind
-                          fetchpriority={aboveFold ? "high" : "auto"}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                        />
-                      )}
-                      {(() => {
+                    <ListingCardMedia
+                      thumbnails={h.thumbnails ?? h.images ?? []}
+                      address={h.address}
+                      aboveFold={aboveFold}
+                      pills={(() => {
                         const newLabel = getNewLabel(h.listingDate);
                         const openLabel = getOpenHouseLabel(h.openHouses);
                         const isBackOnMarket = !!h.backOnMarketDate &&
                           (Date.now() - new Date(h.backOnMarketDate).getTime()) < 30 * 24 * 60 * 60 * 1000;
-                        // Primary status pill: "new" or "back on market" replaces "For Sale"
                         const primaryLabel =
                           h.status === "For Sale" && newLabel ? newLabel :
                           h.status === "For Sale" && isBackOnMarket ? "BACK ON MARKET" :
@@ -1159,7 +1149,7 @@ export default function Buy() {
                           </div>
                         );
                       })()}
-                    </div>
+                    />
                     <div className="px-[18px] py-4">
                       <div className="mb-px text-[15px] font-semibold">
                         {fmt(h.price)}
