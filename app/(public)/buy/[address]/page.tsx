@@ -58,11 +58,23 @@ export default function PropertyDetail() {
     return (
       <div className="mx-auto max-w-[1100px] px-8 py-20 text-center">
         <h1 className="font-serif text-2xl font-medium">Property not found</h1>
-        <button onClick={() => router.back()} className="mt-4 inline-block text-sm text-coral hover:underline">
+        <button onClick={handleBack} className="mt-4 inline-block text-sm text-coral hover:underline">
           ← Back to search
         </button>
       </div>
     );
+  }
+
+  function handleBack() {
+    if (typeof document !== "undefined" && document.referrer) {
+      try {
+        if (new URL(document.referrer).hostname === window.location.hostname) {
+          router.back();
+          return;
+        }
+      } catch { /* invalid referrer URL, fall through */ }
+    }
+    router.push("/buy");
   }
 
   const estimatedDonation = property.donation ?? calcGivingPool(property.price);
@@ -78,7 +90,7 @@ export default function PropertyDetail() {
     <>
     <div className="mx-auto max-w-[1200px] px-6 py-8">
       <button
-        onClick={() => router.back()}
+        onClick={handleBack}
         className="mb-5 inline-block text-[13px] text-muted transition-colors hover:text-black"
       >
         ← Back to search
