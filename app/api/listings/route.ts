@@ -50,6 +50,12 @@ function applyManualFilters(listings: Property[], params: URLSearchParams): Prop
       if (!allowed.includes(p.type)) return false;
     }
 
+    // Beds / baths
+    const minBedsFilter = params.get("minBeds");
+    const minBathsFilter = params.get("minBaths");
+    if (minBedsFilter && Number(minBedsFilter) > 0 && p.beds < Number(minBedsFilter)) return false;
+    if (minBathsFilter && Number(minBathsFilter) > 0 && p.baths < Number(minBathsFilter)) return false;
+
     // Status
     if (rawStatus) {
       const requestedStatuses = rawStatus.split(",").map((s) => {
@@ -137,6 +143,11 @@ export async function GET(request: Request) {
   const minBeds = searchParams.get("minBeds");
   if (minBeds && Number(minBeds) > 0)
     conditions.push(`BedsTotal Ge ${minBeds}`);
+
+  // Baths minimum
+  const minBaths = searchParams.get("minBaths");
+  if (minBaths && Number(minBaths) > 0)
+    conditions.push(`BathsFull Ge ${minBaths}`);
 
   // Sqft range
   const minSqft = searchParams.get("minSqft");

@@ -280,6 +280,9 @@ export default function Buy() {
   const [openHousesOnly, setOpenHousesOnly] = useState(false);
   // Listing type
   const [listingTypes, setListingTypes] = useState<Set<string>>(new Set());
+  // Beds / baths
+  const [minBeds, setMinBeds] = useState<number | null>(() => { const v = searchParams.get("minBeds"); return v ? Number(v) : null; });
+  const [minBaths, setMinBaths] = useState<number | null>(() => { const v = searchParams.get("minBaths"); return v ? Number(v) : null; });
   // Property facts
   const [minSqft, setMinSqft] = useState(() => searchParams.get("minSqft") ?? "");
   const [maxSqft, setMaxSqft] = useState(() => searchParams.get("maxSqft") ?? "");
@@ -415,6 +418,8 @@ export default function Buy() {
     if (maxPrice !== Infinity && minPrice === 0) params.set("maxPrice", String(maxPrice));
     if (propertyTypes.size > 0) params.set("type", Array.from(propertyTypes).join(","));
     if (statuses.size > 0) params.set("status", Array.from(statuses).join(","));
+    if (minBeds !== null) params.set("minBeds", String(minBeds));
+    if (minBaths !== null) params.set("minBaths", String(minBaths));
     if (minSqft) params.set("minSqft", minSqft);
     if (maxSqft) params.set("maxSqft", maxSqft);
     if (maxHoa !== null) params.set("maxHoa", String(maxHoa));
@@ -454,7 +459,7 @@ export default function Buy() {
     } finally {
       setLoading(false);
     }
-  }, [minPrice, maxPrice, propertyTypes, statuses, minSqft, maxSqft, maxHoa, selectedLocation, page, sortBy]);
+  }, [minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, selectedLocation, page, sortBy]);
 
   // Debounced refetch — waits for location detection on first load
   useEffect(() => {
@@ -491,6 +496,8 @@ export default function Buy() {
     setStatuses(new Set());
     setOpenHousesOnly(false);
     setListingTypes(new Set());
+    setMinBeds(null);
+    setMinBaths(null);
     setMinSqft("");
     setMaxSqft("");
     setMinYear(null);
@@ -503,7 +510,7 @@ export default function Buy() {
   // Reset to page 1 whenever filter / location / sort params change
   useEffect(() => { setPage(1); },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [minPrice, maxPrice, minSqft, maxSqft, maxHoa, selectedLocation?.label, propertyTypes.size, statuses.size, sortBy]);
+    [minPrice, maxPrice, minBeds, minBaths, minSqft, maxSqft, maxHoa, selectedLocation?.label, propertyTypes.size, statuses.size, sortBy]);
 
   // Sync filter state to URL so browser back + "← Back to search" restores the previous search.
   // Uses router.replace (no new history entry) so every filter tweak doesn't pollute the history stack.
@@ -517,6 +524,8 @@ export default function Buy() {
     if (maxPrice !== Infinity) p.set("maxPrice", String(maxPrice));
     if (propertyTypes.size > 0) p.set("type", Array.from(propertyTypes).join(","));
     if (statuses.size > 0) p.set("status", Array.from(statuses).join(","));
+    if (minBeds !== null) p.set("minBeds", String(minBeds));
+    if (minBaths !== null) p.set("minBaths", String(minBaths));
     if (minSqft) p.set("minSqft", minSqft);
     if (maxSqft) p.set("maxSqft", maxSqft);
     if (maxHoa !== null) p.set("maxHoa", String(maxHoa));
@@ -525,13 +534,15 @@ export default function Buy() {
     const qs = p.toString();
     router.replace(qs ? `?${qs}` : "?", { scroll: false });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationReady, selectedLocation, minPrice, maxPrice, propertyTypes, statuses, minSqft, maxSqft, maxHoa, page, sortBy]);
+  }, [locationReady, selectedLocation, minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, page, sortBy]);
 
   const activeFilterCount =
     propertyTypes.size +
     statuses.size +
     (openHousesOnly ? 1 : 0) +
     listingTypes.size +
+    (minBeds !== null ? 1 : 0) +
+    (minBaths !== null ? 1 : 0) +
     (minSqft ? 1 : 0) +
     (maxSqft ? 1 : 0) +
     (minYear !== null ? 1 : 0) +
@@ -817,6 +828,38 @@ export default function Buy() {
 
                     {/* Left column */}
                     <div className="p-5">
+                      {/* Bedrooms */}
+                      <div className="mb-5">
+                        <SectionLabel>Bedrooms</SectionLabel>
+                        <div className="flex gap-[6px]">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <button
+                              key={n}
+                              onClick={() => setMinBeds(minBeds === n ? null : n)}
+                              className={`flex-1 rounded-md border py-[7px] text-[13px] font-medium transition-colors ${minBeds === n ? "border-coral bg-coral/10 text-coral" : "border-[#e8e5e0] text-[#2a2825] hover:border-coral"}`}
+                            >
+                              {n}+
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Bathrooms */}
+                      <div className="mb-6">
+                        <SectionLabel>Bathrooms</SectionLabel>
+                        <div className="flex gap-[6px]">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <button
+                              key={n}
+                              onClick={() => setMinBaths(minBaths === n ? null : n)}
+                              className={`flex-1 rounded-md border py-[7px] text-[13px] font-medium transition-colors ${minBaths === n ? "border-coral bg-coral/10 text-coral" : "border-[#e8e5e0] text-[#2a2825] hover:border-coral"}`}
+                            >
+                              {n}+
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       {/* Property Type */}
                       <div className="mb-6">
                         <SectionLabel>Property Type</SectionLabel>
@@ -1048,8 +1091,9 @@ export default function Buy() {
                             Listed by Givenest
                           </span>
                         )}
-                        {h.status && h.status !== "For Sale" && (
+                        {h.status && !(isGivenest && h.status === "For Sale") && (
                           <span className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm ${
+                            h.status === "For Sale" ? "bg-emerald-500" :
                             h.status === "Coming Soon" ? "bg-blue-500" :
                             h.status === "Pending" ? "bg-amber-500" :
                             h.status === "Contingent" ? "bg-orange-500" :
