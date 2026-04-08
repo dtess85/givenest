@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -28,6 +28,8 @@ export default function PropertyDetail() {
   const [submittedAgents, setSubmittedAgents] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
+  const [mobilePhotoIndex, setMobilePhotoIndex] = useState(0);
+  const mobileCarouselRef = useRef<HTMLDivElement>(null);
 
   // Fetch listing from Spark API
   useEffect(() => {
@@ -92,15 +94,71 @@ export default function PropertyDetail() {
           {(() => {
             const imgs = property.images ?? [];
             const hasMany = imgs.length > 1;
+            const isGivenest = property.listOfficeName?.toLowerCase().includes("givenest");
             return (
               <>
+                {/* ── MOBILE: swipeable carousel (hidden on md+) ── */}
+                <div className="relative md:hidden overflow-hidden rounded-[12px]">
+                  <div
+                    ref={mobileCarouselRef}
+                    onScroll={() => {
+                      const el = mobileCarouselRef.current;
+                      if (!el) return;
+                      setMobilePhotoIndex(Math.round(el.scrollLeft / el.offsetWidth));
+                    }}
+                    className="flex snap-x snap-mandatory overflow-x-auto"
+                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
+                  >
+                    {imgs.length > 0 ? imgs.map((src, i) => (
+                      <div
+                        key={i}
+                        className="relative h-[300px] w-full flex-none snap-center cursor-pointer"
+                        onClick={() => setPhotoModalOpen(true)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={src} alt={i === 0 ? property.address : ""} className="h-full w-full object-cover" />
+                        {i === 0 && isGivenest && (
+                          <span className="absolute left-3 top-3 rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
+                            Listed by Givenest
+                          </span>
+                        )}
+                      </div>
+                    )) : (
+                      <div className="relative h-[300px] w-full flex-none snap-center bg-[#E8E6E0] flex items-center justify-center">
+                        <svg className="h-10 w-10 text-[#C4C0B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  {/* Photo counter badge */}
+                  {imgs.length > 1 && (
+                    <div className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/50 px-2 py-[3px] text-[11px] font-medium text-white backdrop-blur-sm">
+                      {mobilePhotoIndex + 1} / {imgs.length}
+                    </div>
+                  )}
+                  {/* Dot indicators */}
+                  {imgs.length > 1 && imgs.length <= 10 && (
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-[5px]">
+                      {imgs.map((_, i) => (
+                        <div
+                          key={i}
+                          className={`h-[5px] rounded-full transition-all duration-200 ${i === mobilePhotoIndex ? "w-4 bg-white" : "w-[5px] bg-white/50"}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── DESKTOP: photo grid (hidden on mobile, shown md+) ── */}
                 {hasMany ? (
                   /* Multi-photo grid */
-                  <div className="relative grid h-[460px] grid-cols-2 gap-1 overflow-hidden rounded-[12px]">
+                  <div className="relative hidden md:grid h-[460px] grid-cols-2 gap-1 overflow-hidden rounded-[12px]">
                     <div className="relative cursor-pointer" onClick={() => setPhotoModalOpen(true)}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={imgs[0]} alt={property.address} className="h-full w-full object-cover" />
-                      {property.listOfficeName?.toLowerCase().includes("givenest") && (
+                      {isGivenest && (
                         <span className="absolute left-3 top-3 rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
                           Listed by Givenest
                         </span>
@@ -140,14 +198,14 @@ export default function PropertyDetail() {
                 ) : (
                   /* Single photo — full width, clickable */
                   <div
-                    className={`relative h-[460px] overflow-hidden rounded-[12px] bg-[#E8E6E0] ${imgs[0] ? "cursor-pointer" : ""}`}
+                    className={`relative hidden md:block h-[460px] overflow-hidden rounded-[12px] bg-[#E8E6E0] ${imgs[0] ? "cursor-pointer" : ""}`}
                     onClick={() => imgs[0] && setPhotoModalOpen(true)}
                   >
                     {imgs[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={imgs[0]} alt={property.address} className="h-full w-full object-cover" />
                     ) : null}
-                    {property.listOfficeName?.toLowerCase().includes("givenest") && (
+                    {isGivenest && (
                       <span className="absolute left-3 top-3 rounded-full bg-coral px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
                         Listed by Givenest
                       </span>
@@ -162,7 +220,6 @@ export default function PropertyDetail() {
                     )}
                   </div>
                 )}
-
               </>
             );
           })()}
