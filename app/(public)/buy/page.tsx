@@ -348,21 +348,7 @@ export default function Buy() {
           // Auto-select nearest city if user is in AZ and hasn't picked one manually.
           // Uses haversine against city coordinates instead of exact name match so any
           // AZ IP location (even cities not in our list) resolves to the closest city.
-          if (data.region === "AZ" && !userSetLocation.current) {
-            const citiesWithCoords = AZ_LOCATIONS.filter(
-              (l) => l.type === "city" && l.lat != null && l.lng != null
-            );
-            let nearest: (typeof AZ_LOCATIONS)[number] | null = null;
-            let nearestDist = Infinity;
-            for (const loc of citiesWithCoords) {
-              const d = haversine(data.lat, data.lng, loc.lat!, loc.lng!);
-              if (d < nearestDist) { nearest = loc; nearestDist = d; }
-            }
-            if (nearest) {
-              setSelectedLocation(nearest);
-              setSearchInput(nearest.label);
-            }
-          }
+          // Location coords are used only for distance sorting — not shown in search bar
         }
       })
       .catch(() => {})
@@ -968,11 +954,6 @@ export default function Buy() {
               <span className="flex items-center gap-[6px] rounded-full bg-coral/10 px-3 py-[5px] text-xs font-medium text-coral">
                 {selectedLocation.type === "city" ? <MapPinIcon /> : selectedLocation.type === "zip" ? <HashIcon /> : <HomeGridIcon />}
                 {selectedLocation.label}
-                {locationSource && !userSetLocation.current && (
-                  <span className="text-coral/50">
-                    · {locationSource === "gps" ? "GPS" : "approximate"}
-                  </span>
-                )}
                 <button
                   onClick={clearLocation}
                   className="ml-[2px] text-coral/60 hover:text-coral transition-colors"
@@ -983,11 +964,6 @@ export default function Buy() {
                   </svg>
                 </button>
               </span>
-              {locationSource === "gps" && (
-                <span className="text-[11px] text-muted">
-                  Sorted by distance · closest first
-                </span>
-              )}
             </div>
           )}
 
