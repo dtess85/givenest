@@ -20,26 +20,29 @@ export async function GET(
       // If a Spark listing key has been linked (e.g. once the listing goes Active),
       // serve live data from Spark so the URL stays the same after Coming Soon ends.
       if (row.spark_listing_key) {
-        const live = await fetchSparkListing(row.spark_listing_key);
+        const live = await fetchSparkListing(row.spark_listing_key, { noCache: true });
         if (live) {
-          return NextResponse.json({ listing: live }, {
-            headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=1800" },
-          });
+          return NextResponse.json(
+            { listing: live, fetchedAt: new Date().toISOString() },
+            { headers: { "Cache-Control": "no-store" } }
+          );
         }
       }
-      return NextResponse.json({ listing: manualListingToProperty(row) }, {
-        headers: { "Cache-Control": "no-store" },
-      });
+      return NextResponse.json(
+        { listing: manualListingToProperty(row), fetchedAt: new Date().toISOString() },
+        { headers: { "Cache-Control": "no-store" } }
+      );
     }
 
-    // Spark listing key
-    const listing = await fetchSparkListing(key);
+    // Spark listing key — always fetch live so detail page shows real-time data
+    const listing = await fetchSparkListing(key, { noCache: true });
     if (!listing) {
       return NextResponse.json({ error: "Listing not found" }, { status: 404 });
     }
-    return NextResponse.json({ listing }, {
-      headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=1800" },
-    });
+    return NextResponse.json(
+      { listing, fetchedAt: new Date().toISOString() },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (err) {
     console.error("Listing detail API error:", err);
     return NextResponse.json(

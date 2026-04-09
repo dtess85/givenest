@@ -26,6 +26,7 @@ export interface Property {
   neighborhood?: string; // SubdivisionName — community / planned subdivision name
   backOnMarketDate?: string; // ISO date — set when a listing is relisted after withdrawal
   openHouses?: Array<{ date: string; startTime: string; endTime: string }>; // upcoming open houses
+  modifiedAt?: string; // ISO — ModificationTimestamp from Spark (when listing data last changed)
 }
 
 export interface CharityItem {

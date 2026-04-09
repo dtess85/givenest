@@ -17,6 +17,7 @@ export default function PropertyDetail() {
 
   // undefined = loading, null = not found, Property = loaded
   const [property, setProperty] = useState<Property | null | undefined>(undefined);
+  const [fetchedAt, setFetchedAt] = useState<string | null>(null);
 
   const [descExpanded, setDescExpanded] = useState(false);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
@@ -37,7 +38,10 @@ export default function PropertyDetail() {
     if (!key) { setProperty(null); return; }
     fetch(`/api/listings/${key}`)
       .then((r) => r.json())
-      .then((d) => setProperty(d.listing ?? null))
+      .then((d) => {
+        setProperty(d.listing ?? null);
+        setFetchedAt(d.fetchedAt ?? null);
+      })
       .catch(() => setProperty(null));
   }, [params.address]);
 
@@ -80,11 +84,26 @@ export default function PropertyDetail() {
   const estimatedDonation = property.donation ?? calcGivingPool(property.price);
   const pricePerSqft = Math.round(property.price / property.sqft);
 
-  const listingUpdated = property.listingDate
-    ? new Date(property.listingDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  const listingUpdated = (property.modifiedAt ?? property.listingDate)
+    ? (() => {
+        const d = new Date(property.modifiedAt ?? property.listingDate!);
+        const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
+        return `${date} at ${time}`;
+      })()
     : null;
 
-  const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const checkedRelative = fetchedAt
+    ? (() => {
+        const secs = Math.floor((Date.now() - new Date(fetchedAt).getTime()) / 1000);
+        if (secs < 10) return "just now";
+        if (secs < 60) return `${secs} seconds ago`;
+        const mins = Math.floor(secs / 60);
+        if (mins < 60) return `${mins} minute${mins === 1 ? "" : "s"} ago`;
+        const hrs = Math.floor(mins / 60);
+        return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+      })()
+    : null;
 
   return (
     <>
@@ -504,7 +523,7 @@ export default function PropertyDetail() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </span>
-                <span>Last checked: <span className="text-[#4a4845]">{today}</span></span>
+                <span>Givenest checked: <span className="text-emerald-600">{checkedRelative ?? "just now"}</span></span>
               </div>
               {property.mlsNumber && (
                 <div className="flex items-center gap-2">
@@ -668,7 +687,7 @@ export default function PropertyDetail() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </span>
-            <span>Last checked: <span className="text-[#4a4845]">{today}</span></span>
+            <span>Givenest checked: <span className="text-emerald-600">{checkedRelative ?? "just now"}</span></span>
           </div>
           {property.mlsNumber && (
             <div className="flex items-center gap-2">
