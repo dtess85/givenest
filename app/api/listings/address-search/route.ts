@@ -84,7 +84,7 @@ export async function GET(request: Request) {
 
   // ── Query Supabase index ───────────────────────────────────────────────────
   try {
-    const { results, isMlsNumber, hasSubdivisionMatch } = await searchListings(q, 8);
+    const { results, isMlsNumber, hasSubdivisionMatch, hasAgentMatch, matchedAgentName } = await searchListings(q, 8);
 
     // If DB returned nothing, fall back to Spark (handles edge cases like very new listings)
     if (results.length === 0 && !isMlsNumber) {
@@ -93,11 +93,11 @@ export async function GET(request: Request) {
         const fallback = await sparkFallback(q);
         return NextResponse.json(fallback);
       } catch {
-        return NextResponse.json({ listings: results, isMlsNumber, hasSubdivisionMatch });
+        return NextResponse.json({ listings: results, isMlsNumber, hasSubdivisionMatch, hasAgentMatch, matchedAgentName });
       }
     }
 
-    return NextResponse.json({ listings: results, isMlsNumber, hasSubdivisionMatch });
+    return NextResponse.json({ listings: results, isMlsNumber, hasSubdivisionMatch, hasAgentMatch, matchedAgentName });
   } catch (err) {
     console.error("Address search DB error:", err);
     // DB error — try Spark

@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS listings (
   beds NUMERIC,
   baths NUMERIC,
   neighborhood TEXT,                      -- SubdivisionName
+  agent_name TEXT,                        -- ListAgentFullName
   status TEXT,                            -- mapped status (e.g. "For Sale")
   mls_status TEXT,                        -- raw MlsStatus from Spark
   modified_at TIMESTAMPTZ,               -- ModificationTimestamp from Spark
@@ -90,6 +91,7 @@ CREATE INDEX IF NOT EXISTS listings_city_idx ON listings(city);
 CREATE INDEX IF NOT EXISTS listings_street_num_idx ON listings(street_number);
 CREATE INDEX IF NOT EXISTS listings_address_trgm_idx ON listings USING GIN(address gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS listings_neighborhood_trgm_idx ON listings USING GIN(neighborhood gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS listings_agent_trgm_idx ON listings USING GIN(agent_name gin_trgm_ops);
 
 -- Closing records (manually entered by Givenest admin)
 CREATE TABLE IF NOT EXISTS transactions (

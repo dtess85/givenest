@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Property } from "@/lib/mock-data";
@@ -255,7 +255,7 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number): numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default function Buy() {
+function BuyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -273,6 +273,8 @@ export default function Buy() {
   const [addressSearchLoading, setAddressSearchLoading] = useState(false);
   const [isMlsSearch, setIsMlsSearch] = useState(false);
   const [hasSubdivisionMatch, setHasSubdivisionMatch] = useState(false);
+  const [hasAgentMatch, setHasAgentMatch] = useState(false);
+  const [matchedAgentName, setMatchedAgentName] = useState<string | null>(null);
 
   // User geolocation
   const [userLat, setUserLat] = useState<number | null>(null);
@@ -417,6 +419,8 @@ export default function Buy() {
       setAddressResults([]);
       setIsMlsSearch(false);
       setHasSubdivisionMatch(false);
+      setHasAgentMatch(false);
+      setMatchedAgentName(null);
       setAddressSearchLoading(false);
       return;
     }
@@ -428,10 +432,14 @@ export default function Buy() {
         setAddressResults(data.listings ?? []);
         setIsMlsSearch(data.isMlsNumber ?? false);
         setHasSubdivisionMatch(data.hasSubdivisionMatch ?? false);
+        setHasAgentMatch(data.hasAgentMatch ?? false);
+        setMatchedAgentName(data.matchedAgentName ?? null);
       } catch {
         setAddressResults([]);
         setIsMlsSearch(false);
         setHasSubdivisionMatch(false);
+        setHasAgentMatch(false);
+        setMatchedAgentName(null);
       } finally {
         setAddressSearchLoading(false);
       }
@@ -682,7 +690,7 @@ export default function Buy() {
               <div className="flex overflow-hidden rounded-lg border border-border bg-white shadow-sm transition-colors focus-within:border-coral">
                 <input
                   className="min-w-0 flex-1 bg-transparent px-[16px] py-[10px] text-[15px] outline-none placeholder:text-[#c0bdb6]"
-                  placeholder="City, zip, or address..."
+                  placeholder="City, Neighborhood, Address, ZIP, Agent, MLS #"
                   value={searchInput}
                   onFocus={() => setSearchDropdownOpen(true)}
                   onChange={(e) => {
@@ -790,6 +798,28 @@ export default function Buy() {
                           <div className="min-w-0 flex-1">
                             <div className="text-[13px] font-medium text-[#2a2825]">Browse {searchInput.trim()} community</div>
                             <div className="text-[11px] text-muted">See all listings in this neighborhood</div>
+                          </div>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Browse agent's listings shortcut */}
+                      {hasAgentMatch && matchedAgentName && (
+                        <button
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectLocation({ type: "subdivision", label: matchedAgentName, subdivision: matchedAgentName });
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-[9px] text-left hover:bg-[#F9F7F4] transition-colors"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                          </svg>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[13px] font-medium text-[#2a2825]">{matchedAgentName}</div>
+                            <div className="text-[11px] text-muted">See all listings by this agent</div>
                           </div>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
                             <path d="M9 18l6-6-6-6" />
@@ -1228,5 +1258,13 @@ export default function Buy() {
       </div>
     </div>
     </>
+  );
+}
+
+export default function Buy() {
+  return (
+    <Suspense>
+      <BuyPage />
+    </Suspense>
   );
 }
