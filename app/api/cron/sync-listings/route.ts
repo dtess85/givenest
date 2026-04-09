@@ -184,6 +184,7 @@ export async function GET(request: Request) {
   let totalFetched = 0;
   let totalUpserted = 0;
 
+  try {
   if (isFull) {
     // ── Full sync: paginate through all active AZ listings ─────────────────
     let page = 1;
@@ -228,4 +229,9 @@ export async function GET(request: Request) {
     upserted: totalUpserted,
     elapsedSeconds: parseFloat(elapsed),
   });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Sync error:", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
