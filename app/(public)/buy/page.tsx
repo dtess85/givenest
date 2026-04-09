@@ -174,8 +174,15 @@ function SkeletonCard() {
   );
 }
 
-/** Returns "NEW X HRS AGO" / "NEW X DAYS AGO" if listed recently, null otherwise */
-function getNewLabel(listingDate: string | undefined): string | null {
+/** Returns "NEW X HRS AGO" / "NEW X DAYS AGO" using ARMLS CumulativeDaysOnMarket.
+ *  Falls back to computing from listingDate if daysOnMarket is unavailable. */
+function getNewLabel(listingDate: string | undefined, daysOnMarket?: number): string | null {
+  if (daysOnMarket != null) {
+    if (daysOnMarket === 0) return "NEW TODAY";
+    if (daysOnMarket === 1) return "NEW 1 DAY AGO";
+    if (daysOnMarket <= 7) return `NEW ${daysOnMarket} DAYS AGO`;
+    return null;
+  }
   if (!listingDate) return null;
   const ms = Date.now() - new Date(listingDate).getTime();
   const hours = ms / (1000 * 60 * 60);
@@ -1065,7 +1072,7 @@ export default function Buy() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1100px] px-8 py-9">
+      <div className="mx-auto max-w-[1100px] px-8 py-[18px]">
         {/* Results header: count + sort */}
         <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
           <div className="flex items-center gap-2">
@@ -1078,13 +1085,13 @@ export default function Buy() {
                   </svg>
                   Loading…
                 </span>
-              ) : (
+              ) : (selectedLocation || activeFilterCount > 0 || minPrice > 0 || maxPrice !== Infinity) ? (
                 <>
-                  <span className="font-semibold text-[#2a2825]">{total >= 1000 ? "1,000+" : total.toLocaleString()}</span>
+                  <span className="font-semibold text-[#2a2825]">{total >= 1000 ? "999+" : total.toLocaleString()}</span>
                   {" "}home{total !== 1 ? "s" : ""}
-                  {selectedLocation ? ` in ${selectedLocation.label}` : " in Arizona"}
+                  {selectedLocation ? ` in ${selectedLocation.label}` : ""}
                 </>
-              )}
+              ) : null}
             </span>
             <span className="text-border">·</span>
             <span className="text-[13px] text-muted">Sort:</span>
@@ -1125,7 +1132,7 @@ export default function Buy() {
                       address={h.address}
                       aboveFold={aboveFold}
                       pills={(() => {
-                        const newLabel = getNewLabel(h.listingDate);
+                        const newLabel = getNewLabel(h.listingDate, h.daysOnMarket);
                         const openLabel = getOpenHouseLabel(h.openHouses);
                         const isBackOnMarket = !!h.backOnMarketDate &&
                           (Date.now() - new Date(h.backOnMarketDate).getTime()) < 30 * 24 * 60 * 60 * 1000;

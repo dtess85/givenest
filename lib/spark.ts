@@ -33,6 +33,7 @@ const FIELDS = [
   "SubdivisionName",
   "BackOnMarketDate",
   "ModificationTimestamp",
+  "CumulativeDaysOnMarket",
 ].join(",");
 
 export interface SparkOpenHouse {
@@ -83,6 +84,7 @@ export interface SparkStandardFields {
   SubdivisionName: string | null;
   BackOnMarketDate?: string | null;
   ModificationTimestamp?: string | null;
+  CumulativeDaysOnMarket?: number | null;
   Photos?: SparkPhoto[];
   OpenHouses?: SparkOpenHouse[];
 }
@@ -180,6 +182,7 @@ export function sparkToProperty(listing: SparkListing): Property {
     neighborhood: f.SubdivisionName ?? undefined,
     backOnMarketDate: f.BackOnMarketDate ?? undefined,
     modifiedAt: f.ModificationTimestamp ?? undefined,
+    daysOnMarket: f.CumulativeDaysOnMarket ?? undefined,
     openHouses: f.OpenHouses
       ?.filter((oh) => oh.Type !== "Appointment Only")
       .map((oh) => ({ date: oh.Date, startTime: oh.StartTime, endTime: oh.EndTime })),
