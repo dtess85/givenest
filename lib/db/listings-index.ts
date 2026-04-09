@@ -14,6 +14,7 @@ export interface ListingIndexRow {
   beds: number | null;
   baths: number | null;
   neighborhood: string | null;
+  agent_name: string | null;
   status: string | null;
   mls_status: string | null;
   modified_at: string | null;
@@ -33,12 +34,13 @@ export interface ListingUpsertData {
   beds?: number | null;
   baths?: number | null;
   neighborhood?: string | null;
+  agent_name?: string | null;
   status?: string | null;
   mls_status?: string | null;
   modified_at?: string | null;
 }
 
-const COLS = 16; // number of columns per row
+const COLS = 17; // number of columns per row
 
 /**
  * Batch upsert listings by spark_listing_key.
@@ -76,6 +78,7 @@ export async function upsertListings(listings: ListingUpsertData[]): Promise<voi
         l.beds ?? null,
         l.baths ?? null,
         l.neighborhood ?? null,
+        l.agent_name ?? null,
         l.status ?? null,
         l.mls_status ?? null,
         l.modified_at ?? null,
@@ -86,7 +89,7 @@ export async function upsertListings(listings: ListingUpsertData[]): Promise<voi
     const text = `
       INSERT INTO listings (
         spark_listing_key, mls_number, address, street_number, street_name,
-        city, state, zip, price, beds, baths, neighborhood, status, mls_status,
+        city, state, zip, price, beds, baths, neighborhood, agent_name, status, mls_status,
         modified_at, synced_at
       ) VALUES ${valuePlaceholders}
       ON CONFLICT (spark_listing_key) DO UPDATE SET
@@ -101,6 +104,7 @@ export async function upsertListings(listings: ListingUpsertData[]): Promise<voi
         beds          = EXCLUDED.beds,
         baths         = EXCLUDED.baths,
         neighborhood  = EXCLUDED.neighborhood,
+        agent_name    = EXCLUDED.agent_name,
         status        = EXCLUDED.status,
         mls_status    = EXCLUDED.mls_status,
         modified_at   = EXCLUDED.modified_at,
@@ -130,7 +134,7 @@ export interface ListingSearchResult {
 export async function searchListings(
   query: string,
   limit = 8
-): Promise<{ results: ListingSearchResult[]; isMlsNumber: boolean; hasSubdivisionMatch: boolean }> {
+): Promise<{ results: ListingSearchResult[]; isMlsNumber: boolean; hasSubdivisionMatch: boolean; hasAgentMatch: boolean; matchedAgentName: string | null }> {
   const q = query.trim();
 
   // ── MLS number ────────────────────────────────────────────────────────────
@@ -141,7 +145,7 @@ export async function searchListings(
        FROM listings WHERE mls_number = $1 LIMIT $2`,
       [q, limit]
     );
-    return { results: rows.map(rowToResult), isMlsNumber: true, hasSubdivisionMatch: false };
+    return { results: rows.map(rowToResult), isMlsNumber: true, hasSubdivisionMatch: false, hasAgentMatch: false, matchedAgentName: null };
   }
 
   // ── "123 Main" — street number + name ────────────────────────────────────
@@ -154,16 +158,16 @@ export async function searchListings(
        ORDER BY price DESC LIMIT $3`,
       [streetNum, `%${streetNameRaw.trim()}%`, limit]
     );
-    return { results: rows.map(rowToResult), isMlsNumber: false, hasSubdivisionMatch: false };
+    return { results: rows.map(rowToResult), isMlsNumber: false, hasSubdivisionMatch: false, hasAgentMatch: false, matchedAgentName: null };
   }
 
-  // ── General: trigram search on address, neighborhood, zip; exact on city ──
+  // ── General: trigram search on address, neighborhood, zip, agent; exact on city ──
   const pattern = `%${q}%`;
   const { rows } = await pool.query(
-    `SELECT spark_listing_key, address, city, price, neighborhood,
-       CASE WHEN city ILIKE $1 THEN 3 WHEN neighborhood ILIKE $2 THEN 2 ELSE 1 END AS score
+    `SELECT spark_listing_key, address, city, price, neighborhood, agent_name,
+       CASE WHEN city ILIKE $1 THEN 4 WHEN neighborhood ILIKE $2 THEN 3 WHEN agent_name ILIKE $2 THEN 2 ELSE 1 END AS score
      FROM listings
-     WHERE address ILIKE $2 OR neighborhood ILIKE $2 OR city ILIKE $1 OR zip = $1
+     WHERE address ILIKE $2 OR neighborhood ILIKE $2 OR city ILIKE $1 OR zip = $1 OR agent_name ILIKE $2
      ORDER BY score DESC, price DESC LIMIT $3`,
     [q, pattern, limit]
   );
@@ -174,10 +178,19 @@ export async function searchListings(
       r.neighborhood && r.neighborhood.toUpperCase().includes(qUpper)
   );
 
+  const agentRow = rows.find(
+    (r: { agent_name: string | null }) =>
+      r.agent_name && r.agent_name.toUpperCase().includes(qUpper)
+  );
+  const hasAgentMatch = !!agentRow && !hasSubdivisionMatch;
+  const matchedAgentName: string | null = hasAgentMatch ? (agentRow as { agent_name: string }).agent_name : null;
+
   return {
     results: rows.map(rowToResult),
     isMlsNumber: false,
     hasSubdivisionMatch,
+    hasAgentMatch,
+    matchedAgentName,
   };
 }
 

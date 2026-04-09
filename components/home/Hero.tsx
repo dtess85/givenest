@@ -37,6 +37,15 @@ function HomeIcon() {
   );
 }
 
+function HomeGridIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
+      <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+    </svg>
+  );
+}
+
 export default function Hero() {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
@@ -44,6 +53,9 @@ export default function Hero() {
   const [addressResults, setAddressResults] = useState<Property[]>([]);
   const [addressLoading, setAddressLoading] = useState(false);
   const [isMlsSearch, setIsMlsSearch] = useState(false);
+  const [hasSubdivisionMatch, setHasSubdivisionMatch] = useState(false);
+  const [hasAgentMatch, setHasAgentMatch] = useState(false);
+  const [matchedAgentName, setMatchedAgentName] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const addressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -70,7 +82,10 @@ export default function Hero() {
         const res = await fetch(`/api/listings/address-search?q=${encodeURIComponent(q)}`);
         const data = await res.json();
         setAddressResults(data.listings ?? []);
-        setIsMlsSearch(data.isMlsSearch ?? false);
+        setIsMlsSearch(data.isMlsNumber ?? false);
+        setHasSubdivisionMatch(data.hasSubdivisionMatch ?? false);
+        setHasAgentMatch(data.hasAgentMatch ?? false);
+        setMatchedAgentName(data.matchedAgentName ?? null);
       } catch {
         setAddressResults([]);
       } finally {
@@ -146,7 +161,7 @@ export default function Hero() {
         </p>
 
         {/* Search bar with autocomplete */}
-        <div className="relative w-full max-w-[640px]" ref={searchRef}>
+        <div className="relative w-full max-w-[800px]" ref={searchRef}>
           <div className="flex overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
             <input
               value={searchInput}
@@ -156,7 +171,7 @@ export default function Hero() {
                 if (e.key === "Escape") setDropdownOpen(false);
                 if (e.key === "Enter") handleSearch();
               }}
-              placeholder="Search by city, zip, or address..."
+              placeholder="City, Neighborhood, Address, ZIP, Agent, MLS #"
               className="min-w-0 flex-1 border-none bg-white px-4 py-[18px] font-sans text-[15px] font-light text-black outline-none placeholder:text-[#c0bdb6] md:px-[22px]"
             />
             {searchInput && (
@@ -172,13 +187,12 @@ export default function Hero() {
             )}
             <button
               onClick={handleSearch}
-              className="flex items-center justify-center bg-coral px-[20px] py-[18px] font-sans text-[15px] font-medium text-white transition-colors hover:bg-[#d4574a] md:px-[30px]"
+              className="flex items-center justify-center gap-2 bg-coral px-[20px] font-sans text-[15px] font-medium text-white transition-colors hover:bg-[#d4574a] md:px-[28px]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="md:hidden">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
-              <span className="hidden whitespace-nowrap md:inline">Search homes</span>
+              <span className="hidden whitespace-nowrap md:inline">Search</span>
             </button>
           </div>
 
@@ -238,6 +252,49 @@ export default function Hero() {
                       </svg>
                     )}
                   </div>
+                  {/* Browse community shortcut */}
+                  {hasSubdivisionMatch && !isMlsSearch && (
+                    <button
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        const q = searchInput.trim();
+                        navigateToLocation({ type: "subdivision", label: q, subdivision: q });
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-[9px] text-left hover:bg-[#F9F7F4] transition-colors"
+                    >
+                      <HomeGridIcon />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[13px] font-medium text-[#2a2825]">Browse {searchInput.trim()} community</div>
+                        <div className="text-[11px] text-muted">See all listings in this neighborhood</div>
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                    </button>
+                  )}
+
+                  {/* Browse agent's listings shortcut */}
+                  {hasAgentMatch && matchedAgentName && (
+                    <button
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        navigateToLocation({ type: "subdivision", label: matchedAgentName, subdivision: matchedAgentName });
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-[9px] text-left hover:bg-[#F9F7F4] transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                      </svg>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[13px] font-medium text-[#2a2825]">{matchedAgentName}</div>
+                        <div className="text-[11px] text-muted">See all listings by this agent</div>
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                    </button>
+                  )}
+
                   {addressResults.length > 0 ? (
                     addressResults.map((prop) => (
                       <Link
