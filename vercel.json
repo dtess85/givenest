@@ -4,10 +4,5 @@
       "path": "/api/cron/sync-listings",
       "schedule": "*/15 * * * *"
     }
-  ],
-  "functions": {
-    "app/api/cron/sync-listings/route.ts": {
-      "maxDuration": 300
-    }
-  }
+  ]
 }

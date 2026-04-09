@@ -1,3 +1,5 @@
+export const maxDuration = 300; // 5 min — full sync takes ~70s, well within Pro limit
+
 /**
  * Spark → Supabase listings sync
  *
