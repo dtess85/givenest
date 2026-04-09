@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Lora, DM_Sans } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const lora = Lora({
@@ -22,6 +21,7 @@ export const metadata: Metadata = {
   title: "givenest — Every Home Funds a Cause",
   description:
     "Buy or sell with givenest and we donate to a charity of your choice at closing — at no extra cost. Arizona's giving brokerage.",
+  icons: { icon: "/favicon.png" },
 };
 
 export default function RootLayout({
@@ -30,12 +30,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider signInUrl="/charity/login" signInFallbackRedirectUrl="/charity/dashboard">
-      <html lang="en">
-        <body className={`${lora.variable} ${dmSans.variable} font-sans antialiased`}>
-          {children}
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body className={`${lora.variable} ${dmSans.variable} font-sans antialiased`}>
+        {children}
+      </body>
+    </html>
   );
 }

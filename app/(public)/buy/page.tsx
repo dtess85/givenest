@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Property } from "@/lib/mock-data";
@@ -38,19 +38,6 @@ function locationFromParams(p: URLSearchParams): LocationSuggestion | null {
   return null;
 }
 
-/** Build page number list with ellipsis for pagination nav */
-function getPaginationPages(current: number, total: number): (number | "...")[] {
-  if (total <= 9) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | "...")[] = [];
-  const rangeStart = Math.max(2, current - 2);
-  const rangeEnd = Math.min(total - 1, current + 2);
-  pages.push(1);
-  if (rangeStart > 2) pages.push("...");
-  for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
-  if (rangeEnd < total - 1) pages.push("...");
-  pages.push(total);
-  return pages;
-}
 
 const PRICE_OPTIONS = [
   { label: "No min", value: 0 },
@@ -187,8 +174,15 @@ function SkeletonCard() {
   );
 }
 
-/** Returns "NEW X HRS AGO" / "NEW X DAYS AGO" if listed recently, null otherwise */
-function getNewLabel(listingDate: string | undefined): string | null {
+/** Returns "NEW X HRS AGO" / "NEW X DAYS AGO" using ARMLS CumulativeDaysOnMarket.
+ *  Falls back to computing from listingDate if daysOnMarket is unavailable. */
+function getNewLabel(listingDate: string | undefined, daysOnMarket?: number): string | null {
+  if (daysOnMarket != null) {
+    if (daysOnMarket === 0) return "NEW TODAY";
+    if (daysOnMarket === 1) return "NEW 1 DAY AGO";
+    if (daysOnMarket <= 7) return `NEW ${daysOnMarket} DAYS AGO`;
+    return null;
+  }
   if (!listingDate) return null;
   const ms = Date.now() - new Date(listingDate).getTime();
   const hours = ms / (1000 * 60 * 60);
@@ -261,7 +255,7 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number): numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default function Buy() {
+function BuyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -331,9 +325,12 @@ export default function Buy() {
   const [pinnedListings, setPinnedListings] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get("page") ?? "1")));
   const [sortBy, setSortBy] = useState(() => searchParams.get("sort") ?? "recommended");
-  const [totalPages, setTotalPages] = useState(1);
+  const [nextPage, setNextPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadingRef = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Search suggestions (memoized)
   const suggestions = useMemo(() => {
@@ -443,7 +440,10 @@ export default function Buy() {
   }, [searchInput, selectedLocation]);
 
   // Fetch listings from Spark API (server-side filtered), with client-side cache
-  const fetchListings = useCallback(async () => {
+  const fetchListings = useCallback(async (targetPage: number) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+
     const params = new URLSearchParams();
     if (minPrice > 0) params.set("minPrice", String(minPrice));
     if (minPrice > 0 && maxPrice !== Infinity) params.set("maxPrice", String(maxPrice));
@@ -458,47 +458,78 @@ export default function Buy() {
     if (selectedLocation?.city) params.set("city", selectedLocation.city);
     if (selectedLocation?.zip) params.set("zip", selectedLocation.zip);
     if (selectedLocation?.subdivision) params.set("subdivision", selectedLocation.subdivision);
-    params.set("page", String(page));
+    params.set("page", String(targetPage));
+    params.set("limit", "12");
     params.set("sort", sortBy);
 
     const cacheKey = params.toString();
 
-    // Serve from cache instantly if fresh (< 5 min)
-    const hit = listingsCache.get(cacheKey);
-    if (hit && Date.now() - hit.ts < CACHE_TTL) {
-      setProperties(hit.data.listings);
-      setPinnedListings(hit.data.pinnedListings ?? []);
-      setTotal(hit.data.total);
-      setTotalPages(hit.data.totalPages ?? 1);
-      setLoading(false);
-      return;
-    }
+    if (targetPage === 1) setLoading(true);
+    else setLoadingMore(true);
 
-    setLoading(true);
     try {
-      const res = await fetch(`/api/listings?${cacheKey}`);
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      listingsCache.set(cacheKey, { data, ts: Date.now() });
-      setProperties(data.listings ?? []);
-      setPinnedListings(data.pinnedListings ?? []);
+      // Serve from cache instantly if fresh (< 5 min)
+      const hit = listingsCache.get(cacheKey);
+      const data = hit && Date.now() - hit.ts < CACHE_TTL
+        ? hit.data
+        : await (async () => {
+            const res = await fetch(`/api/listings?${cacheKey}`);
+            if (!res.ok) throw new Error("Failed to fetch");
+            const d = await res.json();
+            listingsCache.set(cacheKey, { data: d, ts: Date.now() });
+            return d;
+          })();
+
+      if (targetPage === 1) {
+        setProperties(data.listings ?? []);
+        setPinnedListings(data.pinnedListings ?? []);
+      } else {
+        setProperties((prev) => [...prev, ...(data.listings ?? [])]);
+      }
       setTotal(data.total ?? 0);
-      setTotalPages(data.totalPages ?? 1);
+      const totalPages = data.totalPages ?? 1;
+      setHasMore(targetPage < totalPages);
+      setNextPage(targetPage + 1);
     } catch (err) {
       console.error("Failed to fetch listings:", err);
-      setProperties([]);
-      setPinnedListings([]);
+      if (targetPage === 1) {
+        setProperties([]);
+        setPinnedListings([]);
+      }
+      setHasMore(false);
     } finally {
-      setLoading(false);
+      if (targetPage === 1) setLoading(false);
+      else setLoadingMore(false);
+      loadingRef.current = false;
     }
-  }, [minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, selectedLocation, page, sortBy]);
+  }, [minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, selectedLocation, sortBy]);
 
-  // Debounced refetch — waits for location detection on first load
+  // Debounced refetch — waits for location detection on first load.
+  // Resets accumulated list and fetches page 1 whenever fetchListings identity changes (filter/sort change).
   useEffect(() => {
     if (!locationReady) return;
-    const timer = setTimeout(fetchListings, 400);
+    setProperties([]);
+    setHasMore(true);
+    setNextPage(1);
+    const timer = setTimeout(() => fetchListings(1), 400);
     return () => clearTimeout(timer);
   }, [fetchListings, locationReady]);
+
+  // IntersectionObserver: auto-fetch next page as user scrolls near the bottom
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasMore && !loadingRef.current) {
+          fetchListings(nextPage);
+        }
+      },
+      { rootMargin: "300px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, nextPage, fetchListings]);
 
   function selectLocation(loc: LocationSuggestion) {
     userSetLocation.current = true;
@@ -536,13 +567,7 @@ export default function Buy() {
     setMaxYear(null);
     setMaxHoa(null);
     setMaxDom(null);
-    setPage(1);
   }
-
-  // Reset to page 1 whenever filter / location / sort params change
-  useEffect(() => { setPage(1); },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [minPrice, maxPrice, minBeds, minBaths, minSqft, maxSqft, maxHoa, selectedLocation?.label, propertyTypes.size, statuses.size, sortBy]);
 
   // Sync filter state to URL so browser back + "← Back to search" restores the previous search.
   // Uses router.replace (no new history entry) so every filter tweak doesn't pollute the history stack.
@@ -561,12 +586,11 @@ export default function Buy() {
     if (minSqft) p.set("minSqft", minSqft);
     if (maxSqft) p.set("maxSqft", maxSqft);
     if (maxHoa !== null) p.set("maxHoa", String(maxHoa));
-    if (page > 1) p.set("page", String(page));
     if (sortBy !== "recommended") p.set("sort", sortBy);
     const qs = p.toString();
     router.replace(qs ? `?${qs}` : "?", { scroll: false });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationReady, selectedLocation, minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, page, sortBy]);
+  }, [locationReady, selectedLocation, minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, sortBy]);
 
   const activeFilterCount =
     propertyTypes.size +
@@ -1048,7 +1072,7 @@ export default function Buy() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1100px] px-8 py-9">
+      <div className="mx-auto max-w-[1100px] px-8 py-[18px]">
         {/* Results header: count + sort */}
         <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
           <div className="flex items-center gap-2">
@@ -1061,20 +1085,20 @@ export default function Buy() {
                   </svg>
                   Loading…
                 </span>
-              ) : (
+              ) : (selectedLocation || activeFilterCount > 0 || minPrice > 0 || maxPrice !== Infinity) ? (
                 <>
-                  <span className="font-semibold text-[#2a2825]">{total >= 1000 ? "1,000+" : total.toLocaleString()}</span>
+                  <span className="font-semibold text-[#2a2825]">{total >= 1000 ? "999+" : total.toLocaleString()}</span>
                   {" "}home{total !== 1 ? "s" : ""}
-                  {selectedLocation ? ` in ${selectedLocation.label}` : " in Arizona"}
+                  {selectedLocation ? ` in ${selectedLocation.label}` : ""}
                 </>
-              )}
+              ) : null}
             </span>
             <span className="text-border">·</span>
             <span className="text-[13px] text-muted">Sort:</span>
             <div className="relative">
               <select
                 value={sortBy}
-                onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                onChange={(e) => { setSortBy(e.target.value); }}
                 className="appearance-none rounded-md border border-border bg-white py-[7px] pl-3 pr-8 text-[13px] font-medium text-[#2a2825] outline-none focus:border-coral cursor-pointer"
               >
                 <option value="recommended">Recommended</option>
@@ -1108,7 +1132,7 @@ export default function Buy() {
                       address={h.address}
                       aboveFold={aboveFold}
                       pills={(() => {
-                        const newLabel = getNewLabel(h.listingDate);
+                        const newLabel = getNewLabel(h.listingDate, h.daysOnMarket);
                         const openLabel = getOpenHouseLabel(h.openHouses);
                         const isBackOnMarket = !!h.backOnMarketDate &&
                           (Date.now() - new Date(h.backOnMarketDate).getTime()) < 30 * 24 * 60 * 60 * 1000;
@@ -1183,64 +1207,34 @@ export default function Buy() {
               })}
         </div>
 
-        {/* Pagination nav */}
-        {!loading && totalPages > 1 && (
-          <div className="mt-10 flex flex-col items-center gap-3">
-            <div className="flex flex-wrap items-center justify-center gap-1">
-              {/* Previous */}
-              <button
-                onClick={() => { setPage((p) => p - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                disabled={page === 1}
-                className="flex h-9 items-center gap-1 rounded-md border border-border px-3 text-[13px] font-medium text-[#2a2825] transition-colors hover:border-coral hover:text-coral disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-                Prev
-              </button>
-
-              {/* Page numbers */}
-              {getPaginationPages(page, totalPages).map((p, i) =>
-                p === "..." ? (
-                  <span key={`ellipsis-${i}`} className="flex h-9 w-9 items-center justify-center text-[13px] text-muted">
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => { setPage(p as number); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                    className={`flex h-9 w-9 items-center justify-center rounded-md border text-[13px] font-medium transition-colors ${
-                      page === p
-                        ? "border-coral bg-coral text-white"
-                        : "border-border text-[#2a2825] hover:border-coral hover:text-coral"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
-
-              {/* Next */}
-              <button
-                onClick={() => { setPage((p) => p + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                disabled={page === totalPages}
-                className="flex h-9 items-center gap-1 rounded-md border border-border px-3 text-[13px] font-medium text-[#2a2825] transition-colors hover:border-coral hover:text-coral disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
-            </div>
-            <div className="text-[12px] text-muted">
-              Page {page} of {totalPages}
-            </div>
-          </div>
+        {/* Infinite scroll sentinel + bottom states */}
+        {!loading && (
+          <>
+            <div ref={sentinelRef} className="h-1" aria-hidden="true" />
+            {loadingMore && (
+              <div className="mt-[14px] grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            )}
+            {!hasMore && sorted.length > 0 && (
+              <p className="mt-10 text-center text-[13px] text-muted">
+                You&apos;ve seen all {total.toLocaleString()} listing{total !== 1 ? "s" : ""}
+              </p>
+            )}
+          </>
         )}
 
         <IdxAttribution />
       </div>
     </div>
     </>
+  );
+}
+
+export default function Buy() {
+  return (
+    <Suspense>
+      <BuyPage />
+    </Suspense>
   );
 }

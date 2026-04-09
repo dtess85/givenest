@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS charities (
   is_featured BOOLEAN DEFAULT false,
   is_partner BOOLEAN DEFAULT false,
   status TEXT DEFAULT 'pending',
-  clerk_user_id TEXT,
+  user_id TEXT, -- will be populated by Supabase Auth uid() once auth is wired
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
   subscription_status TEXT,
@@ -58,6 +58,38 @@ CREATE TABLE IF NOT EXISTS manual_listings (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Pre-indexed Spark listings for instant address search and stable property URLs.
+-- Synced every 15 min via /api/cron/sync-listings.
+-- Supabase requires pg_trgm for the trigram indexes below (enabled by default).
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE TABLE IF NOT EXISTS listings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  spark_listing_key TEXT UNIQUE NOT NULL, -- = listing.Id from Spark replication API
+  mls_number TEXT,                        -- ListingId (ARMLS MLS#)
+  address TEXT NOT NULL,                  -- "123 N Main St"
+  street_number TEXT,
+  street_name TEXT,
+  city TEXT,
+  state TEXT DEFAULT 'AZ',
+  zip TEXT,
+  price NUMERIC,
+  beds NUMERIC,
+  baths NUMERIC,
+  neighborhood TEXT,                      -- SubdivisionName
+  status TEXT,                            -- mapped status (e.g. "For Sale")
+  mls_status TEXT,                        -- raw MlsStatus from Spark
+  modified_at TIMESTAMPTZ,               -- ModificationTimestamp from Spark
+  synced_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS listings_spark_key_idx ON listings(spark_listing_key);
+CREATE INDEX IF NOT EXISTS listings_mls_idx ON listings(mls_number);
+CREATE INDEX IF NOT EXISTS listings_city_idx ON listings(city);
+CREATE INDEX IF NOT EXISTS listings_street_num_idx ON listings(street_number);
+CREATE INDEX IF NOT EXISTS listings_address_trgm_idx ON listings USING GIN(address gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS listings_neighborhood_trgm_idx ON listings USING GIN(neighborhood gin_trgm_ops);
 
 -- Closing records (manually entered by Givenest admin)
 CREATE TABLE IF NOT EXISTS transactions (

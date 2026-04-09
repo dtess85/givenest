@@ -32,6 +32,8 @@ const FIELDS = [
   "Longitude",
   "SubdivisionName",
   "BackOnMarketDate",
+  "ModificationTimestamp",
+  "CumulativeDaysOnMarket",
 ].join(",");
 
 export interface SparkOpenHouse {
@@ -81,6 +83,8 @@ export interface SparkStandardFields {
   Longitude: number | null;
   SubdivisionName: string | null;
   BackOnMarketDate?: string | null;
+  ModificationTimestamp?: string | null;
+  CumulativeDaysOnMarket?: number | null;
   Photos?: SparkPhoto[];
   OpenHouses?: SparkOpenHouse[];
 }
@@ -177,6 +181,8 @@ export function sparkToProperty(listing: SparkListing): Property {
     longitude: num(f.Longitude) ?? undefined,
     neighborhood: f.SubdivisionName ?? undefined,
     backOnMarketDate: f.BackOnMarketDate ?? undefined,
+    modifiedAt: f.ModificationTimestamp ?? undefined,
+    daysOnMarket: f.CumulativeDaysOnMarket ?? undefined,
     openHouses: f.OpenHouses
       ?.filter((oh) => oh.Type !== "Appointment Only")
       .map((oh) => ({ date: oh.Date, startTime: oh.StartTime, endTime: oh.EndTime })),
@@ -217,7 +223,7 @@ export async function countSparkListings(filter: string): Promise<number> {
 
   const res = await fetch(url.toString(), {
     headers: sparkHeaders(),
-    next: { revalidate: 900 },
+    next: { revalidate: 60 },
   });
 
   if (!res.ok) return 0;
@@ -253,7 +259,7 @@ export async function fetchSparkListings(
 
   const res = await fetch(url.toString(), {
     headers: sparkHeaders(),
-    next: { revalidate: 900 }, // 15-minute server-side cache (listings change slowly)
+    next: { revalidate: 120 }, // 2-minute server-side cache
   });
 
   if (!res.ok) {
@@ -273,16 +279,18 @@ export async function fetchSparkListings(
 
 /** Fetch a single listing by ListingKey */
 export async function fetchSparkListing(
-  key: string
+  key: string,
+  opts?: { noCache?: boolean }
 ): Promise<Property | null> {
   const url = new URL(`${SPARK_BASE}/listings/${key}`);
   url.searchParams.set("_expand", "Photos,OpenHouses");
   url.searchParams.set("_select", FIELDS);
 
-  const res = await fetch(url.toString(), {
-    headers: sparkHeaders(),
-    next: { revalidate: 300 },
-  });
+  const fetchInit = opts?.noCache
+    ? { headers: sparkHeaders(), cache: "no-store" as const }
+    : { headers: sparkHeaders(), next: { revalidate: 300 } };
+
+  const res = await fetch(url.toString(), fetchInit);
 
   if (!res.ok) return null;
 

@@ -19,7 +19,7 @@ export interface Charity {
   is_featured: boolean;
   is_partner: boolean;
   status: string;
-  clerk_user_id?: string;
+  user_id?: string; // Supabase Auth uid — populated when auth is wired
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
   subscription_status?: string;
@@ -39,8 +39,8 @@ export async function getCharityById(id: string): Promise<Charity | null> {
   return (rows[0] as Charity) ?? null;
 }
 
-export async function getCharityByClerkUserId(clerkUserId: string): Promise<Charity | null> {
-  const { rows } = await sql`SELECT * FROM charities WHERE clerk_user_id = ${clerkUserId} LIMIT 1`;
+export async function getCharityByUserId(userId: string): Promise<Charity | null> {
+  const { rows } = await sql`SELECT * FROM charities WHERE user_id = ${userId} LIMIT 1`;
   return (rows[0] as Charity) ?? null;
 }
 
@@ -75,7 +75,7 @@ export async function updateCharity(id: string, data: Partial<Charity>): Promise
       is_featured = COALESCE(${data.is_featured ?? null}, is_featured),
       is_partner = COALESCE(${data.is_partner ?? null}, is_partner),
       status = COALESCE(${data.status ?? null}, status),
-      clerk_user_id = COALESCE(${data.clerk_user_id ?? null}, clerk_user_id),
+      user_id = COALESCE(${data.user_id ?? null}, user_id),
       stripe_customer_id = COALESCE(${data.stripe_customer_id ?? null}, stripe_customer_id),
       stripe_subscription_id = COALESCE(${data.stripe_subscription_id ?? null}, stripe_subscription_id),
       subscription_status = COALESCE(${data.subscription_status ?? null}, subscription_status),
