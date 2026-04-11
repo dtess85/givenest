@@ -149,14 +149,29 @@ export async function searchListings(
   }
 
   // ── "123 Main" — street number + name ────────────────────────────────────
+  // Handles optional directional prefix/suffix (E, W, N, S, NE, SW, …) and
+  // street suffix ("Dr", "St", "Ave", …) so users can type the full address
+  // the way it appears on Zillow/Redfin and still hit a match. The street_name
+  // column stores only the bare name (e.g. "Clark"), so we strip everything
+  // else from the query.
   const numericPrefix = q.match(/^(\d+)\s+(.+)$/);
   if (numericPrefix) {
-    const [, streetNum, streetNameRaw] = numericPrefix;
+    const [, streetNum, rest] = numericPrefix;
+    const bareName = rest
+      .trim()
+      // Strip leading directional (E, W, N, S, NE, NW, SE, SW)
+      .replace(/^(N|S|E|W|NE|NW|SE|SW)\s+/i, "")
+      // Strip trailing directional
+      .replace(/\s+(N|S|E|W|NE|NW|SE|SW)$/i, "")
+      // Strip common street suffix so "Clark Drive" → "Clark"
+      .replace(/\s+(St|Street|Ave|Avenue|Dr|Drive|Rd|Road|Blvd|Boulevard|Ln|Lane|Ct|Court|Pl|Place|Way|Cir|Circle|Pkwy|Parkway|Hwy|Highway|Trl|Trail|Pt|Point|Cv|Cove|Pass|Ter|Terrace|Sq|Square|Row|Loop|Run|Path|Xing|Crossing)$/i, "")
+      .trim();
+
     const { rows } = await pool.query(
       `SELECT spark_listing_key, address, city, price, neighborhood
        FROM listings WHERE street_number = $1 AND street_name ILIKE $2
        ORDER BY price DESC LIMIT $3`,
-      [streetNum, `%${streetNameRaw.trim()}%`, limit]
+      [streetNum, `%${bareName}%`, limit]
     );
     return { results: rows.map(rowToResult), isMlsNumber: false, hasSubdivisionMatch: false, hasAgentMatch: false, matchedAgentName: null };
   }

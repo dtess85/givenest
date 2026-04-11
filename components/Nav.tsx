@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Wordmark from "./Wordmark";
+import ListingSearch from "./ListingSearch";
 
 const links = [
   { href: "/buy", label: "Buy" },
@@ -15,16 +16,26 @@ const links = [
 export default function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // Hero already owns the big search bar on the home page, so we only surface
+  // the compact nav search once the user has navigated anywhere else.
+  const showSearch = pathname !== "/";
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-white">
-      <div className="mx-auto flex h-14 max-w-[1100px] items-center justify-between px-8">
-        <Link href="/">
+      <div className="mx-auto flex h-14 max-w-[1100px] items-center gap-6 px-8">
+        <Link href="/" className="flex-shrink-0">
           <Wordmark size={18} />
         </Link>
 
+        {/* Compact search — hidden on home page and mobile */}
+        {showSearch && (
+          <div className="hidden min-w-0 flex-1 md:block lg:max-w-[420px]">
+            <ListingSearch variant="nav" />
+          </div>
+        )}
+
         {/* Desktop nav */}
-        <div className="hidden items-center gap-7 md:flex">
+        <div className={`hidden items-center gap-7 md:flex ${showSearch ? "ml-auto" : "ml-auto"}`}>
           {links.map(({ href, label }) => (
             <Link
               key={href}
@@ -45,6 +56,9 @@ export default function Nav() {
             Get started
           </Link>
         </div>
+
+        {/* Mobile spacer pushes hamburger right when search is hidden */}
+        {!showSearch && <div className="flex-1 md:hidden" />}
 
         {/* Mobile hamburger */}
         <button

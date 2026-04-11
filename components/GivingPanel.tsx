@@ -32,7 +32,7 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<EveryOrgNonprofit[]>([]);
   const [loading, setLoading] = useState(false);
-  const [charity, setCharity] = useState<PickedCharity | null>(null);
+  const [charities, setCharities] = useState<PickedCharity[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
@@ -72,6 +72,16 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
     }, 350);
   }, [search]);
 
+  const selectedEins = new Set(charities.map((c) => c.ein));
+
+  const toggleCharity = (c: PickedCharity) => {
+    setCharities((prev) =>
+      selectedEins.has(c.ein)
+        ? prev.filter((x) => x.ein !== c.ein)
+        : [...prev, c]
+    );
+  };
+
   const rows = [
     { label: variant === "seller" ? "Home value" : "List price", value: fmt(price), highlight: false },
     { label: "Estimated donation (25%)", value: fmt(givingPool), highlight: true },
@@ -91,7 +101,8 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
   const favoritesList = Array.from(favorites.values()).filter((f) => !SEED_EINS.has(f.ein));
 
   type ListItem = PickedCharity & { location?: string; isSeed?: boolean; isFav?: boolean };
-  const listItems: ListItem[] = showFeatured
+
+  const baseItems: ListItem[] = showFeatured
     ? [
         ...CHARITIES.map((c) => ({ name: c.name, ein: c.ein ?? "", category: c.category, isSeed: true })),
         ...favoritesList.map((f) => ({ name: f.name, ein: f.ein, category: "", location: f.location, isFav: true })),
@@ -100,6 +111,14 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
         name: r.name, ein: r.ein, category: "", location: r.location,
         isSeed: SEED_EINS.has(r.ein), isFav: favorites.has(r.ein),
       }));
+
+  // Selected charities always pinned to top; unselected follow below
+  const selectedItems = charities.map((c) => {
+    const match = baseItems.find((b) => b.ein === c.ein);
+    return match ?? { ...c, isSeed: SEED_EINS.has(c.ein) };
+  });
+  const unselectedItems = baseItems.filter((b) => !selectedEins.has(b.ein));
+  const listItems: ListItem[] = [...selectedItems, ...unselectedItems];
 
   return (
     <div className="rounded-[10px] border border-border bg-white p-[26px]" style={{ borderTop: "3px solid var(--color-coral)" }}>
@@ -135,14 +154,19 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
           100% to charity
         </div>
         <div className="text-xs font-light leading-[1.6] text-muted">
-          givenest donates this amount directly to your chosen charity at
+          givenest donates this amount directly to your chosen {charities.length > 1 ? "charities" : "charity"} at
           closing. Nothing extra from you.
         </div>
       </div>
 
       {/* Charity search */}
       <div className="mb-2">
-        <div className="mb-[7px] text-xs text-muted">Choose your charity</div>
+        <div className="mb-[7px] text-xs text-muted">
+          Choose your {charities.length > 1 ? "charities" : "charity"}
+          {charities.length > 0 && (
+            <span className="ml-1 font-medium text-coral">({charities.length} selected)</span>
+          )}
+        </div>
         <input
           className="w-full rounded-md border border-border bg-white px-[14px] py-[11px] text-sm outline-none transition-colors placeholder:text-[#c0bdb6] focus:border-coral"
           placeholder="Search 1.8M+ nonprofits..."
@@ -153,22 +177,31 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
 
       {/* List label */}
       <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
-        {showFeatured ? "Featured charities" : loading ? "Searching…" : `${results.length} results`}
+        {charities.length > 0 ? "Selected" : showFeatured ? "Featured charities" : loading ? "Searching…" : `${results.length} results`}
       </div>
 
-      <div className="mb-[14px] flex max-h-[200px] flex-col gap-1 overflow-y-auto">
+      <div className="mb-[14px] flex max-h-[220px] flex-col gap-1 overflow-y-auto">
         {listItems.map((c, i) => {
-          const isSelected = charity?.ein === c.ein;
-          const showFavLabel = showFeatured && c.isFav && listItems[i - 1]?.isSeed;
+          const isSelected = selectedEins.has(c.ein);
+          // Show "Featured / Your saved / Results" divider between selected and unselected
+          const prevIsSelected = i > 0 && selectedEins.has(listItems[i - 1].ein);
+          const showDivider = charities.length > 0 && !isSelected && prevIsSelected;
+          const showFavLabel = showFeatured && c.isFav && !isSelected && listItems[i - 1] && !listItems[i - 1].isFav;
+
           return (
             <div key={c.ein || c.name}>
+              {showDivider && (
+                <div className="mb-1 mt-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+                  {showFeatured ? "Featured charities" : loading ? "Searching…" : "Results"}
+                </div>
+              )}
               {showFavLabel && (
                 <div className="mb-1 mt-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
                   Your saved
                 </div>
               )}
               <button
-                onClick={() => setCharity(c)}
+                onClick={() => toggleCharity(c)}
                 className={`flex w-full items-center justify-between rounded-[5px] border px-[10px] py-2 text-left transition-all ${
                   isSelected
                     ? "border-coral bg-coral/[0.08]"
@@ -200,7 +233,7 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
             </div>
           );
         })}
-        {!showFeatured && !loading && results.length === 0 && (
+        {!showFeatured && !loading && results.length === 0 && charities.length === 0 && (
           <div className="py-3 text-center text-xs text-muted">No results found</div>
         )}
       </div>
@@ -251,7 +284,7 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
                       name: formData.name,
                       email: formData.email,
                       phone: formData.phone,
-                      charity: charity?.name,
+                      charity: charities.map((c) => c.name).join(", ") || undefined,
                       homeValue: fmt(price),
                       givingAmount: fmt(givingPool),
                     }),
