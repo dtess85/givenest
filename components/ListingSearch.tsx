@@ -165,7 +165,7 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
   // ── Variant-dependent shell styling ──────────────────────────────────────
   const shellClass =
     variant === "nav"
-      ? "flex overflow-hidden rounded-full border border-border"
+      ? "flex overflow-hidden rounded-lg border border-border"
       : "flex overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]";
   const inputClass =
     variant === "nav"
