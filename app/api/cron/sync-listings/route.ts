@@ -1,8 +1,12 @@
+export const maxDuration = 300; // 5 min — full sync takes ~70s, well within Pro limit
+
 /**
  * Spark → Supabase listings sync
  *
  * Normal run (every 15 min via Vercel Cron):
- *   Fetches listings modified in the last 30 minutes and upserts them.
+ *   Fetches listings modified in the last 90 minutes and upserts them.
+ *   The 90-min lookback means up to 5 consecutive sync failures can occur
+ *   before any data is actually missed.
  *
  * Full sync (manual bootstrap or recovery):
  *   GET /api/cron/sync-listings?full=1
@@ -28,8 +32,10 @@ const SYNC_FIELDS = [
   "BathsFull",
   "BathsHalf",
   "StreetNumber",
+  "StreetDirPrefix",
   "StreetName",
   "StreetSuffix",
+  "StreetDirSuffix",
   "City",
   "StateOrProvince",
   "PostalCode",
@@ -69,8 +75,10 @@ interface SparkSyncListing {
     BathsFull: number | string;
     BathsHalf: number | string | null;
     StreetNumber: string;
+    StreetDirPrefix: string | null;
     StreetName: string;
     StreetSuffix: string | null;
+    StreetDirSuffix: string | null;
     City: string;
     StateOrProvince: string;
     PostalCode: string;
@@ -107,9 +115,13 @@ function toUpsertData(listing: SparkSyncListing): ListingUpsertData | null {
   const price = num(f.ListPrice);
   if (price !== null && price > 0 && price < 15_000) return null;
 
+  const streetDirPrefix = titleCase(f.StreetDirPrefix);
   const streetName = titleCase(f.StreetName);
   const streetSuffix = titleCase(f.StreetSuffix);
-  const address = [f.StreetNumber, streetName, streetSuffix].filter(Boolean).join(" ");
+  const streetDirSuffix = titleCase(f.StreetDirSuffix);
+  const address = [f.StreetNumber, streetDirPrefix, streetName, streetSuffix, streetDirSuffix]
+    .filter(Boolean)
+    .join(" ");
 
   const bathsFull = num(f.BathsFull) ?? 0;
   const bathsHalf = num(f.BathsHalf) ?? 0;
@@ -182,6 +194,7 @@ export async function GET(request: Request) {
   let totalFetched = 0;
   let totalUpserted = 0;
 
+  try {
   if (isFull) {
     // ── Full sync: paginate through all active AZ listings ─────────────────
     let page = 1;
@@ -202,18 +215,29 @@ export async function GET(request: Request) {
       page++;
     }
   } else {
-    // ── Incremental sync: last 30 minutes of changes ───────────────────────
-    const windowMs = 30 * 60 * 1000;
-    const since = new Date(Date.now() - windowMs).toISOString().replace(".000", "");
+    // ── Incremental sync: last 90 minutes of changes ───────────────────────
+    // Wide window = resilient to missed crons. Since upsert is idempotent on
+    // spark_listing_key, re-processing the same rows costs nothing.
+    const windowMs = 90 * 60 * 1000;
+    const since = new Date(Date.now() - windowMs).toISOString().replace(/\.\d{3}/, "");
     const filter = `${BASE_FILTER} And ModificationTimestamp Gt '${since}'`;
 
-    const listings = await fetchPage(filter, 1);
-    const rows = listings.map(toUpsertData).filter((r): r is ListingUpsertData => r !== null);
-    totalFetched = listings.length;
+    // Paginate — a 90-min window with heavy MLS churn can exceed one page
+    let page = 1;
+    while (true) {
+      const listings = await fetchPage(filter, page);
+      if (listings.length === 0) break;
 
-    if (rows.length > 0) {
-      await upsertListings(rows);
-      totalUpserted = rows.length;
+      const rows = listings.map(toUpsertData).filter((r): r is ListingUpsertData => r !== null);
+      totalFetched += listings.length;
+
+      if (rows.length > 0) {
+        await upsertListings(rows);
+        totalUpserted += rows.length;
+      }
+
+      if (listings.length < 1000) break;
+      page++;
     }
   }
 
@@ -226,4 +250,9 @@ export async function GET(request: Request) {
     upserted: totalUpserted,
     elapsedSeconds: parseFloat(elapsed),
   });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Sync error:", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

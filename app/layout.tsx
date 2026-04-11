@@ -21,7 +21,11 @@ export const metadata: Metadata = {
   title: "givenest — Every Home Funds a Cause",
   description:
     "Buy or sell with givenest and we donate to a charity of your choice at closing — at no extra cost. Arizona's giving brokerage.",
-  icons: { icon: "/favicon.png" },
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

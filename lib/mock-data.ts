@@ -20,6 +20,7 @@ export interface Property {
   listingDate?: string; // ISO date string
   daysOnMarket?: number;
   listOfficeName?: string; // Listing brokerage (IDX attribution)
+  listAgentName?: string;
   latitude?: number;
   longitude?: number;
   thumbnails?: string[]; // Uri640 — optimized for listing cards (~30% smaller than Uri800)

@@ -268,6 +268,17 @@ function BuyPage() {
   const [selectedLocation, setSelectedLocation] = useState<LocationSuggestion | null>(urlLocation);
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const [searchPlaceholder, setSearchPlaceholder] = useState("City, Neighborhood, Address, ZIP, Agent, MLS #");
+  useEffect(() => {
+    const update = () => setSearchPlaceholder(
+      window.innerWidth < 640
+        ? "City, Address, ZIP, Agent, MLS #"
+        : "City, Neighborhood, Address, ZIP, Agent, MLS #"
+    );
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
   // Live address search results
   const [addressResults, setAddressResults] = useState<Property[]>([]);
   const [addressSearchLoading, setAddressSearchLoading] = useState(false);
@@ -492,7 +503,10 @@ function BuyPage() {
         setProperties(data.listings ?? []);
         setPinnedListings(data.pinnedListings ?? []);
       } else {
-        setProperties((prev) => [...prev, ...(data.listings ?? [])]);
+        setProperties((prev) => {
+          const seen = new Set(prev.map((l) => l.slug));
+          return [...prev, ...(data.listings ?? []).filter((l: Property) => !seen.has(l.slug))];
+        });
       }
       setTotal(data.total ?? 0);
       const totalPages = data.totalPages ?? 1;
@@ -631,30 +645,66 @@ function BuyPage() {
     return true;
   });
 
-  // Sort: for "recommended" on page 1, pin Givenest listings first (fetched separately by API),
-  // then proximity-sort the rest. Other sorts trust the API ordering.
+  // Sort: for "recommended", pin Givenest listings first (fetched separately by the API),
+  // then rank the rest by a composite score that blends:
+  //   • Location — closer to the user scores higher
+  //   • Days on market — fresher listings score higher
+  //   • Price — listings above the pool's average price get a logarithmic boost
+  // Other sorts trust the API ordering.
   const sorted = useMemo(() => {
     if (sortBy !== "recommended") return filtered;
 
-    // Build a deduped set: pinned Givenest listings first, then the rest sorted by proximity
     const pinnedSlugs = new Set(pinnedListings.map((l) => l.slug));
     const rest = filtered.filter((l) => !pinnedSlugs.has(l.slug));
 
-    if (userLat !== null && userLng !== null) {
-      rest.sort((a, b) => {
-        const aDist =
-          a.latitude != null && a.longitude != null
-            ? haversine(userLat, userLng, a.latitude, a.longitude)
-            : Infinity;
-        const bDist =
-          b.latitude != null && b.longitude != null
-            ? haversine(userLat, userLng, b.latitude, b.longitude)
-            : Infinity;
-        return aDist - bDist;
-      });
-    }
+    // Pool average price — reference point for the above-average boost.
+    const prices = rest.map((l) => l.price).filter((p) => p > 0);
+    const avgPrice = prices.length
+      ? prices.reduce((s, p) => s + p, 0) / prices.length
+      : 0;
 
-    return [...pinnedListings, ...rest];
+    // Distance score: 1.0 at 0 miles, falls linearly to 0 at 50+ miles.
+    // If we don't know the user's location yet, everyone gets a neutral 0.5.
+    const distanceScore = (lat?: number, lng?: number): number => {
+      if (userLat === null || userLng === null) return 0.5;
+      if (lat == null || lng == null) return 0;
+      const d = haversine(userLat, userLng, lat, lng);
+      return Math.max(0, 1 - d / 50);
+    };
+
+    // Freshness score: 1.0 when brand new, exponential decay (~30-day half-life).
+    const freshnessScore = (dom?: number): number => {
+      if (dom == null) return 0.5;
+      return Math.exp(-Math.max(0, dom) / 30);
+    };
+
+    // Price score: above-average prices get a logarithmic boost (capped at 2.5).
+    // Below-average prices are proportionally penalized.
+    const priceScore = (price: number): number => {
+      if (avgPrice <= 0 || price <= 0) return 0.5;
+      if (price >= avgPrice) {
+        return Math.min(2.5, 1 + Math.log10(price / avgPrice) * 1.5);
+      }
+      return price / avgPrice;
+    };
+
+    // Weights — price premium carries the most weight per the recommended
+    // ranking intent, followed by location, then freshness.
+    const W_LOC = 0.30;
+    const W_DOM = 0.25;
+    const W_PRC = 0.45;
+
+    const scored = rest.map((l) => ({
+      listing: l,
+      score:
+        W_LOC * distanceScore(l.latitude, l.longitude) +
+        W_DOM * freshnessScore(l.daysOnMarket) +
+        W_PRC * priceScore(l.price),
+    }));
+
+    scored.sort((a, b) => b.score - a.score);
+
+    return [...pinnedListings, ...scored.map((s) => s.listing)];
   }, [filtered, pinnedListings, userLat, userLng, sortBy]);
 
   const selectClass =
@@ -690,13 +740,12 @@ function BuyPage() {
               <div className="flex overflow-hidden rounded-lg border border-border bg-white shadow-sm transition-colors focus-within:border-coral">
                 <input
                   className="min-w-0 flex-1 bg-transparent px-[16px] py-[10px] text-[15px] outline-none placeholder:text-[#c0bdb6]"
-                  placeholder="City, Neighborhood, Address, ZIP, Agent, MLS #"
+                  placeholder={searchPlaceholder}
                   value={searchInput}
                   onFocus={() => setSearchDropdownOpen(true)}
                   onChange={(e) => {
                     const val = e.target.value;
                     setSearchInput(val);
-                    setSearch(val); // also drives client-side address filter
                     if (selectedLocation) setSelectedLocation(null); // clear API location on edit
                     setSearchDropdownOpen(true);
                   }}

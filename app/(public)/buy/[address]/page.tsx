@@ -32,6 +32,47 @@ export default function PropertyDetail() {
   const [mobilePhotoIndex, setMobilePhotoIndex] = useState(0);
   const mobileCarouselRef = useRef<HTMLDivElement>(null);
 
+  // ── Favorites: localStorage-backed. A future login will replace this with a
+  //    server-side list, but the slug-keyed set is the same shape either way.
+  const FAVORITES_KEY = "givenest:favorites";
+  const [isFavorited, setIsFavorited] = useState(false);
+  useEffect(() => {
+    if (!property || typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(FAVORITES_KEY);
+      const set: string[] = raw ? JSON.parse(raw) : [];
+      setIsFavorited(set.includes(property.slug));
+    } catch { /* corrupt JSON — ignore */ }
+  }, [property]);
+  function toggleFavorite() {
+    if (!property || typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(FAVORITES_KEY);
+      const set: string[] = raw ? JSON.parse(raw) : [];
+      const next = set.includes(property.slug)
+        ? set.filter((s) => s !== property.slug)
+        : [...set, property.slug];
+      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
+      setIsFavorited(next.includes(property.slug));
+    } catch { /* quota exceeded or disabled — ignore */ }
+  }
+
+  // ── Share: Web Share API on mobile, clipboard fallback on desktop
+  const [shareCopied, setShareCopied] = useState(false);
+  async function handleShare() {
+    if (!property || typeof window === "undefined") return;
+    const url = window.location.href;
+    const title = `${property.address} · ${fmt(property.price)}`;
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try { await navigator.share({ title, url }); return; } catch { /* user dismissed */ }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1800);
+    } catch { /* clipboard blocked — ignore */ }
+  }
+
   // Fetch listing from Spark API
   useEffect(() => {
     const key = params.address as string;
@@ -369,8 +410,8 @@ export default function PropertyDetail() {
               <div className="border-t border-border pt-6">
                 <h2 className="mb-3 font-serif text-[20px] font-medium tracking-[-0.01em]">About this home</h2>
                 <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-[#4a4845]">
-                  {displayed.split("\n\n").map((para, i) => (
-                    <p key={i}>{para}</p>
+                  {displayed.split(/\r?\n\r?\n/).map((para, i) => (
+                    <p key={i}>{para.replace(/\r\n/g, "\n")}</p>
                   ))}
                 </div>
                 {isLong && (
@@ -499,7 +540,7 @@ export default function PropertyDetail() {
           <div className="hidden lg:block border-t border-border pt-5 pb-4">
             <p className="mb-4 text-[13px] text-muted">
               {property.listOfficeName ? (
-                <>Listing courtesy of <span className="font-medium text-[#2a2825]">{property.listOfficeName}</span> via <span className="font-medium text-[#2a2825]">ARMLS</span></>
+                <>Listing courtesy of{property.listAgentName && <> <span className="font-medium text-[#2a2825]">{property.listAgentName}</span> ·</>} <span className="font-medium text-[#2a2825]">{property.listOfficeName}</span> via <span className="font-medium text-[#2a2825]">ARMLS</span></>
               ) : (
                 <>Listed by <span className="font-medium text-[#2a2825]">Kyndall Yates</span><span className="mx-2 text-border">•</span><span className="font-medium text-[#2a2825]">Givenest</span></>
               )}
@@ -666,9 +707,11 @@ export default function PropertyDetail() {
     <div className="lg:hidden mx-auto max-w-[1200px] px-6 pb-8">
       <div className="border-t border-border pt-5 pb-4">
         <p className="mb-4 text-[13px] text-muted">
-          Listed by <span className="font-medium text-[#2a2825]">Kyndall Yates</span>
-          <span className="mx-2 text-border">•</span>
-          <span className="font-medium text-[#2a2825]">Givenest</span>
+          {property.listOfficeName ? (
+            <>Listing courtesy of{property.listAgentName && <> <span className="font-medium text-[#2a2825]">{property.listAgentName}</span> ·</>} <span className="font-medium text-[#2a2825]">{property.listOfficeName}</span> via <span className="font-medium text-[#2a2825]">ARMLS</span></>
+          ) : (
+            <>Listed by <span className="font-medium text-[#2a2825]">Kyndall Yates</span><span className="mx-2 text-border">•</span><span className="font-medium text-[#2a2825]">Givenest</span></>
+          )}
         </p>
         <div className="flex flex-col gap-[6px] text-[12px] text-muted">
           {listingUpdated && (
@@ -778,55 +821,230 @@ export default function PropertyDetail() {
 
     {/* Photo modal — rendered via portal to escape stacking context */}
     {mounted && photoModalOpen && (property.images?.length ?? 0) > 0 && createPortal(
-      <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", zIndex: 9999, background: "rgba(245,244,242,0.97)", display: "flex" }} onClick={() => setPhotoModalOpen(false)}>
-        <div className="flex flex-1 flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
-          {/* Header */}
-          <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-white px-6 py-4">
-            <div>
-              <div className="font-serif text-[15px] font-medium tracking-[-0.01em]">{property.address}</div>
-              <div className="text-[12px] text-muted">{property.images!.length} photo{property.images!.length !== 1 ? "s" : ""}</div>
-            </div>
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", zIndex: 9999, background: "rgba(245,244,242,0.97)", display: "flex", flexDirection: "column" }} onClick={() => setPhotoModalOpen(false)}>
+        {/* Header — X left, category tabs center, Favorite + Share right */}
+        <div
+          className="flex flex-shrink-0 items-center justify-between border-b border-border bg-white px-5 py-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* X close — top left */}
+          <button
+            onClick={() => setPhotoModalOpen(false)}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-white text-muted transition-colors hover:border-coral hover:text-coral"
+            aria-label="Close photo viewer"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Category tabs — placeholder. MLS feed doesn't return per-photo
+              categories (Caption is empty, Name is just numeric). Leaving the
+              slot wired up so we can plug in AI labeling or another source later. */}
+          <div className="hidden md:flex items-center gap-1 rounded-full border border-border bg-[#F5F4F2] p-1">
+            <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium shadow-sm">
+              All {property.images!.length}
+            </span>
+            <span className="px-3 py-1 text-[11px] text-muted/60" title="Photo categories will appear here once categorization data is available">
+              Photos by category — coming soon
+            </span>
+          </div>
+
+          {/* Favorite + Share — top right */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setPhotoModalOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-white text-muted transition-colors hover:border-coral hover:text-coral"
+              onClick={toggleFavorite}
+              className={`flex h-9 items-center gap-[6px] rounded-full border px-3 text-[12px] font-medium transition-colors ${
+                isFavorited
+                  ? "border-coral bg-coral/10 text-coral"
+                  : "border-border bg-white text-muted hover:border-coral hover:text-coral"
+              }`}
+              aria-label={isFavorited ? "Remove from favorites" : "Save to favorites"}
+            >
+              <svg className="h-4 w-4" fill={isFavorited ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              <span className="hidden sm:inline">{isFavorited ? "Saved" : "Save"}</span>
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex h-9 items-center gap-[6px] rounded-full border border-border bg-white px-3 text-[12px] font-medium text-muted transition-colors hover:border-coral hover:text-coral"
+              aria-label="Share listing"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
+              <span className="hidden sm:inline">{shareCopied ? "Copied!" : "Share"}</span>
             </button>
           </div>
-          {/* Body */}
-          <div className="flex flex-1 gap-6 overflow-y-auto p-6">
-            {/* Photos */}
-            <div className="flex flex-1 flex-col gap-4">
-              {property.images!.map((src, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={i}
-                  src={src}
-                  alt={`${property.address} photo ${i + 1}`}
-                  className="w-full rounded-[10px] object-cover shadow-sm"
-                />
-              ))}
-            </div>
-            {/* Right sidebar: agent card + giving panel */}
-            <div className="hidden w-[300px] flex-shrink-0 lg:flex lg:flex-col lg:gap-4 overflow-y-auto">
-              <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
-                <div className="border-b border-border px-4 py-3">
+        </div>
+
+        {/* Body — photos scroll left, sticky sidebar right */}
+        <div
+          className="flex flex-1 gap-6 overflow-hidden p-6"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Photos — scroll column */}
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto">
+            {property.images!.map((src, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={src}
+                alt={`${property.address} photo ${i + 1}`}
+                className="w-full rounded-[10px] object-cover shadow-sm"
+              />
+            ))}
+          </div>
+
+          {/* Sticky price sidebar — right */}
+          <div className="hidden w-[320px] flex-shrink-0 lg:block">
+            <div className="sticky top-0 flex flex-col gap-4">
+              <div className="overflow-hidden rounded-[12px] border border-border bg-white shadow-sm" style={{ borderTop: "3px solid var(--color-coral)" }}>
+                {/* Price + address */}
+                <div className="px-5 pt-5 pb-4">
+                  {property.status && (
+                    <span className={`mb-3 inline-flex items-center gap-[5px] rounded-full border px-2 py-[3px] text-[10px] font-medium uppercase tracking-[0.07em] ${
+                      property.status === "For Sale"    ? "border-green-200 bg-green-50 text-green-700" :
+                      property.status === "Pending"     ? "border-yellow-200 bg-yellow-50 text-yellow-700" :
+                      property.status === "Contingent"  ? "border-orange-200 bg-orange-50 text-orange-700" :
+                      property.status === "Coming Soon" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                      property.status === "Sold"        ? "border-red-200 bg-red-50 text-red-700" :
+                      "border-border bg-[#F0EDE7] text-muted"
+                    }`}>
+                      <span className={`h-[6px] w-[6px] rounded-full ${
+                        property.status === "For Sale"    ? "bg-green-500" :
+                        property.status === "Pending"     ? "bg-yellow-500" :
+                        property.status === "Contingent"  ? "bg-orange-500" :
+                        property.status === "Coming Soon" ? "bg-blue-500" :
+                        property.status === "Sold"        ? "bg-red-500" :
+                        "bg-muted"
+                      }`} />
+                      {property.status}
+                    </span>
+                  )}
+                  <div className="font-serif text-[26px] font-medium tracking-[-0.02em] leading-tight">
+                    {fmt(property.price)}
+                  </div>
+                  <div className="mt-3 font-serif text-[15px] font-medium tracking-[-0.01em] leading-snug">
+                    {property.address}
+                  </div>
+                  <div className="text-[12px] text-muted">{property.city}</div>
+                </div>
+                {/* Beds / baths / sqft row */}
+                <div className="flex items-center gap-4 border-t border-border bg-[#FBFAF8] px-5 py-3">
+                  <div>
+                    <div className="text-[10px] font-medium uppercase tracking-[0.07em] text-muted">Beds</div>
+                    <div className="text-[14px] font-semibold">{property.beds}</div>
+                  </div>
+                  <div className="h-6 w-px bg-border" />
+                  <div>
+                    <div className="text-[10px] font-medium uppercase tracking-[0.07em] text-muted">Baths</div>
+                    <div className="text-[14px] font-semibold">{property.baths}</div>
+                  </div>
+                  <div className="h-6 w-px bg-border" />
+                  <div>
+                    <div className="text-[10px] font-medium uppercase tracking-[0.07em] text-muted">Sqft</div>
+                    <div className="text-[14px] font-semibold">{property.sqft.toLocaleString()}</div>
+                  </div>
+                </div>
+                {/* Contact an agent — same card, continued */}
+                <div className="border-t border-border px-5 py-3">
                   <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Contact an agent</h3>
                 </div>
-                {AGENTS.map((a) => (
-                  <div key={a.initials} className="flex items-center gap-3 px-4 py-4">
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
-                      {a.initials}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-medium">{a.name}</div>
-                      <a href={`mailto:${a.email}`} className="block truncate text-[11px] text-coral hover:underline">{a.email}</a>
-                      <a href={`tel:${a.phone.replace(/\D/g, "")}`} className="block text-[11px] text-muted hover:text-black">{a.phone}</a>
-                    </div>
-                  </div>
-                ))}
+                <div className="flex flex-col divide-y divide-border">
+                  {AGENTS.map((a) => {
+                    const isActive = activeAgent === a.initials;
+                    const isSubmitted = submittedAgents.has(a.initials);
+                    return (
+                      <div key={a.initials}>
+                        <div className="flex items-center gap-3 px-5 py-4">
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[12px] font-medium text-white">
+                            {a.initials}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[13px] font-medium">{a.name}</div>
+                            <a href={`mailto:${a.email}`} className="block truncate text-[12px] text-coral hover:underline">{a.email}</a>
+                            <a href={`tel:${a.phone.replace(/\D/g, "")}`} className="block text-[12px] text-muted hover:text-black">{a.phone}</a>
+                          </div>
+                          <button
+                            onClick={() => {
+                              if (!isSubmitted) {
+                                setActiveAgent(isActive ? null : a.initials);
+                                setFormData({ name: "", email: "", phone: "" });
+                              }
+                            }}
+                            className={`flex-shrink-0 rounded-md border px-3 py-[6px] text-[12px] transition-all ${
+                              isSubmitted
+                                ? "border-border text-muted cursor-default"
+                                : isActive
+                                ? "border-coral text-coral"
+                                : "border-border hover:border-coral hover:text-coral"
+                            }`}
+                          >
+                            {isSubmitted ? "✓ Sent" : "Contact"}
+                          </button>
+                        </div>
+                        {isActive && !isSubmitted && (
+                          <div className="border-t border-border bg-[#FAFAF8] px-5 py-3">
+                            <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">Your contact info</div>
+                            <div className="flex flex-col gap-2">
+                              <input
+                                className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                                placeholder="Full name"
+                                value={formData.name}
+                                onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
+                              />
+                              <input
+                                type="email"
+                                className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                                placeholder="Email address"
+                                value={formData.email}
+                                onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+                              />
+                              <input
+                                type="tel"
+                                className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                                placeholder="Phone (optional)"
+                                value={formData.phone}
+                                onChange={(e) => setFormData((f) => ({ ...f, phone: e.target.value }))}
+                              />
+                              <button
+                                onClick={async () => {
+                                  if (!formData.name || !formData.email) return;
+                                  setSending(true);
+                                  try {
+                                    await fetch("/api/agent-request", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                        name: formData.name,
+                                        email: formData.email,
+                                        phone: formData.phone,
+                                        agentName: a.name,
+                                        propertyAddress: property.address,
+                                      }),
+                                    });
+                                  } finally {
+                                    setSending(false);
+                                    setSubmittedAgents((prev) => new Set(prev).add(a.initials));
+                                    setActiveAgent(null);
+                                  }
+                                }}
+                                disabled={!formData.name || !formData.email || sending}
+                                className={`w-full rounded-md bg-coral py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a] ${
+                                  !formData.name || !formData.email || sending ? "cursor-default opacity-40" : "cursor-pointer"
+                                }`}
+                              >
+                                {sending ? "Sending…" : "Send request"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               <GivingPanel price={property.price} variant="property" />
             </div>

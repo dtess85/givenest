@@ -13,13 +13,16 @@ const FIELDS = [
   "LivingArea",
   "City",
   "StreetNumber",
+  "StreetDirPrefix",
   "StreetName",
   "StreetSuffix",
+  "StreetDirSuffix",
   "StateOrProvince",
   "PostalCode",
   "PropertySubType",
   "MlsStatus",
   "PublicRemarks",
+  "SupplementalRemarks",
   "YearBuilt",
   "LotSizeAcres",
   "AssociationFee",
@@ -27,13 +30,13 @@ const FIELDS = [
   "ListingContractDate",
   "StatusChangeTimestamp",
   "ListOfficeName",
-  "ListAgentFullName",
+  "ListAgentName",
   "Latitude",
   "Longitude",
   "SubdivisionName",
   "BackOnMarketDate",
   "ModificationTimestamp",
-  "CumulativeDaysOnMarket",
+  "OnMarketDate",
 ].join(",");
 
 export interface SparkOpenHouse {
@@ -64,13 +67,16 @@ export interface SparkStandardFields {
   LivingArea: number | null;
   City: string;
   StreetNumber: string;
+  StreetDirPrefix: string | null;
   StreetName: string;
   StreetSuffix: string | null;
+  StreetDirSuffix: string | null;
   StateOrProvince: string;
   PostalCode: string;
   PropertySubType: string | null;
   MlsStatus: string;
   PublicRemarks: string | null;
+  SupplementalRemarks: string | null;
   YearBuilt: number | null;
   LotSizeAcres: number | null;
   AssociationFee: number | null;
@@ -78,7 +84,8 @@ export interface SparkStandardFields {
   ListingContractDate: string | null;
   StatusChangeTimestamp: string | null;
   ListOfficeName: string | null;
-  ListAgentFullName: string | null;
+  ListAgentName: string | null;
+  OnMarketDate?: string | null;
   Latitude: number | null;
   Longitude: number | null;
   SubdivisionName: string | null;
@@ -142,7 +149,13 @@ function num(val: unknown): number | null {
 
 export function sparkToProperty(listing: SparkListing): Property {
   const f = listing.StandardFields;
-  const address = [f.StreetNumber, titleCaseStreet(f.StreetName), titleCaseStreet(f.StreetSuffix)]
+  const address = [
+    f.StreetNumber,
+    titleCaseStreet(f.StreetDirPrefix),
+    titleCaseStreet(f.StreetName),
+    titleCaseStreet(f.StreetSuffix),
+    titleCaseStreet(f.StreetDirSuffix),
+  ]
     .filter(Boolean)
     .join(" ");
 
@@ -165,9 +178,9 @@ export function sparkToProperty(listing: SparkListing): Property {
     sqft: num(f.LivingArea) ?? 0,
     type: f.PropertySubType ?? "Residential",
     status: MLS_STATUS_MAP[f.MlsStatus] ?? "For Sale",
-    images: photos.map((p) => p.Uri800),       // full-res for detail page
-    thumbnails: photos.map((p) => p.Uri640),   // optimized for listing cards
-    description: f.PublicRemarks ?? undefined,
+    images: photos.map((p) => p.Uri1280 || p.Uri800), // high-res for detail page modal
+    thumbnails: photos.map((p) => p.Uri640),          // optimized for listing cards
+    description: [f.PublicRemarks, f.SupplementalRemarks].filter(Boolean).join("\r\n\r\n") || undefined,
     yearBuilt: num(f.YearBuilt) ?? undefined,
     lotSize: num(f.LotSizeAcres) ? `${f.LotSizeAcres} acres` : undefined,
     hoaDues: num(f.AssociationFee) ?? undefined,
@@ -177,12 +190,18 @@ export function sparkToProperty(listing: SparkListing): Property {
     mlsNumber: f.ListingId ?? undefined,
     listingDate: f.StatusChangeTimestamp ?? f.ListingContractDate ?? undefined,
     listOfficeName: f.ListOfficeName ?? undefined,
+    listAgentName: f.ListAgentName ?? undefined,
     latitude: num(f.Latitude) ?? undefined,
     longitude: num(f.Longitude) ?? undefined,
     neighborhood: f.SubdivisionName ?? undefined,
     backOnMarketDate: f.BackOnMarketDate ?? undefined,
     modifiedAt: f.ModificationTimestamp ?? undefined,
-    daysOnMarket: f.CumulativeDaysOnMarket ?? undefined,
+    daysOnMarket: (() => {
+      // Prefer OnMarketDate — represents when the listing actually went live to buyers.
+      // Fall back to ListingContractDate if OnMarketDate is missing.
+      const d = f.OnMarketDate ?? f.ListingContractDate;
+      return d ? Math.floor((Date.now() - new Date(d).getTime()) / 86_400_000) : undefined;
+    })(),
     openHouses: f.OpenHouses
       ?.filter((oh) => oh.Type !== "Appointment Only")
       .map((oh) => ({ date: oh.Date, startTime: oh.StartTime, endTime: oh.EndTime })),
