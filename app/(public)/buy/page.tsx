@@ -390,10 +390,30 @@ function BuyPage() {
           setUserLat(data.lat);
           setUserLng(data.lng);
           setLocationSource("ip");
-          // Auto-select nearest city if user is in AZ and hasn't picked one manually.
-          // Uses haversine against city coordinates instead of exact name match so any
-          // AZ IP location (even cities not in our list) resolves to the closest city.
-          // Location coords are used only for distance sorting — not shown in search bar
+          // Blank state: if the user hasn't picked a location and there's nothing in the URL,
+          // auto-select the nearest AZ city so the buy page opens localized to them.
+          // Uses haversine against each city's coordinates so any AZ IP (including cities
+          // outside our known list) resolves to the closest city we do know about.
+          if (!userSetLocation.current && !selectedLocation) {
+            const cities = AZ_LOCATIONS.filter(
+              (l): l is LocationSuggestion & { lat: number; lng: number } =>
+                l.type === "city" && typeof l.lat === "number" && typeof l.lng === "number"
+            );
+            let nearest: (typeof cities)[number] | null = null;
+            let nearestDist = Infinity;
+            for (const c of cities) {
+              const d = haversine(data.lat, data.lng, c.lat, c.lng);
+              if (d < nearestDist) {
+                nearestDist = d;
+                nearest = c;
+              }
+            }
+            // Only auto-apply if the user is plausibly in/near AZ (~120 mi from a known city)
+            if (nearest && nearestDist < 120) {
+              setSelectedLocation(nearest);
+              setSearchInput(nearest.label);
+            }
+          }
         }
       })
       .catch(() => {})
@@ -645,13 +665,41 @@ function BuyPage() {
     return true;
   });
 
-  // Sort: for "recommended", pin Givenest listings first (fetched separately by the API),
-  // then rank the rest by a composite score that blends:
-  //   • Location — closer to the user scores higher
-  //   • Days on market — fresher listings score higher
-  //   • Price — listings above the pool's average price get a logarithmic boost
-  // Other sorts trust the API ordering.
+  // Sort:
+  //   • "recommended" — pin Givenest listings first, then rank the rest by a
+  //     composite score that blends (in priority order):
+  //        1. Distance to the user (primary)
+  //        2. Days on market — fresher listings score higher (secondary)
+  //        3. Price — above-pool-average prices get a logarithmic boost (tertiary)
+  //   • "nearest" — strict ascending order by distance to the user.
+  //     Falls back to recommended when we don't yet know the user's location.
+  //   • All other sort values trust the server-side ordering from the API.
   const sorted = useMemo(() => {
+    // Distance score: 1.0 at 0 miles, falls linearly to 0 at 50+ miles.
+    // If we don't know the user's location yet, everyone gets a neutral 0.5.
+    const distanceScore = (lat?: number, lng?: number): number => {
+      if (userLat === null || userLng === null) return 0.5;
+      if (lat == null || lng == null) return 0;
+      const d = haversine(userLat, userLng, lat, lng);
+      return Math.max(0, 1 - d / 50);
+    };
+
+    // "Closest to me": raw miles ascending. Pinned Givenest listings still go first.
+    if (sortBy === "nearest") {
+      if (userLat === null || userLng === null) return filtered;
+      const pinnedSlugs = new Set(pinnedListings.map((l) => l.slug));
+      const rest = filtered.filter((l) => !pinnedSlugs.has(l.slug));
+      const withDistance = rest.map((l) => {
+        const dist =
+          l.latitude != null && l.longitude != null
+            ? haversine(userLat, userLng, l.latitude, l.longitude)
+            : Number.POSITIVE_INFINITY;
+        return { listing: l, dist };
+      });
+      withDistance.sort((a, b) => a.dist - b.dist);
+      return [...pinnedListings, ...withDistance.map((s) => s.listing)];
+    }
+
     if (sortBy !== "recommended") return filtered;
 
     const pinnedSlugs = new Set(pinnedListings.map((l) => l.slug));
@@ -662,15 +710,6 @@ function BuyPage() {
     const avgPrice = prices.length
       ? prices.reduce((s, p) => s + p, 0) / prices.length
       : 0;
-
-    // Distance score: 1.0 at 0 miles, falls linearly to 0 at 50+ miles.
-    // If we don't know the user's location yet, everyone gets a neutral 0.5.
-    const distanceScore = (lat?: number, lng?: number): number => {
-      if (userLat === null || userLng === null) return 0.5;
-      if (lat == null || lng == null) return 0;
-      const d = haversine(userLat, userLng, lat, lng);
-      return Math.max(0, 1 - d / 50);
-    };
 
     // Freshness score: 1.0 when brand new, exponential decay (~30-day half-life).
     const freshnessScore = (dom?: number): number => {
@@ -688,11 +727,11 @@ function BuyPage() {
       return price / avgPrice;
     };
 
-    // Weights — price premium carries the most weight per the recommended
-    // ranking intent, followed by location, then freshness.
-    const W_LOC = 0.30;
-    const W_DOM = 0.25;
-    const W_PRC = 0.45;
+    // Weights — distance is the PRIMARY ranking factor, followed by freshness,
+    // with price contributing a small tiebreaker boost.
+    const W_LOC = 0.55;
+    const W_DOM = 0.30;
+    const W_PRC = 0.15;
 
     const scored = rest.map((l) => ({
       listing: l,
@@ -1181,6 +1220,9 @@ function BuyPage() {
                 className="appearance-none rounded-md border border-border bg-white py-[7px] pl-3 pr-8 text-[13px] font-medium text-[#2a2825] outline-none focus:border-coral cursor-pointer"
               >
                 <option value="recommended">Recommended</option>
+                <option value="nearest" disabled={userLat === null || userLng === null}>
+                  Closest to me{userLat === null || userLng === null ? " (locating…)" : ""}
+                </option>
                 <option value="newest">Newest</option>
                 <option value="price_asc">Price (low to high)</option>
                 <option value="price_desc">Price (high to low)</option>
