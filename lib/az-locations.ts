@@ -1,9 +1,10 @@
 export type LocationSuggestion = {
-  type: "city" | "zip" | "subdivision";
+  type: "city" | "zip" | "subdivision" | "agent";
   label: string;
   city?: string;
   zip?: string;
   subdivision?: string; // exact SubdivisionName Eq value to pass to the API
+  agent?: string;       // exact ListAgentName Eq value to pass to the API
   lat?: number;
   lng?: number;
 };

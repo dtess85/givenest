@@ -215,6 +215,26 @@ export async function countListingsIndex(): Promise<number> {
   return rows[0]?.n ?? 0;
 }
 
+/**
+ * Look up Spark listing keys for a given agent name, restricted to active
+ * (on-market) listings. Spark's `ListAgentName` field is not searchable via
+ * SparkQL, so we use our local listings index as a secondary lookup and then
+ * filter Spark by the resulting keys.
+ */
+export async function getListingKeysByAgent(agentName: string, limit = 200): Promise<string[]> {
+  const { rows } = await pool.query(
+    `SELECT spark_listing_key
+     FROM listings
+     WHERE agent_name ILIKE $1
+       AND (mls_status IS NULL
+            OR mls_status IN ('Active', 'Active UCB', 'Coming Soon'))
+     ORDER BY modified_at DESC NULLS LAST
+     LIMIT $2`,
+    [agentName, limit]
+  );
+  return rows.map((r: { spark_listing_key: string }) => r.spark_listing_key);
+}
+
 function rowToResult(r: {
   spark_listing_key: string;
   address: string;

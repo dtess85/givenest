@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchSparkListings, countSparkListings } from "@/lib/spark";
 import { getActiveManualListings, manualListingToProperty } from "@/lib/db/listings";
+import { getListingKeysByAgent } from "@/lib/db/listings-index";
 import type { Property } from "@/lib/mock-data";
 
 // Property type UI label → ARMLS PropertySubType values
@@ -17,13 +18,14 @@ function applyManualFilters(listings: Property[], params: URLSearchParams): Prop
   const city = params.get("city");
   const zip = params.get("zip");
   const subdivision = params.get("subdivision");
+  const agent = params.get("agent");
   const minPrice = params.get("minPrice");
   const maxPrice = params.get("maxPrice");
   const type = params.get("type");
   const rawStatus = params.get("status");
 
   return listings.filter((p) => {
-    // Location: city/zip/subdivision — manual listing is included if no location filter,
+    // Location: city/zip/subdivision/agent — manual listing is included if no location filter,
     // or if it matches the specified filter
     if (city && !p.city.toLowerCase().startsWith(city.toLowerCase())) return false;
     if (zip) {
@@ -31,6 +33,9 @@ function applyManualFilters(listings: Property[], params: URLSearchParams): Prop
       if (!p.city.includes(zip)) return false;
     }
     if (subdivision && p.neighborhood?.toLowerCase() !== subdivision.toLowerCase()) return false;
+    // Manual listings don't carry an agent field; if the user is filtering by agent,
+    // exclude all manual listings.
+    if (agent) return false;
 
     // Price
     if (minPrice && p.price < Number(minPrice)) return false;
@@ -138,6 +143,25 @@ export async function GET(request: Request) {
   // Subdivision / community search
   const subdivision = searchParams.get("subdivision");
   if (subdivision) conditions.push(`SubdivisionName Eq '${subdivision.replace(/'/g, "")}'`);
+
+  // Agent name search — Spark's ListAgentName is NOT searchable via SparkQL,
+  // so we look up the matching spark_listing_keys from our Supabase index
+  // and restrict the Spark query to that key set with an OR group.
+  const agent = searchParams.get("agent");
+  if (agent) {
+    const agentKeys = await getListingKeysByAgent(agent);
+    if (agentKeys.length === 0) {
+      // No listings for this agent — short-circuit with an empty result set.
+      return NextResponse.json(
+        { listings: [], pinnedListings: [], total: 0, totalPages: 0 },
+        { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } }
+      );
+    }
+    const keyGroup = agentKeys
+      .map((k) => `ListingKey Eq '${k.replace(/'/g, "")}'`)
+      .join(" Or ");
+    conditions.push(`(${keyGroup})`);
+  }
 
   // Beds minimum
   const minBeds = searchParams.get("minBeds");

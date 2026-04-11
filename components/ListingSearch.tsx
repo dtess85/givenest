@@ -150,6 +150,7 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
     if (loc.type === "city" && loc.city) params.set("city", loc.city);
     else if (loc.type === "zip" && loc.zip) params.set("zip", loc.zip);
     else if (loc.type === "subdivision" && loc.subdivision) params.set("subdivision", loc.subdivision);
+    else if (loc.type === "agent" && loc.agent) params.set("agent", loc.agent);
     router.push(`/buy${params.toString() ? "?" + params.toString() : ""}`);
   }
 
@@ -299,7 +300,7 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
                 <button
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    navigateToLocation({ type: "subdivision", label: matchedAgentName, subdivision: matchedAgentName });
+                    navigateToLocation({ type: "agent", label: matchedAgentName, agent: matchedAgentName });
                   }}
                   className="flex w-full items-center gap-3 px-4 py-[9px] text-left hover:bg-[#F9F7F4] transition-colors"
                 >

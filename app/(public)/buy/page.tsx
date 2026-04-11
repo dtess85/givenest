@@ -20,6 +20,7 @@ function locationFromParams(p: URLSearchParams): LocationSuggestion | null {
   const city = p.get("city");
   const zip = p.get("zip");
   const subdivision = p.get("subdivision");
+  const agent = p.get("agent");
   if (city) {
     return (
       AZ_LOCATIONS.find((l) => l.type === "city" && l.city === city) ??
@@ -34,6 +35,9 @@ function locationFromParams(p: URLSearchParams): LocationSuggestion | null {
   }
   if (subdivision) {
     return { type: "subdivision", label: subdivision, subdivision };
+  }
+  if (agent) {
+    return { type: "agent", label: agent, agent };
   }
   return null;
 }
@@ -497,6 +501,7 @@ function BuyPage() {
     if (selectedLocation?.city) params.set("city", selectedLocation.city);
     if (selectedLocation?.zip) params.set("zip", selectedLocation.zip);
     if (selectedLocation?.subdivision) params.set("subdivision", selectedLocation.subdivision);
+    if (selectedLocation?.agent) params.set("agent", selectedLocation.agent);
     params.set("page", String(targetPage));
     params.set("limit", "12");
     params.set("sort", sortBy);
@@ -619,6 +624,7 @@ function BuyPage() {
     if (selectedLocation?.city) p.set("city", selectedLocation.city);
     if (selectedLocation?.zip) p.set("zip", selectedLocation.zip);
     if (selectedLocation?.subdivision) p.set("subdivision", selectedLocation.subdivision);
+    if (selectedLocation?.agent) p.set("agent", selectedLocation.agent);
     if (minPrice > 0) p.set("minPrice", String(minPrice));
     if (maxPrice !== Infinity) p.set("maxPrice", String(maxPrice));
     if (propertyTypes.size > 0) p.set("type", Array.from(propertyTypes).join(","));
@@ -898,7 +904,7 @@ function BuyPage() {
                         <button
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            selectLocation({ type: "subdivision", label: matchedAgentName, subdivision: matchedAgentName });
+                            selectLocation({ type: "agent", label: matchedAgentName, agent: matchedAgentName });
                           }}
                           className="flex w-full items-center gap-3 px-4 py-[9px] text-left hover:bg-[#F9F7F4] transition-colors"
                         >
@@ -1169,7 +1175,18 @@ function BuyPage() {
           {selectedLocation && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="flex items-center gap-[6px] rounded-full bg-coral/10 px-3 py-[5px] text-xs font-medium text-coral">
-                {selectedLocation.type === "city" ? <MapPinIcon /> : selectedLocation.type === "zip" ? <HashIcon /> : <HomeGridIcon />}
+                {selectedLocation.type === "city" ? (
+                  <MapPinIcon />
+                ) : selectedLocation.type === "zip" ? (
+                  <HashIcon />
+                ) : selectedLocation.type === "agent" ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                ) : (
+                  <HomeGridIcon />
+                )}
                 {selectedLocation.label}
                 <button
                   onClick={clearLocation}
