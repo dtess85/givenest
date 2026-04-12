@@ -10,6 +10,8 @@ import { fmt } from "@/lib/utils";
 import { calcGivingPool } from "@/lib/commission";
 import GivingPanel from "@/components/GivingPanel";
 import IdxAttribution from "@/components/IdxAttribution";
+import AgentPicker from "@/components/AgentPicker";
+import ConsultForm from "@/components/ConsultForm";
 
 export default function PropertyDetail() {
   const params = useParams();
@@ -28,6 +30,7 @@ export default function PropertyDetail() {
   useEffect(() => { setMounted(true); }, []);
   const [submittedAgents, setSubmittedAgents] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
+  const [chosenAgent, setChosenAgent] = useState<{ name: string; office_name: string | null } | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const [mobilePhotoIndex, setMobilePhotoIndex] = useState(0);
   const mobileCarouselRef = useRef<HTMLDivElement>(null);
@@ -693,6 +696,36 @@ export default function PropertyDetail() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Choose your agent */}
+          <div className="rounded-lg border border-border bg-white">
+            <div className="border-b border-border px-4 py-3">
+              <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Choose your agent</h3>
+              <p className="mt-1 text-[11px] text-muted">
+                Work with any Arizona Realtor. 25% of the total commission goes to charity.
+              </p>
+            </div>
+            <div className="px-4 py-3">
+              <AgentPicker
+                defaultAgent={{
+                  name: "Kyndall Yates",
+                  office_name: "Givenest",
+                  primary_city: "Gilbert",
+                  active_listing_count: 0,
+                  is_givenest: true,
+                }}
+                onSelect={(agent) => setChosenAgent({ name: agent.name, office_name: agent.office_name })}
+              />
+              <div className="mt-3">
+                <ConsultForm
+                  agentName={chosenAgent?.name ?? "Kyndall Yates"}
+                  agentOffice={chosenAgent?.office_name ?? "Givenest"}
+                  propertyAddress={property.address}
+                  source="property-page"
+                />
+              </div>
             </div>
           </div>
 

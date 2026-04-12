@@ -15,6 +15,7 @@ export interface ListingIndexRow {
   baths: number | null;
   neighborhood: string | null;
   agent_name: string | null;
+  list_office_name: string | null;
   status: string | null;
   mls_status: string | null;
   modified_at: string | null;
@@ -35,12 +36,13 @@ export interface ListingUpsertData {
   baths?: number | null;
   neighborhood?: string | null;
   agent_name?: string | null;
+  list_office_name?: string | null;
   status?: string | null;
   mls_status?: string | null;
   modified_at?: string | null;
 }
 
-const COLS = 17; // number of columns per row
+const COLS = 18; // number of columns per row
 
 /**
  * Batch upsert listings by spark_listing_key.
@@ -79,6 +81,7 @@ export async function upsertListings(listings: ListingUpsertData[]): Promise<voi
         l.baths ?? null,
         l.neighborhood ?? null,
         l.agent_name ?? null,
+        l.list_office_name ?? null,
         l.status ?? null,
         l.mls_status ?? null,
         l.modified_at ?? null,
@@ -89,26 +92,27 @@ export async function upsertListings(listings: ListingUpsertData[]): Promise<voi
     const text = `
       INSERT INTO listings (
         spark_listing_key, mls_number, address, street_number, street_name,
-        city, state, zip, price, beds, baths, neighborhood, agent_name, status, mls_status,
-        modified_at, synced_at
+        city, state, zip, price, beds, baths, neighborhood, agent_name, list_office_name,
+        status, mls_status, modified_at, synced_at
       ) VALUES ${valuePlaceholders}
       ON CONFLICT (spark_listing_key) DO UPDATE SET
-        mls_number    = EXCLUDED.mls_number,
-        address       = EXCLUDED.address,
-        street_number = EXCLUDED.street_number,
-        street_name   = EXCLUDED.street_name,
-        city          = EXCLUDED.city,
-        state         = EXCLUDED.state,
-        zip           = EXCLUDED.zip,
-        price         = EXCLUDED.price,
-        beds          = EXCLUDED.beds,
-        baths         = EXCLUDED.baths,
-        neighborhood  = EXCLUDED.neighborhood,
-        agent_name    = EXCLUDED.agent_name,
-        status        = EXCLUDED.status,
-        mls_status    = EXCLUDED.mls_status,
-        modified_at   = EXCLUDED.modified_at,
-        synced_at     = EXCLUDED.synced_at
+        mls_number       = EXCLUDED.mls_number,
+        address          = EXCLUDED.address,
+        street_number    = EXCLUDED.street_number,
+        street_name      = EXCLUDED.street_name,
+        city             = EXCLUDED.city,
+        state            = EXCLUDED.state,
+        zip              = EXCLUDED.zip,
+        price            = EXCLUDED.price,
+        beds             = EXCLUDED.beds,
+        baths            = EXCLUDED.baths,
+        neighborhood     = EXCLUDED.neighborhood,
+        agent_name       = EXCLUDED.agent_name,
+        list_office_name = EXCLUDED.list_office_name,
+        status           = EXCLUDED.status,
+        mls_status       = EXCLUDED.mls_status,
+        modified_at      = EXCLUDED.modified_at,
+        synced_at        = EXCLUDED.synced_at
     `;
 
     await pool.query(text, values);
@@ -233,6 +237,171 @@ export async function getListingKeysByAgent(agentName: string, limit = 200): Pro
     [agentName, limit]
   );
   return rows.map((r: { spark_listing_key: string }) => r.spark_listing_key);
+}
+
+// ── Agent helpers ──────────────────────────────────────────────────────────
+
+export interface AgentUpsertData {
+  spark_member_id: string;
+  slug: string;
+  name: string;
+  first_name: string | null;
+  last_name: string | null;
+  office_name: string | null;
+  office_id: string | null;
+  primary_city: string | null;
+  license_number: string | null;
+  phone: string | null;
+  email: string | null;
+  associations: string[];
+  is_givenest: boolean;
+  idx_participant: boolean;
+  modified_at: string | null;
+}
+
+const AGENT_COLS = 15;
+
+export async function upsertAgentsBatch(agents: AgentUpsertData[]): Promise<void> {
+  if (agents.length === 0) return;
+
+  const CHUNK = 500;
+  for (let offset = 0; offset < agents.length; offset += CHUNK) {
+    const chunk = agents.slice(offset, offset + CHUNK);
+
+    const placeholders = chunk
+      .map((_, i) => {
+        const base = i * AGENT_COLS;
+        const params = Array.from({ length: AGENT_COLS }, (__, j) => `$${base + j + 1}`).join(",");
+        return `(${params})`;
+      })
+      .join(",");
+
+    const values: unknown[] = [];
+    for (const a of chunk) {
+      values.push(
+        a.spark_member_id,
+        a.slug,
+        a.name,
+        a.first_name,
+        a.last_name,
+        a.office_name,
+        a.office_id,
+        a.primary_city,
+        a.license_number,
+        a.phone,
+        a.email,
+        a.associations,
+        a.is_givenest,
+        a.idx_participant,
+        a.modified_at,
+      );
+    }
+
+    await pool.query(
+      `INSERT INTO agents (
+        spark_member_id, slug, name, first_name, last_name,
+        office_name, office_id, primary_city, license_number,
+        phone, email, associations, is_givenest, idx_participant, modified_at
+      ) VALUES ${placeholders}
+      ON CONFLICT (spark_member_id) DO UPDATE SET
+        slug             = EXCLUDED.slug,
+        name             = EXCLUDED.name,
+        first_name       = EXCLUDED.first_name,
+        last_name        = EXCLUDED.last_name,
+        office_name      = EXCLUDED.office_name,
+        office_id        = EXCLUDED.office_id,
+        primary_city     = EXCLUDED.primary_city,
+        license_number   = EXCLUDED.license_number,
+        phone            = EXCLUDED.phone,
+        email            = EXCLUDED.email,
+        associations     = EXCLUDED.associations,
+        is_givenest      = EXCLUDED.is_givenest,
+        idx_participant  = EXCLUDED.idx_participant,
+        modified_at      = EXCLUDED.modified_at,
+        updated_at       = NOW()`,
+      values,
+    );
+  }
+}
+
+/** Update active_listing_count on all agents by joining against listings */
+export async function updateAgentListingCounts(): Promise<void> {
+  // Reset all to 0 first, then set from listings
+  await pool.query(`UPDATE agents SET active_listing_count = 0`);
+  await pool.query(`
+    UPDATE agents a SET active_listing_count = c.cnt
+    FROM (
+      SELECT agent_name, COUNT(*)::int AS cnt
+      FROM listings
+      WHERE mls_status IN ('Active', 'Active UCB', 'Coming Soon')
+        AND agent_name IS NOT NULL
+      GROUP BY agent_name
+    ) c
+    WHERE a.name = c.agent_name
+  `);
+}
+
+/** Remove agents not seen in the last 7 days */
+export async function pruneStaleAgents(): Promise<number> {
+  const { rowCount } = await pool.query(
+    `DELETE FROM agents WHERE updated_at < NOW() - INTERVAL '7 days'`
+  );
+  return rowCount ?? 0;
+}
+
+export interface AgentRow {
+  name: string;
+  office_name: string | null;
+  primary_city: string | null;
+  active_listing_count: number;
+  is_givenest: boolean;
+}
+
+/** Paginated agent search for the directory API */
+export async function searchAgents(
+  opts: { q?: string; city?: string; page?: number; limit?: number }
+): Promise<{ agents: AgentRow[]; total: number }> {
+  const { q, city, page = 1, limit = 48 } = opts;
+  const conditions: string[] = ["idx_participant = true"];
+  const params: unknown[] = [];
+  let paramIdx = 0;
+
+  if (q) {
+    paramIdx++;
+    const pattern = `%${q}%`;
+    conditions.push(`(name ILIKE $${paramIdx} OR office_name ILIKE $${paramIdx})`);
+    params.push(pattern);
+  }
+  if (city) {
+    paramIdx++;
+    conditions.push(`primary_city = $${paramIdx}`);
+    params.push(city);
+  }
+
+  const where = conditions.join(" AND ");
+
+  const countResult = await pool.query(
+    `SELECT COUNT(*)::int AS total FROM agents WHERE ${where}`,
+    params,
+  );
+  const total: number = countResult.rows[0]?.total ?? 0;
+
+  const offset = (page - 1) * limit;
+  paramIdx++;
+  params.push(limit);
+  paramIdx++;
+  params.push(offset);
+
+  const { rows } = await pool.query(
+    `SELECT name, office_name, primary_city, active_listing_count, is_givenest
+     FROM agents
+     WHERE ${where}
+     ORDER BY is_givenest DESC, active_listing_count DESC, name ASC
+     LIMIT $${paramIdx - 1} OFFSET $${paramIdx}`,
+    params,
+  );
+
+  return { agents: rows as AgentRow[], total };
 }
 
 function rowToResult(r: {

@@ -43,6 +43,7 @@ const SYNC_FIELDS = [
   "MlsStatus",
   "SubdivisionName",
   "ListAgentName",
+  "ListOfficeName",
   "ModificationTimestamp",
 ].join(",");
 
@@ -86,6 +87,7 @@ interface SparkSyncListing {
     MlsStatus: string;
     SubdivisionName: string | null;
     ListAgentName: string | null;
+    ListOfficeName: string | null;
     ModificationTimestamp: string | null;
   };
 }
@@ -140,6 +142,7 @@ function toUpsertData(listing: SparkSyncListing): ListingUpsertData | null {
     baths: bathsFull + (bathsHalf > 0 ? 0.5 : 0) || null,
     neighborhood: f.SubdivisionName || null,
     agent_name: f.ListAgentName || null,
+    list_office_name: f.ListOfficeName || null,
     status: MLS_STATUS_MAP[f.MlsStatus] ?? "For Sale",
     mls_status: f.MlsStatus || null,
     modified_at: f.ModificationTimestamp || null,

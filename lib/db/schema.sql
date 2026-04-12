@@ -93,6 +93,50 @@ CREATE INDEX IF NOT EXISTS listings_address_trgm_idx ON listings USING GIN(addre
 CREATE INDEX IF NOT EXISTS listings_neighborhood_trgm_idx ON listings USING GIN(neighborhood gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS listings_agent_trgm_idx ON listings USING GIN(agent_name gin_trgm_ops);
 
+-- Add list_office_name to listings (idempotent for existing installs)
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS list_office_name TEXT;
+
+-- ARMLS member roster — synced daily from Spark /v1/accounts
+CREATE TABLE IF NOT EXISTS agents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  spark_member_id TEXT UNIQUE NOT NULL,  -- Spark account Id
+  slug TEXT UNIQUE NOT NULL,             -- URL-safe, for future profile pages
+  name TEXT NOT NULL,                    -- full display name
+  first_name TEXT,
+  last_name TEXT,
+  office_name TEXT,                      -- current brokerage from Spark
+  office_id TEXT,
+  primary_city TEXT,                     -- from Associations[0]
+  license_number TEXT,
+  phone TEXT,                            -- stored but NOT exposed in UI (referral protection)
+  email TEXT,                            -- stored but NOT exposed in UI
+  associations TEXT[],
+  is_givenest BOOLEAN DEFAULT false,
+  active_listing_count INTEGER DEFAULT 0,
+  idx_participant BOOLEAN DEFAULT true,
+  modified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS agents_slug_idx ON agents(slug);
+CREATE INDEX IF NOT EXISTS agents_name_trgm_idx ON agents USING GIN(name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS agents_city_idx ON agents(primary_city);
+CREATE INDEX IF NOT EXISTS agents_office_trgm_idx ON agents USING GIN(office_name gin_trgm_ops);
+
+-- Lead capture for agent consult requests
+CREATE TABLE IF NOT EXISTS agent_inquiries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_name TEXT NOT NULL,
+  agent_office TEXT,
+  buyer_name TEXT NOT NULL,
+  buyer_email TEXT NOT NULL,
+  buyer_phone TEXT,
+  property_address TEXT,
+  message TEXT,
+  source TEXT,                           -- 'directory' | 'property-page' | 'search'
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Closing records (manually entered by Givenest admin)
 CREATE TABLE IF NOT EXISTS transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

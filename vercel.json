@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/sync-listings",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/sync-agents",
+      "schedule": "0 6 * * *"
     }
   ]
 }

@@ -296,6 +296,61 @@ export async function fetchSparkListings(
   return { listings, total: listings.length, totalPages: 0 };
 }
 
+// ── Spark accounts (ARMLS member roster) ────────────────────────────────────
+
+export interface SparkAccount {
+  Id: string;
+  Name: string;
+  FirstName: string | null;
+  MiddleName: string | null;
+  LastName: string | null;
+  Office: string | null;
+  OfficeId: string | null;
+  LicenseNumber: string | null;
+  Associations: string[];
+  IdxParticipant: boolean;
+  ModificationTimestamp: string | null;
+  ShortId: string | null;
+  Phones: Array<{ Name: string; Primary: boolean; Type: string; Number: string }>;
+  Emails: Array<{ Name: string; Primary: boolean; Address: string }>;
+}
+
+const ACCOUNT_SELECT = [
+  "Id", "Name", "FirstName", "MiddleName", "LastName",
+  "Office", "OfficeId", "LicenseNumber", "Associations",
+  "IdxParticipant", "ModificationTimestamp", "ShortId",
+  "Phones", "Emails",
+].join(",");
+
+/**
+ * Fetch one page of ARMLS member accounts from Spark /v1/accounts.
+ * Filter is required — at minimum `UserType Eq 'Member'`.
+ */
+export async function fetchSparkAccounts(
+  filter: string,
+  page = 1,
+  limit = 1000,
+): Promise<SparkAccount[]> {
+  const url = new URL(`${SPARK_BASE}/accounts`);
+  url.searchParams.set("_filter", filter);
+  url.searchParams.set("_select", ACCOUNT_SELECT);
+  url.searchParams.set("_limit", String(limit));
+  url.searchParams.set("_page", String(page));
+
+  const res = await fetch(url.toString(), {
+    headers: sparkHeaders(),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    console.error(`Spark accounts fetch error: ${res.status} ${await res.text()}`);
+    return [];
+  }
+
+  const data = await res.json();
+  return (data?.D?.Results ?? []) as SparkAccount[];
+}
+
 /** Fetch a single listing by ListingKey */
 export async function fetchSparkListing(
   key: string,
