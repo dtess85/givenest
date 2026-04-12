@@ -100,7 +100,7 @@ ALTER TABLE listings ADD COLUMN IF NOT EXISTS list_office_name TEXT;
 CREATE TABLE IF NOT EXISTS agents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   spark_member_id TEXT UNIQUE NOT NULL,  -- Spark account Id
-  slug TEXT UNIQUE NOT NULL,             -- URL-safe, for future profile pages
+  slug TEXT NOT NULL,                     -- URL-safe, for future profile pages (not unique — name collisions possible)
   name TEXT NOT NULL,                    -- full display name
   first_name TEXT,
   last_name TEXT,

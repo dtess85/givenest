@@ -304,7 +304,6 @@ export async function upsertAgentsBatch(agents: AgentUpsertData[]): Promise<void
         phone, email, associations, is_givenest, idx_participant, modified_at
       ) VALUES ${placeholders}
       ON CONFLICT (spark_member_id) DO UPDATE SET
-        slug             = EXCLUDED.slug,
         name             = EXCLUDED.name,
         first_name       = EXCLUDED.first_name,
         last_name        = EXCLUDED.last_name,
@@ -368,9 +367,15 @@ export async function searchAgents(
 
   if (q) {
     paramIdx++;
-    const pattern = `%${q}%`;
-    conditions.push(`(name ILIKE $${paramIdx} OR office_name ILIKE $${paramIdx})`);
-    params.push(pattern);
+    // Use trigram similarity (%) which handles partial/fuzzy matches like
+    // "Teresa Porpiglia" matching "Teresa M Porpiglia". Falls back to ILIKE
+    // for very short queries where trigram similarity thresholds are too strict.
+    if (q.length >= 3) {
+      conditions.push(`(name % $${paramIdx} OR office_name % $${paramIdx})`);
+    } else {
+      conditions.push(`(name ILIKE '%' || $${paramIdx} || '%' OR office_name ILIKE '%' || $${paramIdx} || '%')`);
+    }
+    params.push(q);
   }
   if (city) {
     paramIdx++;
@@ -392,11 +397,16 @@ export async function searchAgents(
   paramIdx++;
   params.push(offset);
 
+  // When searching, rank by similarity first; otherwise by listing count
+  const orderBy = q && q.length >= 3
+    ? `is_givenest DESC, GREATEST(similarity(name, $1), similarity(COALESCE(office_name,''), $1)) DESC, name ASC`
+    : `is_givenest DESC, active_listing_count DESC, name ASC`;
+
   const { rows } = await pool.query(
     `SELECT name, office_name, primary_city, active_listing_count, is_givenest
      FROM agents
      WHERE ${where}
-     ORDER BY is_givenest DESC, active_listing_count DESC, name ASC
+     ORDER BY ${orderBy}
      LIMIT $${paramIdx - 1} OFFSET $${paramIdx}`,
     params,
   );

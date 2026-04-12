@@ -23,15 +23,17 @@ import {
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
-function slugify(name: string, shortId: string | null): string {
+function slugify(name: string, sparkMemberId: string): string {
   const base = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/-+$/, "")
     .replace(/^-+/, "");
-  // If name is very short or generic, append shortId to reduce collisions
-  if (base.length < 4 && shortId) return `${base}-${shortId}`;
-  return base;
+  // Append a portion of the spark member ID to guarantee uniqueness.
+  // IDs look like "20240502213401501889000000" — trailing zeros are common,
+  // so use chars 8-14 (the time-based portion) for better entropy.
+  const suffix = sparkMemberId.slice(8, 14);
+  return `${base}-${suffix}`;
 }
 
 function primaryPhone(phones: SparkAccount["Phones"]): string | null {
@@ -49,7 +51,7 @@ function primaryEmail(emails: SparkAccount["Emails"]): string | null {
 function toAgentData(account: SparkAccount): AgentUpsertData {
   return {
     spark_member_id: account.Id,
-    slug: slugify(account.Name, account.ShortId),
+    slug: slugify(account.Name, account.Id),
     name: account.Name,
     first_name: account.FirstName ?? null,
     last_name: account.LastName ?? null,
@@ -89,16 +91,6 @@ export async function GET(request: Request) {
 
       totalFetched += accounts.length;
       const rows = accounts.map(toAgentData);
-
-      // Handle slug collisions within the batch by appending shortId
-      const slugSeen = new Set<string>();
-      for (const r of rows) {
-        if (slugSeen.has(r.slug)) {
-          r.slug = `${r.slug}-${r.spark_member_id.slice(-6)}`;
-        }
-        slugSeen.add(r.slug);
-      }
-
       await upsertAgentsBatch(rows);
       totalUpserted += rows.length;
 
