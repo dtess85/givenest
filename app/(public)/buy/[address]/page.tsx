@@ -4,14 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { AGENTS } from "@/lib/mock-data";
 import type { Property } from "@/lib/mock-data";
 import { fmt } from "@/lib/utils";
 import { calcGivingPool } from "@/lib/commission";
 import GivingPanel from "@/components/GivingPanel";
 import IdxAttribution from "@/components/IdxAttribution";
 import AgentPicker from "@/components/AgentPicker";
-import ConsultForm from "@/components/ConsultForm";
+import LeadModal from "@/components/LeadModal";
 
 export default function PropertyDetail() {
   const params = useParams();
@@ -25,13 +24,10 @@ export default function PropertyDetail() {
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [activeAgent, setActiveAgent] = useState<string | null>(null);
-
   useEffect(() => { setMounted(true); }, []);
-  const [submittedAgents, setSubmittedAgents] = useState<Set<string>>(new Set());
-  const [sending, setSending] = useState(false);
   const [chosenAgent, setChosenAgent] = useState<{ name: string; office_name: string | null } | null>(null);
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [selectedCharities, setSelectedCharities] = useState<{ name: string; ein: string }[]>([]);
   const [mobilePhotoIndex, setMobilePhotoIndex] = useState(0);
   const mobileCarouselRef = useRef<HTMLDivElement>(null);
 
@@ -598,116 +594,50 @@ export default function PropertyDetail() {
         {/* ── RIGHT SIDEBAR ── */}
         <div className="sticky top-[68px] flex flex-col gap-4">
 
-          {/* Contact an agent */}
-          <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
-            <div className="border-b border-border px-4 py-3">
-              <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Contact an agent</h3>
-            </div>
-            <div className="flex flex-col divide-y divide-border">
-              {AGENTS.map((a) => {
-                const isActive = activeAgent === a.initials;
-                const isSubmitted = submittedAgents.has(a.initials);
-                return (
-                  <div key={a.initials}>
-                    <div className="flex items-center gap-3 px-4 py-3">
-                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
-                        {a.initials}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-medium">{a.name}</div>
-                        <a href={`mailto:${a.email}`} className="block text-[11px] text-coral hover:underline truncate">{a.email}</a>
-                        <a href={`tel:${a.phone.replace(/\D/g, "")}`} className="block text-[11px] text-muted hover:text-black">{a.phone}</a>
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (!isSubmitted) {
-                            setActiveAgent(isActive ? null : a.initials);
-                            setFormData({ name: "", email: "", phone: "" });
-                          }
-                        }}
-                        className={`flex-shrink-0 rounded-md border px-3 py-[6px] text-[12px] transition-all ${
-                          isSubmitted
-                            ? "border-border text-muted cursor-default"
-                            : isActive
-                            ? "border-coral text-coral"
-                            : "border-border hover:border-coral hover:text-coral"
-                        }`}
-                      >
-                        {isSubmitted ? "✓ Sent" : "Contact"}
-                      </button>
-                    </div>
-
-                    {isActive && !isSubmitted && (
-                      <div className="border-t border-border bg-[#FAFAF8] px-4 py-3">
-                        <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">Your contact info</div>
-                        <div className="flex flex-col gap-2">
-                          <input
-                            className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-                            placeholder="Full name"
-                            value={formData.name}
-                            onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
-                          />
-                          <input
-                            type="email"
-                            className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-                            placeholder="Email address"
-                            value={formData.email}
-                            onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
-                          />
-                          <input
-                            type="tel"
-                            className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-                            placeholder="Phone (optional)"
-                            value={formData.phone}
-                            onChange={(e) => setFormData((f) => ({ ...f, phone: e.target.value }))}
-                          />
-                          <button
-                            onClick={async () => {
-                              if (!formData.name || !formData.email) return;
-                              setSending(true);
-                              try {
-                                await fetch("/api/agent-request", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    name: formData.name,
-                                    email: formData.email,
-                                    phone: formData.phone,
-                                    agentName: a.name,
-                                    propertyAddress: property.address,
-                                  }),
-                                });
-                              } finally {
-                                setSending(false);
-                                setSubmittedAgents((prev) => new Set(prev).add(a.initials));
-                                setActiveAgent(null);
-                              }
-                            }}
-                            disabled={!formData.name || !formData.email || sending}
-                            className={`w-full rounded-md bg-coral py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a] ${
-                              !formData.name || !formData.email || sending ? "cursor-default opacity-40" : "cursor-pointer"
-                            }`}
-                          >
-                            {sending ? "Sending…" : "Send request"}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Choose your agent */}
-          <div className="rounded-lg border border-border bg-white">
-            <div className="border-b border-border px-4 py-3">
-              <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Choose your agent</h3>
-              <p className="mt-1 text-[11px] text-muted">
-                Work with any Arizona Realtor. 25% of the total commission goes to charity.
-              </p>
+          <div className="rounded-[10px] border border-border bg-white p-[26px]" style={{ borderTop: "3px solid var(--color-coral)" }}>
+            <h3 className="font-serif text-xl font-medium leading-[1.2] tracking-[-0.02em] text-black">
+              Choose your agent.
+            </h3>
+            <p className="mt-2 text-[13px] font-light text-muted">
+              Work with any agent. They handle the deal and we make the donation.
+            </p>
+
+            {/* Selected agent display */}
+            <div className="mt-5 flex items-center gap-3">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                {(chosenAgent?.name ?? "Kyndall Yates").split(" ").filter((w) => w.length > 0 && w[0] === w[0].toUpperCase()).slice(0, 2).map((w) => w[0]).join("")}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-medium">{chosenAgent?.name ?? "Kyndall Yates"}</div>
+                {!chosenAgent ? (
+                  <>
+                    <a href="mailto:kyndall@givenest.com" className="block text-[12px] text-coral hover:underline truncate">kyndall@givenest.com</a>
+                    <a href="tel:4804008690" className="block text-[12px] text-muted hover:text-black">(480) 400-8690</a>
+                  </>
+                ) : (
+                  <div className="text-[12px] text-muted truncate">
+                    {[chosenAgent.office_name, "Arizona"].filter(Boolean).join(" · ")}
+                  </div>
+                )}
+              </div>
+              {!chosenAgent && (
+                <span className="flex-shrink-0 rounded bg-coral/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-coral">
+                  Givenest
+                </span>
+              )}
+              {chosenAgent && (
+                <button
+                  onClick={() => setChosenAgent(null)}
+                  className="flex-shrink-0 text-[12px] text-muted hover:text-coral transition-colors"
+                >
+                  Reset
+                </button>
+              )}
             </div>
-            <div className="px-4 py-3">
+
+            {/* Agent search */}
+            <div className="mt-3">
               <AgentPicker
                 defaultAgent={{
                   name: "Kyndall Yates",
@@ -718,19 +648,23 @@ export default function PropertyDetail() {
                 }}
                 onSelect={(agent) => setChosenAgent({ name: agent.name, office_name: agent.office_name })}
               />
-              <div className="mt-3">
-                <ConsultForm
-                  agentName={chosenAgent?.name ?? "Kyndall Yates"}
-                  agentOffice={chosenAgent?.office_name ?? "Givenest"}
-                  propertyAddress={property.address}
-                  source="property-page"
-                />
-              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setLeadModalOpen(true)}
+              className="mt-4 w-full cursor-pointer rounded-md bg-coral py-[10px] text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a]"
+            >
+              Send request
+            </button>
           </div>
 
           {/* GivingPanel */}
-          <GivingPanel price={property.price} variant="property" />
+          <GivingPanel
+            price={property.price}
+            variant="property"
+            onRequestMatch={() => setLeadModalOpen(true)}
+            onCharitiesChange={setSelectedCharities}
+          />
         </div>
 
       </div>
@@ -830,20 +764,24 @@ export default function PropertyDetail() {
             <div className="hidden w-[280px] flex-shrink-0 lg:block">
               <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
                 <div className="border-b border-border px-4 py-3">
-                  <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Contact an agent</h3>
+                  <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Your agent</h3>
                 </div>
-                {AGENTS.map((a) => (
-                  <div key={a.initials} className="flex items-center gap-3 px-4 py-4">
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
-                      {a.initials}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-medium">{a.name}</div>
-                      <a href={`mailto:${a.email}`} className="block truncate text-[11px] text-coral hover:underline" onClick={(e) => e.stopPropagation()}>{a.email}</a>
-                      <a href={`tel:${a.phone.replace(/\D/g, "")}`} className="block text-[11px] text-muted hover:text-black" onClick={(e) => e.stopPropagation()}>{a.phone}</a>
-                    </div>
+                <div className="flex items-center gap-3 px-4 py-4">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                    {(chosenAgent?.name ?? "Kyndall Yates").split(" ").filter((w) => w.length > 0 && w[0] === w[0].toUpperCase()).slice(0, 2).map((w) => w[0]).join("")}
                   </div>
-                ))}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-medium">{chosenAgent?.name ?? "Kyndall Yates"}</div>
+                    {!chosenAgent ? (
+                      <>
+                        <a href="mailto:kyndall@givenest.com" className="block truncate text-[11px] text-coral hover:underline" onClick={(e) => e.stopPropagation()}>kyndall@givenest.com</a>
+                        <a href="tel:4804008690" className="block text-[11px] text-muted hover:text-black" onClick={(e) => e.stopPropagation()}>(480) 400-8690</a>
+                      </>
+                    ) : (
+                      <div className="text-[11px] text-muted truncate">{chosenAgent.office_name ?? "Arizona"}</div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -981,105 +919,75 @@ export default function PropertyDetail() {
                     <div className="text-[14px] font-semibold">{property.sqft.toLocaleString()}</div>
                   </div>
                 </div>
-                {/* Contact an agent — same card, continued */}
-                <div className="border-t border-border px-5 py-3">
-                  <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Contact an agent</h3>
-                </div>
-                <div className="flex flex-col divide-y divide-border">
-                  {AGENTS.map((a) => {
-                    const isActive = activeAgent === a.initials;
-                    const isSubmitted = submittedAgents.has(a.initials);
-                    return (
-                      <div key={a.initials}>
-                        <div className="flex items-center gap-3 px-5 py-4">
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[12px] font-medium text-white">
-                            {a.initials}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-[13px] font-medium">{a.name}</div>
-                            <a href={`mailto:${a.email}`} className="block truncate text-[12px] text-coral hover:underline">{a.email}</a>
-                            <a href={`tel:${a.phone.replace(/\D/g, "")}`} className="block text-[12px] text-muted hover:text-black">{a.phone}</a>
-                          </div>
-                          <button
-                            onClick={() => {
-                              if (!isSubmitted) {
-                                setActiveAgent(isActive ? null : a.initials);
-                                setFormData({ name: "", email: "", phone: "" });
-                              }
-                            }}
-                            className={`flex-shrink-0 rounded-md border px-3 py-[6px] text-[12px] transition-all ${
-                              isSubmitted
-                                ? "border-border text-muted cursor-default"
-                                : isActive
-                                ? "border-coral text-coral"
-                                : "border-border hover:border-coral hover:text-coral"
-                            }`}
-                          >
-                            {isSubmitted ? "✓ Sent" : "Contact"}
-                          </button>
+                {/* Choose your agent */}
+                <div className="border-t border-border px-5 py-5">
+                  <h3 className="font-serif text-xl font-medium leading-[1.2] tracking-[-0.02em] text-black">
+                    Choose your agent.
+                  </h3>
+                  <p className="mt-2 text-[13px] font-light text-muted">
+                    Work with any agent. They handle the deal and we make the donation.
+                  </p>
+
+                  {/* Selected agent display */}
+                  <div className="mt-5 flex items-center gap-3">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[12px] font-medium text-white">
+                      {(chosenAgent?.name ?? "Kyndall Yates").split(" ").filter((w) => w.length > 0 && w[0] === w[0].toUpperCase()).slice(0, 2).map((w) => w[0]).join("")}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-medium">{chosenAgent?.name ?? "Kyndall Yates"}</div>
+                      {!chosenAgent ? (
+                        <>
+                          <a href="mailto:kyndall@givenest.com" className="block truncate text-[12px] text-coral hover:underline">kyndall@givenest.com</a>
+                          <a href="tel:4804008690" className="block text-[12px] text-muted hover:text-black">(480) 400-8690</a>
+                        </>
+                      ) : (
+                        <div className="text-[12px] text-muted truncate">
+                          {[chosenAgent.office_name, "Arizona"].filter(Boolean).join(" · ")}
                         </div>
-                        {isActive && !isSubmitted && (
-                          <div className="border-t border-border bg-[#FAFAF8] px-5 py-3">
-                            <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">Your contact info</div>
-                            <div className="flex flex-col gap-2">
-                              <input
-                                className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-                                placeholder="Full name"
-                                value={formData.name}
-                                onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
-                              />
-                              <input
-                                type="email"
-                                className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-                                placeholder="Email address"
-                                value={formData.email}
-                                onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
-                              />
-                              <input
-                                type="tel"
-                                className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-                                placeholder="Phone (optional)"
-                                value={formData.phone}
-                                onChange={(e) => setFormData((f) => ({ ...f, phone: e.target.value }))}
-                              />
-                              <button
-                                onClick={async () => {
-                                  if (!formData.name || !formData.email) return;
-                                  setSending(true);
-                                  try {
-                                    await fetch("/api/agent-request", {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({
-                                        name: formData.name,
-                                        email: formData.email,
-                                        phone: formData.phone,
-                                        agentName: a.name,
-                                        propertyAddress: property.address,
-                                      }),
-                                    });
-                                  } finally {
-                                    setSending(false);
-                                    setSubmittedAgents((prev) => new Set(prev).add(a.initials));
-                                    setActiveAgent(null);
-                                  }
-                                }}
-                                disabled={!formData.name || !formData.email || sending}
-                                className={`w-full rounded-md bg-coral py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a] ${
-                                  !formData.name || !formData.email || sending ? "cursor-default opacity-40" : "cursor-pointer"
-                                }`}
-                              >
-                                {sending ? "Sending…" : "Send request"}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      )}
+                    </div>
+                    {!chosenAgent && (
+                      <span className="flex-shrink-0 rounded bg-coral/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-coral">
+                        Givenest
+                      </span>
+                    )}
+                    {chosenAgent && (
+                      <button
+                        onClick={() => setChosenAgent(null)}
+                        className="flex-shrink-0 text-[12px] text-muted hover:text-coral transition-colors"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-3">
+                    <AgentPicker
+                      defaultAgent={{
+                        name: "Kyndall Yates",
+                        office_name: "Givenest",
+                        primary_city: "Gilbert",
+                        active_listing_count: 0,
+                        is_givenest: true,
+                      }}
+                      onSelect={(agent) => setChosenAgent({ name: agent.name, office_name: agent.office_name })}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLeadModalOpen(true)}
+                    className="mt-4 w-full cursor-pointer rounded-md bg-coral py-[10px] text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a]"
+                  >
+                    Send request
+                  </button>
                 </div>
               </div>
-              <GivingPanel price={property.price} variant="property" />
+              <GivingPanel
+                price={property.price}
+                variant="property"
+                onRequestMatch={() => setLeadModalOpen(true)}
+                onCharitiesChange={setSelectedCharities}
+              />
             </div>
           </div>
         </div>
@@ -1091,6 +999,16 @@ export default function PropertyDetail() {
     <div className="mx-auto max-w-[1200px] px-6 pb-10">
       <IdxAttribution />
     </div>
+
+    {/* Lead capture modal */}
+    <LeadModal
+      open={leadModalOpen}
+      onClose={() => setLeadModalOpen(false)}
+      propertyAddress={property.address}
+      propertyPrice={property.price}
+      defaultAgent={chosenAgent ?? undefined}
+      defaultCharities={selectedCharities}
+    />
     </>
   );
 }

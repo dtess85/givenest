@@ -111,12 +111,6 @@ export default function AgentPicker({ defaultAgent, onSelect }: AgentPickerProps
         </div>
       )}
 
-      {defaultAgent && !query && (
-        <div className="mt-2 text-[11px] text-muted">
-          Default: <span className="font-medium text-black">{defaultAgent.name}</span>
-          {defaultAgent.office_name && <> · {defaultAgent.office_name}</>}
-        </div>
-      )}
     </div>
   );
 }

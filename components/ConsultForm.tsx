@@ -69,6 +69,7 @@ export default function ConsultForm({
         className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
         placeholder="Full name"
         value={form.name}
+        autoFocus
         onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
       />
       <input

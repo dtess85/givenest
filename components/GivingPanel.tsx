@@ -9,6 +9,8 @@ import { useUserLocation } from "@/lib/useUserLocation";
 interface GivingPanelProps {
   price: number;
   variant?: "property" | "seller" | "dashboard";
+  onRequestMatch?: () => void;
+  onCharitiesChange?: (charities: { name: string; ein: string }[]) => void;
 }
 
 interface EveryOrgNonprofit {
@@ -28,15 +30,11 @@ interface PickedCharity {
 
 const SEED_EINS = new Set(CHARITIES.map((c) => c.ein).filter(Boolean));
 
-export default function GivingPanel({ price, variant = "property" }: GivingPanelProps) {
+export default function GivingPanel({ price, variant = "property", onRequestMatch, onCharitiesChange }: GivingPanelProps) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<EveryOrgNonprofit[]>([]);
   const [loading, setLoading] = useState(false);
   const [charities, setCharities] = useState<PickedCharity[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const [favorites, setFavorites] = useState<Map<string, EveryOrgNonprofit>>(new Map());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userLoc = useUserLocation();
@@ -75,16 +73,18 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
   const selectedEins = new Set(charities.map((c) => c.ein));
 
   const toggleCharity = (c: PickedCharity) => {
-    setCharities((prev) =>
-      selectedEins.has(c.ein)
+    setCharities((prev) => {
+      const next = selectedEins.has(c.ein)
         ? prev.filter((x) => x.ein !== c.ein)
-        : [...prev, c]
-    );
+        : [...prev, c];
+      onCharitiesChange?.(next);
+      return next;
+    });
   };
 
   const rows = [
     { label: variant === "seller" ? "Home value" : "List price", value: fmt(price), highlight: false },
-    { label: "Estimated donation (25%)", value: fmt(givingPool), highlight: true },
+    { label: "Estimated donation", value: fmt(givingPool), highlight: true },
   ];
 
   const locationScore = (loc?: string) => {
@@ -151,11 +151,10 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
       {/* 100% to charity callout */}
       <div className="mb-4 rounded-md border border-coral/20 bg-coral/[0.08] px-3 py-[10px]">
         <div className="mb-[3px] text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
-          100% to charity
+          Donation to charity
         </div>
         <div className="text-xs font-light leading-[1.6] text-muted">
-          givenest donates this amount directly to your chosen {charities.length > 1 ? "charities" : "charity"} at
-          closing. Nothing extra from you.
+          We donate 25% of the commission to your chosen {charities.length > 1 ? "charities" : "charity"}. Nothing extra from you.
         </div>
       </div>
 
@@ -240,71 +239,11 @@ export default function GivingPanel({ price, variant = "property" }: GivingPanel
 
       {/* CTA */}
       <button
-        onClick={() => { if (!submitted) setShowForm((v) => !v); }}
-        className={`w-full rounded-md bg-coral py-[13px] text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a] ${
-          submitted ? "cursor-default opacity-40" : "cursor-pointer"
-        }`}
+        onClick={() => onRequestMatch?.()}
+        className="w-full cursor-pointer rounded-md bg-coral py-[13px] text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a]"
       >
-        {submitted ? "\u2713 Request sent" : "Get matched with an agent"}
+        Get matched with an agent
       </button>
-
-      {showForm && !submitted && (
-        <div className="mt-3 rounded-md border border-border bg-white p-3">
-          <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">Your contact info</div>
-          <div className="flex flex-col gap-[6px]">
-            <input
-              className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-              placeholder="Full name"
-              value={formData.name}
-              onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
-            />
-            <input
-              type="email"
-              className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-              placeholder="Email address"
-              value={formData.email}
-              onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
-            />
-            <input
-              type="tel"
-              className="w-full rounded-md border border-border bg-white px-[12px] py-[8px] text-xs outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-              placeholder="Phone (optional)"
-              value={formData.phone}
-              onChange={(e) => setFormData((f) => ({ ...f, phone: e.target.value }))}
-            />
-            <button
-              onClick={async () => {
-                if (!formData.name || !formData.email) return;
-                setSending(true);
-                try {
-                  await fetch("/api/contact", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      name: formData.name,
-                      email: formData.email,
-                      phone: formData.phone,
-                      charity: charities.map((c) => c.name).join(", ") || undefined,
-                      homeValue: fmt(price),
-                      givingAmount: fmt(givingPool),
-                    }),
-                  });
-                } finally {
-                  setSending(false);
-                  setSubmitted(true);
-                  setShowForm(false);
-                }
-              }}
-              disabled={!formData.name || !formData.email || sending}
-              className={`w-full rounded-md bg-coral py-[8px] text-xs font-medium text-white transition-colors hover:bg-[#d4574a] ${
-                !formData.name || !formData.email || sending ? "cursor-default opacity-40" : "cursor-pointer"
-              }`}
-            >
-              {sending ? "Sending…" : "Send request"}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
