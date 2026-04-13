@@ -429,10 +429,12 @@ function BuyPage() {
 
       // Non-blocking GPS upgrade: if permission is "prompt", ask once
       // This won't block — it fires the browser prompt in the background
+      // NOTE: GPS callback intentionally ignores `cancelled` flag because it
+      // fires long after the effect cleanup runs. The location state setters
+      // are stable and safe to call even after re-renders.
       if (!gotGps && typeof navigator !== "undefined" && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            if (cancelled) return;
             setUserLat(pos.coords.latitude);
             setUserLng(pos.coords.longitude);
             setLocationSource("gps");
