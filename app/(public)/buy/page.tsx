@@ -295,6 +295,7 @@ function BuyPage() {
   const [userLat, setUserLat] = useState<number | null>(null);
   const [userLng, setUserLng] = useState<number | null>(null);
   const [locationSource, setLocationSource] = useState<"ip" | "gps" | null>(null);
+  const [userCity, setUserCity] = useState<string | null>(null);
   // Skip IP geolocation wait if a location was already in the URL
   const [locationReady, setLocationReady] = useState(() => urlLocation !== null);
   // Treat URL-restored location as user-set so IP doesn't override it
@@ -418,6 +419,7 @@ function BuyPage() {
             setUserLat(data.lat);
             setUserLng(data.lng);
             setLocationSource("ip");
+            if (data.city) setUserCity(data.city);
           }
         } catch {}
       }
@@ -676,51 +678,63 @@ function BuyPage() {
   });
 
   // Sort:
-  //   • "recommended" — pin Givenest listings first, then sort by distance
-  //     (closest first). Listings within 0.5 mi of each other are tie-broken
-  //     by days on market (freshest first).
-  //   • "nearest" — strict ascending order by distance to the user.
-  //     Falls back to recommended when we don't yet know the user's location.
+  //   • "recommended" / "nearest" — pin Givenest listings first, then show
+  //     same-city listings sorted by days on market (freshest first), followed
+  //     by other cities sorted by distance then DOM.
   //   • All other sort values trust the server-side ordering from the API.
   const sorted = useMemo(() => {
-    // "Closest to me": raw miles ascending. Pinned Givenest listings still go first.
-    if (sortBy === "nearest") {
-      if (userLat === null || userLng === null) return filtered;
+    // Extract just the city name from a listing's "City, ST ZIP" string.
+    const cityOf = (l: Property) => l.city?.split(",")[0]?.trim() ?? "";
+    // Helper: enrich listing with distance to user
+    const withDist = (list: Property[]) =>
+      list.map((l) => ({
+        listing: l,
+        dist:
+          userLat !== null && userLng !== null && l.latitude != null && l.longitude != null
+            ? haversine(userLat, userLng, l.latitude, l.longitude)
+            : Number.POSITIVE_INFINITY,
+      }));
+
+    // "Closest to me" or "Recommended": same-city listings first (sorted by
+    // days on market), then remaining listings sorted by distance then DOM.
+    if (sortBy === "nearest" || sortBy === "recommended") {
+      if (sortBy === "nearest" && userLat === null) return filtered;
+
       const pinnedSlugs = new Set(pinnedListings.map((l) => l.slug));
       const rest = filtered.filter((l) => !pinnedSlugs.has(l.slug));
-      const withDistance = rest.map((l) => {
-        const dist =
-          l.latitude != null && l.longitude != null
-            ? haversine(userLat, userLng, l.latitude, l.longitude)
-            : Number.POSITIVE_INFINITY;
-        return { listing: l, dist };
-      });
-      withDistance.sort((a, b) => a.dist - b.dist);
-      return [...pinnedListings, ...withDistance.map((s) => s.listing)];
+      const scored = withDist(rest);
+
+      // Determine user's city: explicit from IP, or infer from nearest listing.
+      let city = userCity;
+      if (!city && scored.length > 0) {
+        const nearest = scored.reduce((a, b) => (a.dist < b.dist ? a : b));
+        if (nearest.dist < 10) city = cityOf(nearest.listing);
+      }
+
+      if (city) {
+        const cityUpper = city.toUpperCase();
+        const sameCity = scored.filter((s) => cityOf(s.listing).toUpperCase() === cityUpper);
+        const other = scored.filter((s) => cityOf(s.listing).toUpperCase() !== cityUpper);
+
+        // Same-city: freshest first
+        sameCity.sort((a, b) => (a.listing.daysOnMarket ?? 999) - (b.listing.daysOnMarket ?? 999));
+        // Other: closest first, then freshest
+        other.sort((a, b) => {
+          const dd = a.dist - b.dist;
+          if (Math.abs(dd) > 0.5) return dd;
+          return (a.listing.daysOnMarket ?? 999) - (b.listing.daysOnMarket ?? 999);
+        });
+
+        return [...pinnedListings, ...sameCity.map((s) => s.listing), ...other.map((s) => s.listing)];
+      }
+
+      // No city info — fall back to pure distance sort
+      scored.sort((a, b) => a.dist - b.dist);
+      return [...pinnedListings, ...scored.map((s) => s.listing)];
     }
 
-    if (sortBy !== "recommended") return filtered;
-
-    const pinnedSlugs = new Set(pinnedListings.map((l) => l.slug));
-    const rest = filtered.filter((l) => !pinnedSlugs.has(l.slug));
-
-    // Sort by distance first, then by days on market (freshest first) as tiebreaker.
-    const withDist = rest.map((l) => ({
-      listing: l,
-      dist:
-        userLat !== null && userLng !== null && l.latitude != null && l.longitude != null
-          ? haversine(userLat, userLng, l.latitude, l.longitude)
-          : Number.POSITIVE_INFINITY,
-    }));
-
-    withDist.sort((a, b) => {
-      const dd = a.dist - b.dist;
-      if (Math.abs(dd) > 0.5) return dd; // >0.5 mi apart — closer wins
-      return (a.listing.daysOnMarket ?? 999) - (b.listing.daysOnMarket ?? 999);
-    });
-
-    return [...pinnedListings, ...withDist.map((s) => s.listing)];
-  }, [filtered, pinnedListings, userLat, userLng, sortBy]);
+    return filtered;
+  }, [filtered, pinnedListings, userLat, userLng, userCity, sortBy]);
 
   const selectClass =
     "w-full rounded-lg border border-border bg-white px-3 py-[10px] text-[15px] text-[#2a2825] outline-none focus:border-coral appearance-none cursor-pointer pr-8";
