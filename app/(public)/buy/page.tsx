@@ -683,13 +683,14 @@ function BuyPage() {
   //     Falls back to recommended when we don't yet know the user's location.
   //   • All other sort values trust the server-side ordering from the API.
   const sorted = useMemo(() => {
-    // Distance score: 1.0 at 0 miles, falls linearly to 0 at 50+ miles.
-    // If we don't know the user's location yet, everyone gets a neutral 0.5.
+    // Distance score: 1.0 at 0 miles, falls linearly to 0 at 15+ miles.
+    // Tighter radius so listings in the user's immediate city rank much higher
+    // than listings 20+ miles away. If we don't know location, neutral 0.5.
     const distanceScore = (lat?: number, lng?: number): number => {
       if (userLat === null || userLng === null) return 0.5;
       if (lat == null || lng == null) return 0;
       const d = haversine(userLat, userLng, lat, lng);
-      return Math.max(0, 1 - d / 50);
+      return Math.max(0, 1 - d / 15);
     };
 
     // "Closest to me": raw miles ascending. Pinned Givenest listings still go first.
@@ -735,11 +736,11 @@ function BuyPage() {
       return price / avgPrice;
     };
 
-    // Weights — distance is the PRIMARY ranking factor, followed by freshness,
+    // Weights — distance is the DOMINANT ranking factor, followed by freshness,
     // with price contributing a small tiebreaker boost.
-    const W_LOC = 0.55;
-    const W_DOM = 0.30;
-    const W_PRC = 0.15;
+    const W_LOC = 0.70;
+    const W_DOM = 0.20;
+    const W_PRC = 0.10;
 
     const scored = rest.map((l) => ({
       listing: l,
