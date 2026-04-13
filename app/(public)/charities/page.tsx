@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { CHARITIES } from "@/lib/mock-data";
 import { fmt } from "@/lib/utils";
 import { useUserLocation } from "@/lib/useUserLocation";
+import LeadModal from "@/components/LeadModal";
 
 interface EveryOrgNonprofit {
   name: string;
@@ -43,6 +44,8 @@ export default function Charities() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [selectedCharity, setSelectedCharity] = useState<{ name: string; ein: string } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
   const userLoc = useUserLocation();
@@ -80,6 +83,11 @@ export default function Charities() {
       else next.set(r.ein, r);
       return next;
     });
+  };
+
+  const chooseCharity = (name: string, ein: string) => {
+    setSelectedCharity({ name, ein });
+    setLeadModalOpen(true);
   };
 
   const locationScore = (loc?: string) => {
@@ -294,9 +302,15 @@ export default function Charities() {
                         <div className="text-base font-semibold">{c.closings}</div>
                       </div>
                     </div>
-                    <div className="h-[3px] overflow-hidden rounded-sm bg-border">
+                    <div className="mb-3 h-[3px] overflow-hidden rounded-sm bg-border">
                       <div className="h-full rounded-sm bg-coral" style={{ width: `${Math.min(100, (c.total / 65000) * 100)}%` }} />
                     </div>
+                    <button
+                      onClick={() => chooseCharity(c.name, c.ein ?? "")}
+                      className="w-full rounded-md border border-coral bg-coral/5 py-[7px] text-[12px] font-medium text-coral transition-colors hover:bg-coral hover:text-white cursor-pointer"
+                    >
+                      Choose this charity
+                    </button>
                   </div>
                 </div>
               ))}
@@ -334,8 +348,14 @@ export default function Charities() {
                     <div className="mb-[2px] text-sm font-medium">{r.name}</div>
                     {r.location && <div className="mb-[6px] text-xs text-muted">{r.location}</div>}
                     {r.description && (
-                      <div className="line-clamp-2 text-xs font-light leading-[1.6] text-muted">{r.description}</div>
+                      <div className="mb-[14px] line-clamp-2 text-xs font-light leading-[1.6] text-muted">{r.description}</div>
                     )}
+                    <button
+                      onClick={() => chooseCharity(r.name, r.ein)}
+                      className="w-full rounded-md border border-coral bg-coral/5 py-[7px] text-[12px] font-medium text-coral transition-colors hover:bg-coral hover:text-white cursor-pointer"
+                    >
+                      Choose this charity
+                    </button>
                   </div>
                 </div>
               ))}
@@ -394,10 +414,16 @@ export default function Charities() {
                         <div className="mb-[14px] line-clamp-2 text-xs font-light leading-[1.6] text-muted">{r.description}</div>
                       )}
                       {r.profileUrl && (
-                        <a href={r.profileUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-coral hover:underline">
+                        <a href={r.profileUrl} target="_blank" rel="noopener noreferrer" className="mb-3 inline-block text-[11px] text-coral hover:underline">
                           View on every.org →
                         </a>
                       )}
+                      <button
+                        onClick={() => chooseCharity(r.name, r.ein)}
+                        className="w-full rounded-md border border-coral bg-coral/5 py-[7px] text-[12px] font-medium text-coral transition-colors hover:bg-coral hover:text-white cursor-pointer"
+                      >
+                        Choose this charity
+                      </button>
                     </div>
                   </div>
                 );
@@ -437,6 +463,14 @@ export default function Charities() {
           </div>
         </div>
       </div>
+
+      <LeadModal
+        open={leadModalOpen}
+        onClose={() => { setLeadModalOpen(false); setSelectedCharity(null); }}
+        propertyAddress="Charity page inquiry"
+        propertyPrice={500000}
+        defaultCharities={selectedCharity ? [selectedCharity] : undefined}
+      />
     </div>
   );
 }
