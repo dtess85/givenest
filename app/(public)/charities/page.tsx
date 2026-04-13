@@ -142,7 +142,7 @@ export default function Charities() {
 
   return (
     <div>
-      <section className="relative flex min-h-[55vh] items-center overflow-hidden">
+      <section className="relative flex min-h-[35vh] items-center overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
           <img
             src="/images/charities-banner.png"
@@ -154,7 +154,7 @@ export default function Charities() {
             style={{ background: "linear-gradient(to right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.2) 100%)" }}
           />
         </div>
-        <div className="relative z-10 mx-auto w-full max-w-[1100px] px-8 py-[100px] md:px-12">
+        <div className="relative z-10 mx-auto w-full max-w-[1100px] px-8 py-[60px] md:px-12">
           <div className="mb-5 inline-block rounded-full bg-coral px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-white">
             Charity showcase
           </div>
@@ -268,52 +268,54 @@ export default function Charities() {
 
         {/* Featured charities — Givenest-curated, admin only */}
         {!isSearching && <div className="mb-10">
-          <div className="mb-5 flex items-baseline justify-between">
+          <div className="mb-5">
             <h2 className="font-serif text-xl font-medium tracking-[-0.01em]">
               Featured charities
             </h2>
-            <span className="text-[13px] font-light text-muted">
-              Nonprofits that givenest has donated to
-            </span>
           </div>
 
           {filteredCharities.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted">No charities match the selected filters</p>
           ) : (
-            <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {filteredCharities.map((c) => (
-                <div key={c.id} className="overflow-hidden rounded-[10px] border border-border bg-white">
-                  <div className="h-[3px] bg-coral" />
-                  <div className="px-5 py-[18px]">
-                    <div className="mb-[5px] flex items-center justify-between">
-                      <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-coral">{c.category}</span>
-                      <span className="text-coral"><StarIcon /></span>
+                <div key={c.id} className="rounded-lg border border-border bg-white px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                      {c.name.split(" ").filter((w) => w.length > 0 && w[0] === w[0].toUpperCase()).slice(0, 2).map((w) => w[0]).join("")}
                     </div>
-                    <div className="mb-[2px] text-sm font-medium">{c.name}</div>
-                    <div className="mb-[14px] text-xs text-muted">{c.city}</div>
-                    <div className="mb-3 h-px bg-border" />
-                    <div className="mb-3 grid grid-cols-2 gap-[10px]">
-                      <div>
-                        <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">Received</div>
-                        <div className="text-base font-semibold text-coral">{fmt(c.total)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] font-medium truncate">{c.name}</span>
+                        <span className="flex-shrink-0 rounded bg-coral/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.05em] text-coral">{c.category}</span>
                       </div>
-                      <div>
-                        <div className="mb-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-muted">Closings</div>
-                        <div className="text-base font-semibold">{c.closings}</div>
-                      </div>
-                    </div>
-                    <div className="mb-3 h-[3px] overflow-hidden rounded-sm bg-border">
-                      <div className="h-full rounded-sm bg-coral" style={{ width: `${Math.min(100, (c.total / 65000) * 100)}%` }} />
+                      <div className="text-[11px] text-muted">{c.city}</div>
                     </div>
                     <button
                       onClick={() => chooseCharity(c.name, c.ein ?? "")}
-                      className="w-full rounded-md border border-coral bg-coral/5 py-[7px] text-[12px] font-medium text-coral transition-colors hover:bg-coral hover:text-white cursor-pointer"
+                      className="flex-shrink-0 rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral cursor-pointer"
                     >
-                      Choose this charity
+                      Choose
                     </button>
                   </div>
+                  {c.description && (
+                    <p className="mt-2 pl-12 text-[12px] font-light leading-[1.6] text-muted">{c.description}</p>
+                  )}
                 </div>
               ))}
+              {/* Become a featured charity CTA — inside grid as a card */}
+              <div className="rounded-lg border border-dashed border-coral/40 bg-white px-4 py-4">
+                <h3 className="text-[13px] font-medium tracking-[-0.01em]">Become a featured charity</h3>
+                <p className="mt-1 text-[12px] font-light leading-[1.6] text-muted">
+                  Partner with Givenest to get priority visibility and receive donations from every closing.
+                </p>
+                <a
+                  href="mailto:dustin@givenest.com?subject=Featured Charity Inquiry"
+                  className="mt-3 inline-block rounded-md bg-coral px-4 py-[7px] text-[12px] font-medium text-white transition-colors hover:bg-[#d4574a]"
+                >
+                  Get featured
+                </a>
+              </div>
             </div>
           )}
         </div>}
@@ -330,31 +332,29 @@ export default function Charities() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {favoritesList.map((r) => (
-                <div key={r.ein} className="overflow-hidden rounded-[10px] border border-border bg-white">
-                  <div className="h-[3px] bg-coral" />
-                  <div className="px-5 py-[18px]">
-                    <div className="mb-[5px] flex items-center justify-between">
-                      <span className="rounded-full bg-coral/10 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-coral">Saved</span>
-                      <button
-                        onClick={() => toggleFavorite(r)}
-                        className="text-coral transition-colors hover:text-coral/60"
-                        title="Remove from saved"
-                      >
-                        <HeartIcon filled />
-                      </button>
-                    </div>
-                    <div className="mb-[2px] text-sm font-medium">{r.name}</div>
-                    {r.location && <div className="mb-[6px] text-xs text-muted">{r.location}</div>}
-                    {r.description && (
-                      <div className="mb-[14px] line-clamp-2 text-xs font-light leading-[1.6] text-muted">{r.description}</div>
-                    )}
+                <div key={r.ein} className="flex w-full items-center gap-3 rounded-lg border border-border bg-white px-4 py-3">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                    {r.name.split(" ").filter((w) => w.length > 0 && w[0] === w[0].toUpperCase()).slice(0, 2).map((w) => w[0]).join("")}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium truncate">{r.name}</div>
+                    {r.location && <div className="text-[11px] text-muted truncate">{r.location}</div>}
+                  </div>
+                  <div className="flex flex-shrink-0 items-center gap-1">
+                    <button
+                      onClick={() => toggleFavorite(r)}
+                      className="p-1.5 text-coral transition-colors hover:text-coral/60"
+                      title="Remove from saved"
+                    >
+                      <HeartIcon filled />
+                    </button>
                     <button
                       onClick={() => chooseCharity(r.name, r.ein)}
-                      className="w-full rounded-md border border-coral bg-coral/5 py-[7px] text-[12px] font-medium text-coral transition-colors hover:bg-coral hover:text-white cursor-pointer"
+                      className="rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral cursor-pointer"
                     >
-                      Choose this charity
+                      Choose
                     </button>
                   </div>
                 </div>
@@ -377,52 +377,43 @@ export default function Charities() {
               <p className="py-6 text-center text-sm text-muted">No results found</p>
             )}
 
-            <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {filteredResults.map((r) => {
                 const isSeed = SEED_EINS.has(r.ein);
                 const isFavorited = favorites.has(r.ein);
                 const isLocal = !isSeed && !isFavorited && locationScore(r.location) > 0;
                 return (
-                  <div key={r.ein || r.name} className="overflow-hidden rounded-[10px] border border-border bg-white">
-                    <div className="h-[3px] bg-coral" />
-                    <div className="px-5 py-[18px]">
-                      <div className="mb-[5px] flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {isSeed && (
-                            <span className="rounded-full bg-coral/10 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-coral">Featured</span>
-                          )}
-                          {isFavorited && (
-                            <span className="rounded-full bg-coral/10 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-coral">Saved</span>
-                          )}
-                          {isLocal && (
-                            <span className="rounded-full bg-emerald-50 px-[8px] py-px text-[9px] font-medium uppercase tracking-[0.06em] text-emerald-600">Local</span>
-                          )}
-                        </div>
-                        {!isSeed && (
-                          <button
-                            onClick={() => toggleFavorite(r)}
-                            className={`transition-colors ${isFavorited ? "text-coral hover:text-coral/60" : "text-muted hover:text-coral"}`}
-                            title={isFavorited ? "Remove from saved" : "Save charity"}
-                          >
-                            <HeartIcon filled={isFavorited} />
-                          </button>
+                  <div key={r.ein || r.name} className="flex w-full items-center gap-3 rounded-lg border border-border bg-white px-4 py-3">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                      {r.name.split(" ").filter((w) => w.length > 0 && w[0] === w[0].toUpperCase()).slice(0, 2).map((w) => w[0]).join("")}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] font-medium truncate">{r.name}</span>
+                        {isSeed && (
+                          <span className="flex-shrink-0 rounded bg-coral/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.05em] text-coral">Featured</span>
+                        )}
+                        {isLocal && (
+                          <span className="flex-shrink-0 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.05em] text-emerald-600">Local</span>
                         )}
                       </div>
-                      <div className="mb-[2px] text-sm font-medium">{r.name}</div>
-                      {r.location && <div className="mb-[6px] text-xs text-muted">{r.location}</div>}
-                      {r.description && (
-                        <div className="mb-[14px] line-clamp-2 text-xs font-light leading-[1.6] text-muted">{r.description}</div>
-                      )}
-                      {r.profileUrl && (
-                        <a href={r.profileUrl} target="_blank" rel="noopener noreferrer" className="mb-3 inline-block text-[11px] text-coral hover:underline">
-                          View on every.org →
-                        </a>
+                      {r.location && <div className="text-[11px] text-muted truncate">{r.location}</div>}
+                    </div>
+                    <div className="flex flex-shrink-0 items-center gap-1">
+                      {!isSeed && (
+                        <button
+                          onClick={() => toggleFavorite(r)}
+                          className={`p-1.5 transition-colors ${isFavorited ? "text-coral hover:text-coral/60" : "text-muted hover:text-coral"}`}
+                          title={isFavorited ? "Remove from saved" : "Save charity"}
+                        >
+                          <HeartIcon filled={isFavorited} />
+                        </button>
                       )}
                       <button
                         onClick={() => chooseCharity(r.name, r.ein)}
-                        className="w-full rounded-md border border-coral bg-coral/5 py-[7px] text-[12px] font-medium text-coral transition-colors hover:bg-coral hover:text-white cursor-pointer"
+                        className="rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral cursor-pointer"
                       >
-                        Choose this charity
+                        Choose
                       </button>
                     </div>
                   </div>

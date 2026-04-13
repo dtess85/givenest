@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { calcGivingPool } from "@/lib/commission";
 import { fmt } from "@/lib/utils";
-import GivingPanel from "@/components/GivingPanel";
+import { CHARITIES } from "@/lib/mock-data";
 import AgentPicker from "@/components/AgentPicker";
 import LeadModal from "@/components/LeadModal";
 
@@ -15,9 +15,40 @@ export default function Sell() {
   const [chosenAgent, setChosenAgent] = useState<{ name: string; office_name: string | null } | null>(null);
   const [selectedCharities, setSelectedCharities] = useState<{ name: string; ein: string }[]>([]);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [charitySearch, setCharitySearch] = useState("");
+  const [charityResults, setCharityResults] = useState<{ name: string; ein: string; location?: string }[]>([]);
+  const [charityLoading, setCharityLoading] = useState(false);
+  const charityDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const num = parseFloat(value.replace(/[^0-9.]/g, "")) || 0;
   const givingPool = calcGivingPool(num);
+  const selectedEins = new Set(selectedCharities.map((c) => c.ein));
+
+  const featuredCharities = CHARITIES.map((c) => ({ name: c.name, ein: c.ein ?? "", category: c.category }));
+  const showFeatured = !charitySearch.trim();
+
+  useEffect(() => {
+    if (charityDebounce.current) clearTimeout(charityDebounce.current);
+    if (!charitySearch.trim()) { setCharityResults([]); return; }
+    charityDebounce.current = setTimeout(async () => {
+      setCharityLoading(true);
+      try {
+        const key = process.env.NEXT_PUBLIC_EVERY_ORG_KEY;
+        const res = await fetch(`https://partners.every.org/v0.2/search/${encodeURIComponent(charitySearch.trim())}?apiKey=${key}&take=6`);
+        const data = await res.json();
+        setCharityResults((data.nonprofits ?? []).map((n: { name: string; ein: string; location?: string }) => ({ name: n.name, ein: n.ein, location: n.location })));
+      } catch { setCharityResults([]); }
+      finally { setCharityLoading(false); }
+    }, 350);
+  }, [charitySearch]);
+
+  const toggleCharity = (c: { name: string; ein: string }) => {
+    setSelectedCharities((prev) =>
+      prev.some((p) => p.ein === c.ein) ? prev.filter((p) => p.ein !== c.ein) : [...prev, c]
+    );
+  };
+
+  const charityListItems = showFeatured ? featuredCharities : charityResults;
 
   return (
     <div>
@@ -129,6 +160,68 @@ export default function Sell() {
                   </div>
                 )}
               </div>
+
+              {/* Charity selection */}
+              <div className="border-t border-border pt-4">
+                <div className="mb-[7px] text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+                  Choose your charity
+                  {selectedCharities.length > 0 && (
+                    <span className="ml-1 font-medium text-coral">({selectedCharities.length} selected)</span>
+                  )}
+                </div>
+                <input
+                  className="w-full rounded-md border border-border bg-white px-[14px] py-[11px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                  placeholder="Search 1.8M+ nonprofits..."
+                  value={charitySearch}
+                  onChange={(e) => setCharitySearch(e.target.value)}
+                />
+
+                <div className="mb-1 mt-3 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+                  {selectedCharities.length > 0 && showFeatured ? "Selected" : showFeatured ? "Featured charities" : charityLoading ? "Searching…" : `${charityResults.length} results`}
+                </div>
+
+                <div className="flex max-h-[220px] flex-col gap-1 overflow-y-auto">
+                  {/* Selected charities first */}
+                  {selectedCharities.map((c) => (
+                    <button
+                      key={c.ein}
+                      onClick={() => toggleCharity(c)}
+                      className="flex w-full items-center justify-between rounded-[5px] border border-coral bg-coral/[0.08] px-[10px] py-2 text-left transition-all"
+                    >
+                      <span className="truncate text-xs text-black">{c.name}</span>
+                      <span className="ml-2 flex-shrink-0 text-[13px] text-coral">&#10003;</span>
+                    </button>
+                  ))}
+
+                  {/* Divider between selected and list */}
+                  {selectedCharities.length > 0 && charityListItems.length > 0 && (
+                    <div className="mb-1 mt-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+                      {showFeatured ? "Featured charities" : "Results"}
+                    </div>
+                  )}
+
+                  {/* Unselected charities */}
+                  {charityListItems
+                    .filter((c) => !selectedEins.has(c.ein))
+                    .map((c) => (
+                      <button
+                        key={c.ein}
+                        onClick={() => toggleCharity(c)}
+                        className="flex w-full items-center justify-between rounded-[5px] border border-border bg-white px-[10px] py-2 text-left transition-all hover:border-coral"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <span className="truncate text-xs text-black">{c.name}</span>
+                          {"category" in c && (c as { category: string }).category && (
+                            <div className="text-[10px] text-muted">{(c as { category: string }).category}</div>
+                          )}
+                          {"location" in c && (c as { location?: string }).location && (
+                            <div className="text-[10px] text-muted">{(c as { location?: string }).location}</div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -199,13 +292,6 @@ export default function Sell() {
             </button>
           </div>
 
-          {/* Giving Panel */}
-          <GivingPanel
-            price={num || 500000}
-            variant="seller"
-            onRequestMatch={() => setLeadModalOpen(true)}
-            onCharitiesChange={setSelectedCharities}
-          />
         </div>
       </div>
 

@@ -251,15 +251,15 @@ export default function LeadModal({
     .map((w) => w[0])
     .join("");
 
-  const STEP_HEIGHT = "min-h-[500px]";
+  const STEP_HEIGHT = "min-h-[580px]";
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[560px] rounded-lg border border-border bg-white shadow-xl"
+        className="w-full sm:max-w-[560px] h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto sm:rounded-lg border-t sm:border border-border bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -311,9 +311,9 @@ export default function LeadModal({
 
                   {/* Agent list: selected pinned to top */}
                   <div className="mb-1 mt-3 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
-                    {agent.name !== "Kyndall Yates" ? "Selected" : savedAgentsList.length > 0 ? "Default & saved" : "Default"}
+                    {agent.name !== "Kyndall Yates" ? "Selected" : savedAgentsList.length > 0 ? "Givenest & saved" : "Givenest"}
                   </div>
-                  <div className="flex max-h-[320px] flex-col gap-1 overflow-y-auto">
+                  <div className="flex max-h-[400px] flex-col gap-1 overflow-y-auto">
                     {agentListItems.map((a, i) => {
                       const isSelected = agent.name === a.name;
                       const prevIsSelected = i > 0 && agent.name === agentListItems[i - 1].name;
@@ -328,14 +328,14 @@ export default function LeadModal({
                         <div key={a.name}>
                           {showDivider && (
                             <div className="mb-1 mt-2 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
-                              {savedAgentsList.length > 0 ? "Default & saved" : "Default"}
+                              {savedAgentsList.length > 0 ? "Givenest & saved" : "Givenest"}
                             </div>
                           )}
                           <div className="flex items-center gap-1">
                             <button
                               type="button"
                               onClick={() => setAgent({ name: a.name, office_name: a.office_name })}
-                              className={`flex flex-1 items-center gap-2 rounded-[5px] border px-[10px] py-[6px] text-left transition-all ${
+                              className={`flex flex-1 items-center gap-2 rounded-md border px-3 py-[10px] text-left transition-all ${
                                 isSelected
                                   ? "border-coral bg-coral/[0.08]"
                                   : "border-border bg-white hover:border-coral"
@@ -408,7 +408,7 @@ export default function LeadModal({
                     }
                   </div>
 
-                  <div className="flex max-h-[320px] flex-col gap-1 overflow-y-auto">
+                  <div className="flex max-h-[400px] flex-col gap-1 overflow-y-auto">
                     {charityLoading && charityListItems.length === 0 && (
                       <div className="py-2 text-center text-[11px] text-muted">Searching...</div>
                     )}
@@ -429,7 +429,7 @@ export default function LeadModal({
                           <button
                             type="button"
                             onClick={() => toggleCharity(c)}
-                            className={`flex w-full items-center justify-between rounded-[5px] border px-[10px] py-[6px] text-left transition-all ${
+                            className={`flex w-full items-center justify-between rounded-md border px-3 py-[10px] text-left transition-all ${
                               isSelected
                                 ? "border-coral bg-coral/[0.08]"
                                 : "border-border bg-white hover:border-coral"
