@@ -388,7 +388,20 @@ export async function searchAgents(
     params.push(letter.toUpperCase());
   }
   if (featured) {
-    conditions.push(`is_featured = true`);
+    // is_featured column may not exist if migration hasn't run yet
+    try {
+      const colCheck = await pool.query(
+        `SELECT 1 FROM information_schema.columns WHERE table_name = 'agents' AND column_name = 'is_featured' LIMIT 1`
+      );
+      if (colCheck.rows.length > 0) {
+        conditions.push(`is_featured = true`);
+      } else {
+        // Column doesn't exist — return empty results for featured queries
+        return { agents: [], total: 0 };
+      }
+    } catch {
+      return { agents: [], total: 0 };
+    }
   }
 
   const where = conditions.join(" AND ");

@@ -282,7 +282,20 @@ export default function AgentsPage() {
               {featuredLoading ? (
                 <div className="py-12 text-center text-[13px] text-muted">Loading agents...</div>
               ) : featuredAgents.length === 0 ? (
-                <div className="py-12 text-center text-[13px] text-muted">No featured agents found.</div>
+                <div className="rounded-[10px] border border-border bg-white px-6 py-10 text-center">
+                  <h3 className="font-serif text-lg font-medium tracking-[-0.01em]">Become a featured agent</h3>
+                  <p className="mx-auto mt-2 max-w-[420px] text-[13px] font-light leading-[1.7] text-muted">
+                    Featured agents appear at the top of our directory and get priority visibility
+                    with buyers and sellers. Partner with Givenest and grow your business while
+                    giving back to the community.
+                  </p>
+                  <a
+                    href="mailto:dustin@givenest.com?subject=Featured Agent Inquiry"
+                    className="mt-5 inline-block rounded-md bg-coral px-6 py-[10px] text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a]"
+                  >
+                    Get featured
+                  </a>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {featuredAgents.map((agent) => (
