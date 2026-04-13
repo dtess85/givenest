@@ -8,6 +8,9 @@ import AgentPicker from "@/components/AgentPicker";
 import LeadModal from "@/components/LeadModal";
 
 export default function Sell() {
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [zip, setZip] = useState("");
   const [value, setValue] = useState("");
   const [chosenAgent, setChosenAgent] = useState<{ name: string; office_name: string | null } | null>(null);
   const [selectedCharities, setSelectedCharities] = useState<{ name: string; ein: string }[]>([]);
@@ -33,6 +36,51 @@ export default function Sell() {
       <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-16 px-8 py-11 md:grid-cols-[1fr_480px]">
         {/* Left — estimate calculator */}
         <div>
+          {/* Home address */}
+          <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
+            <div className="border-b border-border px-4 py-3">
+              <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Your home</h3>
+            </div>
+            <div className="p-6 flex flex-col gap-4">
+              <div>
+                <label className="mb-[7px] block text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+                  Street address
+                </label>
+                <input
+                  className="w-full rounded-md border border-border bg-white py-[11px] px-[14px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                  placeholder="123 Main St"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-[7px] block text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+                    City
+                  </label>
+                  <input
+                    className="w-full rounded-md border border-border bg-white py-[11px] px-[14px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                    placeholder="Gilbert"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-[7px] block text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+                    Zip code
+                  </label>
+                  <input
+                    className="w-full rounded-md border border-border bg-white py-[11px] px-[14px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                    placeholder="85234"
+                    value={zip}
+                    onChange={(e) => setZip(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Estimate your giving */}
           <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
             <div className="border-b border-border px-4 py-3">
               <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Estimate your giving</h3>
@@ -172,7 +220,7 @@ export default function Sell() {
       <LeadModal
         open={leadModalOpen}
         onClose={() => setLeadModalOpen(false)}
-        propertyAddress="Sell page inquiry"
+        propertyAddress={[address, city, zip].filter(Boolean).join(", ") || "Sell page inquiry"}
         propertyPrice={num || 500000}
         defaultAgent={chosenAgent ?? undefined}
         defaultCharities={selectedCharities}
