@@ -676,23 +676,13 @@ function BuyPage() {
   });
 
   // Sort:
-  //   • "recommended" — pin Givenest listings first, then rank by two factors:
-  //        1. Distance to user (60%) — closer listings rank higher
-  //        2. Days on market (40%) — fresher listings rank higher
+  //   • "recommended" — pin Givenest listings first, then sort by distance
+  //     (closest first). Listings within 0.5 mi of each other are tie-broken
+  //     by days on market (freshest first).
   //   • "nearest" — strict ascending order by distance to the user.
   //     Falls back to recommended when we don't yet know the user's location.
   //   • All other sort values trust the server-side ordering from the API.
   const sorted = useMemo(() => {
-    // Distance score: 1.0 at 0 miles, falls linearly to 0 at 15+ miles.
-    // Tighter radius so listings in the user's immediate city rank much higher
-    // than listings 20+ miles away. If we don't know location, neutral 0.5.
-    const distanceScore = (lat?: number, lng?: number): number => {
-      if (userLat === null || userLng === null) return 0.5;
-      if (lat == null || lng == null) return 0;
-      const d = haversine(userLat, userLng, lat, lng);
-      return Math.max(0, 1 - d / 25);
-    };
-
     // "Closest to me": raw miles ascending. Pinned Givenest listings still go first.
     if (sortBy === "nearest") {
       if (userLat === null || userLng === null) return filtered;
@@ -714,26 +704,22 @@ function BuyPage() {
     const pinnedSlugs = new Set(pinnedListings.map((l) => l.slug));
     const rest = filtered.filter((l) => !pinnedSlugs.has(l.slug));
 
-    // Freshness score: 1.0 when brand new, exponential decay (~30-day half-life).
-    const freshnessScore = (dom?: number): number => {
-      if (dom == null) return 0.5;
-      return Math.exp(-Math.max(0, dom) / 30);
-    };
-
-    // Two-factor ranking: distance dominates, freshness is a tiebreaker.
-    const W_LOC = 0.85;
-    const W_DOM = 0.15;
-
-    const scored = rest.map((l) => ({
+    // Sort by distance first, then by days on market (freshest first) as tiebreaker.
+    const withDist = rest.map((l) => ({
       listing: l,
-      score:
-        W_LOC * distanceScore(l.latitude, l.longitude) +
-        W_DOM * freshnessScore(l.daysOnMarket),
+      dist:
+        userLat !== null && userLng !== null && l.latitude != null && l.longitude != null
+          ? haversine(userLat, userLng, l.latitude, l.longitude)
+          : Number.POSITIVE_INFINITY,
     }));
 
-    scored.sort((a, b) => b.score - a.score);
+    withDist.sort((a, b) => {
+      const dd = a.dist - b.dist;
+      if (Math.abs(dd) > 0.5) return dd; // >0.5 mi apart — closer wins
+      return (a.listing.daysOnMarket ?? 999) - (b.listing.daysOnMarket ?? 999);
+    });
 
-    return [...pinnedListings, ...scored.map((s) => s.listing)];
+    return [...pinnedListings, ...withDist.map((s) => s.listing)];
   }, [filtered, pinnedListings, userLat, userLng, sortBy]);
 
   const selectClass =
