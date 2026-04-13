@@ -275,28 +275,11 @@ export default function AgentsPage() {
             </div>
 
             {/* Featured agents */}
-            <div className="mb-10">
-              <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
-                Featured agents
-              </h2>
-              {featuredLoading ? (
-                <div className="py-12 text-center text-[13px] text-muted">Loading agents...</div>
-              ) : featuredAgents.length === 0 ? (
-                <div className="rounded-[10px] border border-border bg-white px-6 py-10 text-center">
-                  <h3 className="font-serif text-lg font-medium tracking-[-0.01em]">Become a featured agent</h3>
-                  <p className="mx-auto mt-2 max-w-[420px] text-[13px] font-light leading-[1.7] text-muted">
-                    Featured agents appear at the top of our directory and get priority visibility
-                    with buyers and sellers. Partner with Givenest and grow your business while
-                    giving back to the community.
-                  </p>
-                  <a
-                    href="mailto:dustin@givenest.com?subject=Featured Agent Inquiry"
-                    className="mt-5 inline-block rounded-md bg-coral px-6 py-[10px] text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a]"
-                  >
-                    Get featured
-                  </a>
-                </div>
-              ) : (
+            {!featuredLoading && featuredAgents.length > 0 && (
+              <div className="mb-10">
+                <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
+                  Featured agents
+                </h2>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {featuredAgents.map((agent) => (
                     <AgentCard
@@ -312,8 +295,8 @@ export default function AgentsPage() {
                     />
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </>
         )}
 
@@ -383,6 +366,24 @@ export default function AgentsPage() {
             )}
           </>
         )}
+
+        {/* Become a featured agent — always visible */}
+        <div className="mb-10">
+          <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
+            Become a featured agent
+          </h2>
+          <div className="flex items-center gap-3 rounded-lg border border-dashed border-coral/40 bg-white px-4 py-3">
+            <p className="flex-1 text-[13px] font-light leading-[1.7] text-muted">
+              Partner with Givenest to get priority visibility and grow your business while giving back to the community.
+            </p>
+            <a
+              href="mailto:dustin@givenest.com?subject=Featured Agent Inquiry"
+              className="flex-shrink-0 rounded-md bg-coral px-3 py-[6px] text-[12px] font-medium text-white transition-colors hover:bg-[#d4574a]"
+            >
+              Get featured
+            </a>
+          </div>
+        </div>
       </section>
 
       {/* Lead Modal */}

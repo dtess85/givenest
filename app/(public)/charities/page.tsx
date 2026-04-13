@@ -279,46 +279,49 @@ export default function Charities() {
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {filteredCharities.map((c) => (
-                <div key={c.id} className="rounded-lg border border-border bg-white px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
-                      {c.name.split(" ").filter((w) => w.length > 0 && w[0] === w[0].toUpperCase()).slice(0, 2).map((w) => w[0]).join("")}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-medium truncate">{c.name}</span>
-                        <span className="flex-shrink-0 rounded bg-coral/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.05em] text-coral">{c.category}</span>
-                      </div>
-                      <div className="text-[11px] text-muted">{c.city}</div>
-                    </div>
-                    <button
-                      onClick={() => chooseCharity(c.name, c.ein ?? "")}
-                      className="flex-shrink-0 rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral cursor-pointer"
-                    >
-                      Choose
-                    </button>
+                <div key={c.id} className="flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-3">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                    {c.name.split(" ").filter((w) => w.length > 0 && w[0] === w[0].toUpperCase()).slice(0, 2).map((w) => w[0]).join("")}
                   </div>
-                  {c.description && (
-                    <p className="mt-2 pl-12 text-[12px] font-light leading-[1.6] text-muted">{c.description}</p>
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-medium truncate">{c.name}</span>
+                      <span className="flex-shrink-0 rounded bg-coral/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.05em] text-coral">{c.category}</span>
+                    </div>
+                    <div className="text-[11px] text-muted">{c.city}</div>
+                    {c.description && (
+                      <p className="mt-1 text-[12px] font-light leading-[1.5] text-muted line-clamp-2">{c.description}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => chooseCharity(c.name, c.ein ?? "")}
+                    className="flex-shrink-0 rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral cursor-pointer"
+                  >
+                    Choose
+                  </button>
                 </div>
               ))}
-              {/* Become a featured charity CTA — inside grid as a card */}
-              <div className="rounded-lg border border-dashed border-coral/40 bg-white px-4 py-4">
-                <h3 className="text-[13px] font-medium tracking-[-0.01em]">Become a featured charity</h3>
-                <p className="mt-1 text-[12px] font-light leading-[1.6] text-muted">
-                  Partner with Givenest to get priority visibility and receive donations from every closing.
-                </p>
-                <a
-                  href="mailto:dustin@givenest.com?subject=Featured Charity Inquiry"
-                  className="mt-3 inline-block rounded-md bg-coral px-4 py-[7px] text-[12px] font-medium text-white transition-colors hover:bg-[#d4574a]"
-                >
-                  Get featured
-                </a>
-              </div>
             </div>
           )}
         </div>}
+
+        {/* Become a featured charity — always visible */}
+        <div className="mb-10">
+          <h2 className="mb-5 font-serif text-xl font-medium tracking-[-0.01em]">
+            Become a featured charity
+          </h2>
+          <div className="flex items-center gap-3 rounded-lg border border-dashed border-coral/40 bg-white px-4 py-3">
+            <p className="flex-1 text-[13px] font-light leading-[1.7] text-muted">
+              Partner with Givenest to get priority visibility and receive donations from every closing.
+            </p>
+            <a
+              href="mailto:dustin@givenest.com?subject=Featured Charity Inquiry"
+              className="flex-shrink-0 rounded-md bg-coral px-3 py-[6px] text-[12px] font-medium text-white transition-colors hover:bg-[#d4574a]"
+            >
+              Get featured
+            </a>
+          </div>
+        </div>
 
         {/* User favorites — only shown when non-empty and not searching */}
         {!isSearching && favoritesList.length > 0 && (
