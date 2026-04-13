@@ -401,6 +401,7 @@ function BuyPage() {
               navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
             });
             if (!cancelled) {
+              console.log("[location] GPS granted:", pos.coords.latitude.toFixed(4), pos.coords.longitude.toFixed(4));
               setUserLat(pos.coords.latitude);
               setUserLng(pos.coords.longitude);
               setLocationSource("gps");
@@ -416,6 +417,7 @@ function BuyPage() {
           const res = await fetch("/api/user-location");
           const data = await res.json();
           if (!cancelled && data.lat && data.lng) {
+            console.log("[location] IP fallback:", data.lat, data.lng, "city:", data.city);
             setUserLat(data.lat);
             setUserLng(data.lng);
             setLocationSource("ip");
@@ -437,6 +439,7 @@ function BuyPage() {
       if (!gotGps && typeof navigator !== "undefined" && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
+            console.log("[location] GPS upgrade:", pos.coords.latitude.toFixed(4), pos.coords.longitude.toFixed(4));
             setUserLat(pos.coords.latitude);
             setUserLng(pos.coords.longitude);
             setLocationSource("gps");
@@ -713,13 +716,20 @@ function BuyPage() {
       }
       if (!city) city = userCity;
 
+      console.log("[sort] city:", city, "| userLat:", userLat, "| source:", userLat !== null ? "has coords" : "no coords",
+        "| first 3 dists:", scored.slice(0, 3).map(s => `${cityOf(s.listing)}=${s.dist.toFixed(1)}mi`).join(", "));
+
       if (city) {
         const cityUpper = city.toUpperCase();
         const sameCity = scored.filter((s) => cityOf(s.listing).toUpperCase() === cityUpper);
         const other = scored.filter((s) => cityOf(s.listing).toUpperCase() !== cityUpper);
 
-        // Same-city: freshest first
-        sameCity.sort((a, b) => (a.listing.daysOnMarket ?? 999) - (b.listing.daysOnMarket ?? 999));
+        // Same-city: distance first, then freshest as tiebreaker
+        sameCity.sort((a, b) => {
+          const dd = a.dist - b.dist;
+          if (Math.abs(dd) > 0.5) return dd;
+          return (a.listing.daysOnMarket ?? 999) - (b.listing.daysOnMarket ?? 999);
+        });
         // Other: closest first, then freshest
         other.sort((a, b) => {
           const dd = a.dist - b.dist;
