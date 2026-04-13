@@ -184,6 +184,26 @@ export async function GET(request: Request) {
   if (maxHoa && Number(maxHoa) > 0)
     conditions.push(`AssociationFee Le ${maxHoa}`);
 
+  // Geo-filter: when the client provides lat/lng (for recommended/nearest sorts),
+  // restrict Spark results to a bounding box around the user (~25 mi radius)
+  // so the client-side distance sort has nearby listings to work with.
+  const lat = searchParams.get("lat");
+  const lng = searchParams.get("lng");
+  const sort = searchParams.get("sort") ?? "recommended";
+  if (lat && lng && (sort === "recommended" || sort === "nearest")) {
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+    if (!isNaN(userLat) && !isNaN(userLng)) {
+      // ~0.36 degrees ≈ 25 miles at Arizona's latitude
+      const latDelta = 0.36;
+      const lngDelta = 0.43; // slightly wider because longitude degrees are shorter
+      conditions.push(`Latitude Ge ${(userLat - latDelta).toFixed(6)}`);
+      conditions.push(`Latitude Le ${(userLat + latDelta).toFixed(6)}`);
+      conditions.push(`Longitude Ge ${(userLng - lngDelta).toFixed(6)}`);
+      conditions.push(`Longitude Le ${(userLng + lngDelta).toFixed(6)}`);
+    }
+  }
+
   const filter = conditions.join(" And ");
   const limit = Number(searchParams.get("limit") ?? "50");
   const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
@@ -197,7 +217,6 @@ export async function GET(request: Request) {
     sqft_desc:   "-LivingArea",
     beds_desc:   "-BedsTotal",
   };
-  const sort = searchParams.get("sort") ?? "recommended";
   const orderby = SORT_MAP[sort] ?? "-ListingContractDate";
 
   try {
@@ -207,7 +226,7 @@ export async function GET(request: Request) {
     // (ListOfficeName is not searchable on the replication API; ListOfficeId is)
     const GIVENEST_OFFICE_ID = "20260331163530092165000000";
     const givenestFilterPromise =
-      sort === "recommended" && page === 1
+      (sort === "recommended" || sort === "nearest") && page === 1
         ? fetchSparkListings(filter + ` And ListOfficeId Eq '${GIVENEST_OFFICE_ID}'`, 20, 1, "-ListingContractDate")
         : Promise.resolve({ listings: [] as Property[] });
 

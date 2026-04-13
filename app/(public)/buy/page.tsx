@@ -401,7 +401,6 @@ function BuyPage() {
               navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
             });
             if (!cancelled) {
-              console.log("[location] GPS granted:", pos.coords.latitude.toFixed(4), pos.coords.longitude.toFixed(4));
               setUserLat(pos.coords.latitude);
               setUserLng(pos.coords.longitude);
               setLocationSource("gps");
@@ -417,7 +416,6 @@ function BuyPage() {
           const res = await fetch("/api/user-location");
           const data = await res.json();
           if (!cancelled && data.lat && data.lng) {
-            console.log("[location] IP fallback:", data.lat, data.lng, "city:", data.city);
             setUserLat(data.lat);
             setUserLng(data.lng);
             setLocationSource("ip");
@@ -439,7 +437,6 @@ function BuyPage() {
       if (!gotGps && typeof navigator !== "undefined" && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            console.log("[location] GPS upgrade:", pos.coords.latitude.toFixed(4), pos.coords.longitude.toFixed(4));
             setUserLat(pos.coords.latitude);
             setUserLng(pos.coords.longitude);
             setLocationSource("gps");
@@ -514,6 +511,11 @@ function BuyPage() {
     params.set("page", String(targetPage));
     params.set("limit", "12");
     params.set("sort", sortBy);
+    // Send user location so the API can geo-filter for recommended/nearest sorts
+    if (userLat !== null && userLng !== null) {
+      params.set("lat", String(userLat));
+      params.set("lng", String(userLng));
+    }
 
     const cacheKey = params.toString();
 
@@ -558,7 +560,7 @@ function BuyPage() {
       else setLoadingMore(false);
       loadingRef.current = false;
     }
-  }, [minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, selectedLocation, sortBy]);
+  }, [minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, selectedLocation, sortBy, userLat, userLng]);
 
   // Debounced refetch — waits for location detection on first load.
   // Resets accumulated list and fetches page 1 whenever fetchListings identity changes (filter/sort change).
@@ -715,9 +717,6 @@ function BuyPage() {
         if (nearest.dist < 10) city = cityOf(nearest.listing);
       }
       if (!city) city = userCity;
-
-      console.log("[sort] city:", city, "| userLat:", userLat, "| source:", userLat !== null ? "has coords" : "no coords",
-        "| first 3 dists:", scored.slice(0, 3).map(s => `${cityOf(s.listing)}=${s.dist.toFixed(1)}mi`).join(", "));
 
       if (city) {
         const cityUpper = city.toUpperCase();
