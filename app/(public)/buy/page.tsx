@@ -704,12 +704,14 @@ function BuyPage() {
       const rest = filtered.filter((l) => !pinnedSlugs.has(l.slug));
       const scored = withDist(rest);
 
-      // Determine user's city: explicit from IP, or infer from nearest listing.
-      let city = userCity;
-      if (!city && scored.length > 0) {
+      // Determine user's city: infer from the nearest listing (most accurate),
+      // or fall back to IP geolocation city.
+      let city: string | null = null;
+      if (scored.length > 0 && userLat !== null) {
         const nearest = scored.reduce((a, b) => (a.dist < b.dist ? a : b));
         if (nearest.dist < 10) city = cityOf(nearest.listing);
       }
+      if (!city) city = userCity;
 
       if (city) {
         const cityUpper = city.toUpperCase();
