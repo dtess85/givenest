@@ -676,11 +676,9 @@ function BuyPage() {
   });
 
   // Sort:
-  //   • "recommended" — pin Givenest listings first, then rank the rest by a
-  //     composite score that blends (in priority order):
-  //        1. Distance to the user (primary)
-  //        2. Days on market — fresher listings score higher (secondary)
-  //        3. Price — above-pool-average prices get a logarithmic boost (tertiary)
+  //   • "recommended" — pin Givenest listings first, then rank by two factors:
+  //        1. Distance to user (60%) — closer listings rank higher
+  //        2. Days on market (40%) — fresher listings rank higher
   //   • "nearest" — strict ascending order by distance to the user.
   //     Falls back to recommended when we don't yet know the user's location.
   //   • All other sort values trust the server-side ordering from the API.
@@ -716,40 +714,21 @@ function BuyPage() {
     const pinnedSlugs = new Set(pinnedListings.map((l) => l.slug));
     const rest = filtered.filter((l) => !pinnedSlugs.has(l.slug));
 
-    // Pool average price — reference point for the above-average boost.
-    const prices = rest.map((l) => l.price).filter((p) => p > 0);
-    const avgPrice = prices.length
-      ? prices.reduce((s, p) => s + p, 0) / prices.length
-      : 0;
-
     // Freshness score: 1.0 when brand new, exponential decay (~30-day half-life).
     const freshnessScore = (dom?: number): number => {
       if (dom == null) return 0.5;
       return Math.exp(-Math.max(0, dom) / 30);
     };
 
-    // Price score: above-average prices get a logarithmic boost (capped at 2.5).
-    // Below-average prices are proportionally penalized.
-    const priceScore = (price: number): number => {
-      if (avgPrice <= 0 || price <= 0) return 0.5;
-      if (price >= avgPrice) {
-        return Math.min(2.5, 1 + Math.log10(price / avgPrice) * 1.5);
-      }
-      return price / avgPrice;
-    };
-
-    // Weights — distance is the DOMINANT ranking factor, followed by freshness,
-    // with price contributing a small tiebreaker boost.
-    const W_LOC = 0.70;
-    const W_DOM = 0.20;
-    const W_PRC = 0.10;
+    // Two-factor ranking: closest to user + freshest listings.
+    const W_LOC = 0.60;
+    const W_DOM = 0.40;
 
     const scored = rest.map((l) => ({
       listing: l,
       score:
         W_LOC * distanceScore(l.latitude, l.longitude) +
-        W_DOM * freshnessScore(l.daysOnMarket) +
-        W_PRC * priceScore(l.price),
+        W_DOM * freshnessScore(l.daysOnMarket),
     }));
 
     scored.sort((a, b) => b.score - a.score);
