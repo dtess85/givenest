@@ -690,7 +690,7 @@ function BuyPage() {
       if (userLat === null || userLng === null) return 0.5;
       if (lat == null || lng == null) return 0;
       const d = haversine(userLat, userLng, lat, lng);
-      return Math.max(0, 1 - d / 15);
+      return Math.max(0, 1 - d / 25);
     };
 
     // "Closest to me": raw miles ascending. Pinned Givenest listings still go first.
@@ -720,9 +720,9 @@ function BuyPage() {
       return Math.exp(-Math.max(0, dom) / 30);
     };
 
-    // Two-factor ranking: closest to user + freshest listings.
-    const W_LOC = 0.60;
-    const W_DOM = 0.40;
+    // Two-factor ranking: distance dominates, freshness is a tiebreaker.
+    const W_LOC = 0.85;
+    const W_DOM = 0.15;
 
     const scored = rest.map((l) => ({
       listing: l,
