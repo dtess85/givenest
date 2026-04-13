@@ -36,7 +36,6 @@ export default function Sell() {
       <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-16 px-8 py-11 md:grid-cols-[1fr_480px]">
         {/* Left — estimate calculator */}
         <div>
-          {/* Home address */}
           <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
             <div className="border-b border-border px-4 py-3">
               <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Your home</h3>
@@ -77,65 +76,59 @@ export default function Sell() {
                   />
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Estimate your giving */}
-          <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
-            <div className="border-b border-border px-4 py-3">
-              <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Estimate your giving</h3>
-            </div>
-            <div className="p-6">
-              <label className="mb-[7px] block text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
-                Estimated home value
-              </label>
-              <div className="relative mb-[18px]">
-                <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-sm text-muted">
-                  $
-                </span>
-                <input
-                  className="w-full rounded-md border border-border bg-white py-[11px] pl-[26px] pr-[14px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-                  placeholder="550,000"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                />
-              </div>
+              <div className="border-t border-border pt-4">
+                <label className="mb-[7px] block text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+                  Estimated home value
+                </label>
+                <div className="relative mb-[18px]">
+                  <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-sm text-muted">
+                    $
+                  </span>
+                  <input
+                    className="w-full rounded-md border border-border bg-white py-[11px] pl-[26px] pr-[14px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                    placeholder="550,000"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                  />
+                </div>
 
-              {num > 0 && (
-                <div>
-                  {[
-                    { label: "Home value", value: fmt(num), highlight: false },
-                    { label: "Estimated donation", value: fmt(givingPool), highlight: true },
-                  ].map(({ label, value: v, highlight }) => (
-                    <div
-                      key={label}
-                      className="flex items-baseline justify-between border-b border-border py-[11px]"
-                    >
-                      <span className={`text-sm ${highlight ? "font-medium text-black" : "font-light text-muted"}`}>
-                        {label}
-                      </span>
-                      <span
-                        className={
-                          highlight
-                            ? "text-[19px] font-semibold text-coral"
-                            : "text-sm font-normal text-black"
-                        }
+                {num > 0 && (
+                  <div>
+                    {[
+                      { label: "Home value", value: fmt(num), highlight: false },
+                      { label: "Estimated donation", value: fmt(givingPool), highlight: true },
+                    ].map(({ label, value: v, highlight }) => (
+                      <div
+                        key={label}
+                        className="flex items-baseline justify-between border-b border-border py-[11px]"
                       >
-                        {v}
-                      </span>
-                    </div>
-                  ))}
+                        <span className={`text-sm ${highlight ? "font-medium text-black" : "font-light text-muted"}`}>
+                          {label}
+                        </span>
+                        <span
+                          className={
+                            highlight
+                              ? "text-[19px] font-semibold text-coral"
+                              : "text-sm font-normal text-black"
+                          }
+                        >
+                          {v}
+                        </span>
+                      </div>
+                    ))}
 
-                  <div className="mt-[14px] rounded-md border border-coral/20 bg-coral/[0.08] px-[13px] py-[10px]">
-                    <div className="mb-[3px] text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
-                      Donation to charity
-                    </div>
-                    <div className="text-xs font-light leading-[1.6] text-muted">
-                      We donate 25% of the commission to your chosen charity. Nothing extra from you.
+                    <div className="mt-[14px] rounded-md border border-coral/20 bg-coral/[0.08] px-[13px] py-[10px]">
+                      <div className="mb-[3px] text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
+                        Donation to charity
+                      </div>
+                      <div className="text-xs font-light leading-[1.6] text-muted">
+                        We donate 25% of the commission to your chosen charity. Nothing extra from you.
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
