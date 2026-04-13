@@ -211,6 +211,7 @@ export default function LeadModal({
   const unselectedAgentItems = baseAgentItems.filter((a) => a.name !== agent.name);
   const agentListItems: AgentItem[] = [selectedAgentItem, ...unselectedAgentItems];
 
+  const hasProperty = !propertyAddress.toLowerCase().includes("inquiry");
   const givingPool = calcGivingPool(propertyPrice);
   const canSubmit = form.name.trim() && form.email.trim() && !sending && !sent;
 
@@ -250,7 +251,7 @@ export default function LeadModal({
     .map((w) => w[0])
     .join("");
 
-  const STEP_HEIGHT = "min-h-[420px]";
+  const STEP_HEIGHT = "min-h-[500px]";
 
   return createPortal(
     <div
@@ -312,7 +313,7 @@ export default function LeadModal({
                   <div className="mb-1 mt-3 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
                     {agent.name !== "Kyndall Yates" ? "Selected" : savedAgentsList.length > 0 ? "Default & saved" : "Default"}
                   </div>
-                  <div className="flex max-h-[200px] flex-col gap-1 overflow-y-auto">
+                  <div className="flex max-h-[320px] flex-col gap-1 overflow-y-auto">
                     {agentListItems.map((a, i) => {
                       const isSelected = agent.name === a.name;
                       const prevIsSelected = i > 0 && agent.name === agentListItems[i - 1].name;
@@ -385,7 +386,10 @@ export default function LeadModal({
               <div className="flex flex-1 flex-col">
                 <h3 className="font-serif text-xl font-medium leading-tight tracking-[-0.02em]">Choose a charity</h3>
                 <p className="mt-1 text-[13px] text-muted">
-                  25% of our commission — <span className="font-medium text-coral">{fmt(givingPool)}</span> on this home — goes directly to the charity you pick.
+                  {hasProperty
+                    ? <>25% of our commission — <span className="font-medium text-coral">{fmt(givingPool)}</span> on this home — goes directly to the charity you pick.</>
+                    : <>We donate 25% of the commission directly to the charity you choose. Nothing extra from you.</>
+                  }
                 </p>
 
                 <div className="mt-5 flex-1">
@@ -404,7 +408,7 @@ export default function LeadModal({
                     }
                   </div>
 
-                  <div className="flex max-h-[200px] flex-col gap-1 overflow-y-auto">
+                  <div className="flex max-h-[320px] flex-col gap-1 overflow-y-auto">
                     {charityLoading && charityListItems.length === 0 && (
                       <div className="py-2 text-center text-[11px] text-muted">Searching...</div>
                     )}
@@ -474,9 +478,9 @@ export default function LeadModal({
 
                 {/* Summary strip */}
                 <div className="mt-4 rounded-md bg-[#FAFAF8] px-3 py-2">
-                  <div className="text-[12px] font-medium truncate">{propertyAddress}</div>
+                  {hasProperty && <div className="text-[12px] font-medium truncate">{propertyAddress}</div>}
                   <div className="text-[11px] text-muted">
-                    {fmt(propertyPrice)} · {agent.name}
+                    {hasProperty && `${fmt(propertyPrice)} · `}{agent.name}
                     {charities.length > 0 && ` · ${charities.map((c) => c.name).join(", ")}`}
                   </div>
                 </div>
