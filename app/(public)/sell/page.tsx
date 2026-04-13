@@ -69,7 +69,7 @@ export default function Sell() {
         <div>
           <div className="overflow-hidden rounded-[10px] border border-border bg-white" style={{ borderTop: "3px solid var(--color-coral)" }}>
             <div className="border-b border-border px-4 py-3">
-              <h3 className="font-serif text-[15px] font-medium tracking-[-0.01em]">Your home</h3>
+              <h3 className="font-serif text-xl font-medium leading-[1.2] tracking-[-0.02em]">Your home</h3>
             </div>
             <div className="p-6 flex flex-col gap-4">
               <div>
