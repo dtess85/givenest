@@ -378,7 +378,10 @@ function BuyPage() {
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  // On mount: detect location via IP (fast), then upgrade to GPS if allowed
+  // On mount: GPS-first location detection, IP fallback
+  // 1. If GPS already granted (no prompt) → use it immediately (most accurate)
+  // 2. Otherwise → IP geolocation for rough lat/lng
+  // 3. Non-blocking GPS prompt as upgrade if permission is "prompt"
   useEffect(() => {
     let cancelled = false;
     // Safety valve: never block the initial fetch longer than 2s
@@ -386,61 +389,60 @@ function BuyPage() {
       if (!cancelled) setLocationReady(true);
     }, 2000);
 
-    fetch("/api/user-location")
-      .then((r) => r.json())
-      .then((data: { lat: number | null; lng: number | null; city: string | null; region: string | null; source: string }) => {
-        if (cancelled) return;
-        if (data.lat && data.lng) {
-          setUserLat(data.lat);
-          setUserLng(data.lng);
-          setLocationSource("ip");
-          // Blank state: if the user hasn't picked a location and there's nothing in the URL,
-          // auto-select the nearest AZ city so the buy page opens localized to them.
-          // Uses haversine against each city's coordinates so any AZ IP (including cities
-          // outside our known list) resolves to the closest city we do know about.
-          if (!userSetLocation.current && !selectedLocation) {
-            const cities = AZ_LOCATIONS.filter(
-              (l): l is LocationSuggestion & { lat: number; lng: number } =>
-                l.type === "city" && typeof l.lat === "number" && typeof l.lng === "number"
-            );
-            let nearest: (typeof cities)[number] | null = null;
-            let nearestDist = Infinity;
-            for (const c of cities) {
-              const d = haversine(data.lat, data.lng, c.lat, c.lng);
-              if (d < nearestDist) {
-                nearestDist = d;
-                nearest = c;
-              }
-            }
-            // Only auto-apply if the user is plausibly in/near AZ (~120 mi from a known city)
-            if (nearest && nearestDist < 120) {
-              setSelectedLocation(nearest);
-              setSearchInput(nearest.label);
+    async function detect() {
+      // Try GPS first if already granted (no prompt, most accurate)
+      let gotGps = false;
+      if (typeof navigator !== "undefined" && navigator.permissions && navigator.geolocation) {
+        try {
+          const perm = await navigator.permissions.query({ name: "geolocation" });
+          if (perm.state === "granted") {
+            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
+            });
+            if (!cancelled) {
+              setUserLat(pos.coords.latitude);
+              setUserLng(pos.coords.longitude);
+              setLocationSource("gps");
+              gotGps = true;
             }
           }
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) {
-          setLocationReady(true);
-          clearTimeout(fallbackTimer);
-        }
-      });
+        } catch {}
+      }
 
-    // Non-blocking GPS upgrade — fires after initial load, refines sort
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (cancelled) return;
-          setUserLat(pos.coords.latitude);
-          setUserLng(pos.coords.longitude);
-          setLocationSource("gps");
-        },
-        () => {} // silently ignore denial
-      );
+      // Fall back to IP if GPS wasn't available
+      if (!gotGps && !cancelled) {
+        try {
+          const res = await fetch("/api/user-location");
+          const data = await res.json();
+          if (!cancelled && data.lat && data.lng) {
+            setUserLat(data.lat);
+            setUserLng(data.lng);
+            setLocationSource("ip");
+          }
+        } catch {}
+      }
+
+      if (!cancelled) {
+        setLocationReady(true);
+        clearTimeout(fallbackTimer);
+      }
+
+      // Non-blocking GPS upgrade: if permission is "prompt", ask once
+      // This won't block — it fires the browser prompt in the background
+      if (!gotGps && typeof navigator !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (cancelled) return;
+            setUserLat(pos.coords.latitude);
+            setUserLng(pos.coords.longitude);
+            setLocationSource("gps");
+          },
+          () => {} // silently ignore denial
+        );
+      }
     }
 
+    detect();
     return () => {
       cancelled = true;
       clearTimeout(fallbackTimer);

@@ -12,18 +12,28 @@ interface Agent {
   is_givenest: boolean;
 }
 
+interface SavedAgent {
+  name: string;
+  office_name: string | null;
+  primary_city: string | null;
+  active_listing_count: number;
+  is_givenest: boolean;
+}
+
+const AGENT_FAVORITES_KEY = "givenest-agent-favorites";
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const FEATURED_LIMIT = 12;
+
 const GIVENEST_TEAM = [
   {
     initials: "KY",
     name: "Kyndall Yates",
-    title: "Co-Founder · Salesperson",
     email: "kyndall@givenest.com",
     phone: "(480) 400-8690",
   },
   {
     initials: "DT",
     name: "Dustin Tessendorf",
-    title: "Co-Founder · Designated Broker",
     email: "dustin@givenest.com",
     phone: "(480) 779-7204",
   },
@@ -31,23 +41,71 @@ const GIVENEST_TEAM = [
 
 export default function AgentsPage() {
   const [query, setQuery] = useState("");
+  const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [featuredAgents, setFeaturedAgents] = useState<Agent[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [favorites, setFavorites] = useState<Map<string, SavedAgent>>(new Map());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
-  const fetchAgents = useCallback(async (q: string, p: number) => {
+  // Whether we're in browse mode (search or letter filter active)
+  const isBrowsing = !!(query || activeLetter);
+
+  // Load favorites from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(AGENT_FAVORITES_KEY);
+      if (saved) setFavorites(new Map(JSON.parse(saved)));
+    } catch {}
+  }, []);
+
+  const persistFavorites = (next: Map<string, SavedAgent>) => {
+    setFavorites(next);
+    try {
+      localStorage.setItem(AGENT_FAVORITES_KEY, JSON.stringify(Array.from(next.entries())));
+    } catch {}
+  };
+
+  const toggleFavorite = (agent: Agent) => {
+    const next = new Map(favorites);
+    if (next.has(agent.name)) next.delete(agent.name);
+    else next.set(agent.name, agent);
+    persistFavorites(next);
+  };
+
+  // Fetch featured agents on mount (admin-curated via is_featured flag)
+  useEffect(() => {
+    (async () => {
+      setFeaturedLoading(true);
+      try {
+        const res = await fetch(`/api/agents?featured=true&limit=${FEATURED_LIMIT}&page=1`);
+        if (!res.ok) { setFeaturedAgents([]); return; }
+        const data = await res.json();
+        setFeaturedAgents((data.agents ?? []).filter((a: Agent) => !a.is_givenest));
+      } catch {
+        setFeaturedAgents([]);
+      } finally {
+        setFeaturedLoading(false);
+      }
+    })();
+  }, []);
+
+  const fetchAgents = useCallback(async (q: string, letter: string | null, p: number) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (q) params.set("q", q);
+      if (letter) params.set("letter", letter);
       params.set("page", String(p));
       params.set("limit", "48");
       const res = await fetch(`/api/agents?${params}`);
+      if (!res.ok) { setAgents([]); setTotal(0); setTotalPages(0); return; }
       const data = await res.json();
       setAgents(data.agents ?? []);
       setTotal(data.total ?? 0);
@@ -57,19 +115,26 @@ export default function AgentsPage() {
     }
   }, []);
 
-  // Debounced search
+  // Debounced search — only fetch when browsing
   useEffect(() => {
+    if (!query && !activeLetter) {
+      setAgents([]);
+      setTotal(0);
+      setTotalPages(0);
+      return;
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setPage(1);
-      fetchAgents(query, 1);
+      fetchAgents(query, query ? null : activeLetter, 1);
     }, 300);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [query, fetchAgents]);
+  }, [query, activeLetter, fetchAgents]);
 
-  // Page change
+  // Page change (only when browsing)
   useEffect(() => {
-    fetchAgents(query, page);
+    if (!query && !activeLetter) return;
+    fetchAgents(query, query ? null : activeLetter, page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
@@ -78,13 +143,19 @@ export default function AgentsPage() {
     setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
   }
 
-  // Separate givenest agents from the API results (they may also appear in the query)
+  function handleLetterClick(letter: string) {
+    setQuery("");
+    setActiveLetter((prev) => (prev === letter ? null : letter));
+    setPage(1);
+  }
+
+  // Separate givenest agents from browsing results
   const externalAgents = agents.filter((a) => !a.is_givenest);
-  const showGivenestPinned = !query; // Only show pinned section when not searching
+  const savedAgentsList = Array.from(favorites.values());
 
   return (
     <>
-      {/* ── Hero ── */}
+      {/* Hero */}
       <section className="border-b border-border bg-pampas px-8 py-16 text-center">
         <div className="mx-auto max-w-[600px]">
           <div className="mb-4 inline-block rounded-full bg-coral px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-white">
@@ -100,112 +171,208 @@ export default function AgentsPage() {
         </div>
       </section>
 
-      {/* ── Search + directory ── */}
+      {/* Search + directory */}
       <section className="mx-auto max-w-[1100px] px-8 py-10">
         {/* Search bar */}
-        <div className="mb-8">
+        <div className="mb-6">
           <input
             className="w-full rounded-lg border border-border bg-white px-4 py-3 text-[14px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-            placeholder="Search by agent name or brokerage…"
+            placeholder="Search by agent name or brokerage..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); if (e.target.value) setActiveLetter(null); }}
           />
-          {!loading && (
-            <div className="mt-2 text-[12px] text-muted">
-              {total.toLocaleString()} agent{total !== 1 ? "s" : ""} found
-            </div>
-          )}
         </div>
 
-        {/* Pinned Givenest agents */}
-        {showGivenestPinned && (
-          <div className="mb-10">
-            <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
-              Givenest agents
-            </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {GIVENEST_TEAM.map((a) => (
-                <div key={a.initials} className="rounded-lg border border-coral/40 bg-white px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
-                      {a.initials}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-medium">{a.name}</span>
-                        <span className="rounded bg-coral/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.05em] text-coral">
-                          Givenest
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-muted">{a.title}</div>
-                    </div>
-                    <a
-                      href={`mailto:${a.email}`}
-                      className="flex-shrink-0 rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral"
-                    >
-                      Contact
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Agent grid */}
-        <div className="mb-4">
-          <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
-            {query ? "Search results" : "All Arizona agents"}
-          </h2>
-        </div>
-
-        {loading ? (
-          <div className="py-12 text-center text-[13px] text-muted">Loading agents…</div>
-        ) : externalAgents.length === 0 && agents.length === 0 ? (
-          <div className="py-12 text-center text-[13px] text-muted">
-            No agents found{query ? ` for "${query}"` : ""}. Try a different search.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {(query ? agents : externalAgents).map((agent) => (
-              <AgentCard
-                key={agent.name}
-                name={agent.name}
-                officeName={agent.office_name}
-                primaryCity={agent.primary_city}
-                activeListingCount={agent.active_listing_count}
-                isGivenest={agent.is_givenest}
-                onSelect={() => handleSelect(agent)}
-              />
+        {/* A-Z index */}
+        {!query && (
+          <div className="mb-6 flex flex-wrap items-center gap-1">
+            <button
+              onClick={() => { setActiveLetter(null); setPage(1); }}
+              className={`rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors ${
+                !activeLetter
+                  ? "bg-coral text-white"
+                  : "text-muted hover:bg-pampas hover:text-black"
+              }`}
+            >
+              All
+            </button>
+            {LETTERS.map((letter) => (
+              <button
+                key={letter}
+                onClick={() => handleLetterClick(letter)}
+                className={`rounded-md px-2 py-1 text-[12px] font-medium transition-colors ${
+                  activeLetter === letter
+                    ? "bg-coral text-white"
+                    : "text-muted hover:bg-pampas hover:text-black"
+                }`}
+              >
+                {letter}
+              </button>
             ))}
           </div>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-4">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="rounded-md border border-border px-4 py-2 text-[13px] transition-colors hover:border-coral disabled:opacity-30 disabled:hover:border-border"
-            >
-              Previous
-            </button>
-            <span className="text-[13px] text-muted">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="rounded-md border border-border px-4 py-2 text-[13px] transition-colors hover:border-coral disabled:opacity-30 disabled:hover:border-border"
-            >
-              Next
-            </button>
-          </div>
+        {/* ── Default view: Givenest + Featured + Saved ── */}
+        {!isBrowsing && (
+          <>
+            {/* Saved agents */}
+            {savedAgentsList.length > 0 && (
+              <div className="mb-10">
+                <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
+                  Saved agents
+                </h2>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {savedAgentsList.map((agent) => (
+                    <AgentCard
+                      key={agent.name}
+                      name={agent.name}
+                      officeName={agent.office_name}
+                      primaryCity={agent.primary_city}
+                      activeListingCount={agent.active_listing_count}
+                      isGivenest={agent.is_givenest}
+                      isFavorite={true}
+                      onSelect={() => handleSelect(agent)}
+                      onToggleFavorite={() => toggleFavorite(agent)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Givenest agents */}
+            <div className="mb-10">
+              <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
+                Givenest agents
+              </h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {GIVENEST_TEAM.map((a) => (
+                  <div key={a.initials} className="rounded-lg border border-coral/40 bg-white px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                        {a.initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] font-medium">{a.name}</span>
+                          <span className="rounded bg-coral/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.05em] text-coral">Givenest</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted mt-0.5">
+                          <a href={`tel:${a.phone}`} className="hover:text-coral transition-colors">{a.phone}</a>
+                          <span className="text-border">·</span>
+                          <a href={`mailto:${a.email}`} className="hover:text-coral transition-colors">{a.email}</a>
+                        </div>
+                      </div>
+                      <a
+                        href={`mailto:${a.email}`}
+                        className="flex-shrink-0 rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral"
+                      >
+                        Contact
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Featured agents */}
+            <div className="mb-10">
+              <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
+                Featured agents
+              </h2>
+              {featuredLoading ? (
+                <div className="py-12 text-center text-[13px] text-muted">Loading agents...</div>
+              ) : featuredAgents.length === 0 ? (
+                <div className="py-12 text-center text-[13px] text-muted">No featured agents found.</div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {featuredAgents.map((agent) => (
+                    <AgentCard
+                      key={agent.name}
+                      name={agent.name}
+                      officeName={agent.office_name}
+                      primaryCity={agent.primary_city}
+                      activeListingCount={agent.active_listing_count}
+                      isGivenest={agent.is_givenest}
+                      isFavorite={favorites.has(agent.name)}
+                      onSelect={() => handleSelect(agent)}
+                      onToggleFavorite={() => toggleFavorite(agent)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── Browse view: search results or letter-filtered list ── */}
+        {isBrowsing && (
+          <>
+            {/* Count */}
+            {!loading && (
+              <div className="mb-6 text-[12px] text-muted">
+                {total.toLocaleString()} agent{total !== 1 ? "s" : ""} found
+                {activeLetter && ` starting with "${activeLetter}"`}
+              </div>
+            )}
+
+            {/* Agent grid heading */}
+            <div className="mb-4">
+              <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
+                {query ? "Search results" : `Agents — ${activeLetter}`}
+              </h2>
+            </div>
+
+            {loading ? (
+              <div className="py-12 text-center text-[13px] text-muted">Loading agents...</div>
+            ) : externalAgents.length === 0 && agents.length === 0 ? (
+              <div className="py-12 text-center text-[13px] text-muted">
+                No agents found{query ? ` for "${query}"` : activeLetter ? ` starting with "${activeLetter}"` : ""}. Try a different search.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {(query ? agents : externalAgents).map((agent) => (
+                  <AgentCard
+                    key={agent.name}
+                    name={agent.name}
+                    officeName={agent.office_name}
+                    primaryCity={agent.primary_city}
+                    activeListingCount={agent.active_listing_count}
+                    isGivenest={agent.is_givenest}
+                    isFavorite={favorites.has(agent.name)}
+                    onSelect={() => handleSelect(agent)}
+                    onToggleFavorite={() => toggleFavorite(agent)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="rounded-md border border-border px-4 py-2 text-[13px] transition-colors hover:border-coral disabled:opacity-30 disabled:hover:border-border"
+                >
+                  Previous
+                </button>
+                <span className="text-[13px] text-muted">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="rounded-md border border-border px-4 py-2 text-[13px] transition-colors hover:border-coral disabled:opacity-30 disabled:hover:border-border"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
 
-      {/* ── Consult form overlay ── */}
+      {/* Consult form overlay */}
       {selectedAgent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div ref={formRef} className="w-full max-w-[420px] rounded-lg border border-border bg-white shadow-xl">

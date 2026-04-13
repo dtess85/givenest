@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
-    const { name, email, phone, agentName, agentOffice, propertyAddress, message, source } = await req.json();
+    const { name, email, phone, agentName, agentOffice, propertyAddress, message, source, charity, homeValue, givingAmount } = await req.json();
 
     if (!name || !email) {
       return NextResponse.json({ error: "Name and email are required" }, { status: 400 });
@@ -33,6 +33,9 @@ export async function POST(req: Request) {
           <p><strong>Agent requested:</strong> ${agentName || "—"}</p>
           ${agentOffice ? `<p><strong>Brokerage:</strong> ${agentOffice}</p>` : ""}
           ${propertyAddress ? `<p><strong>Property:</strong> ${propertyAddress}</p>` : ""}
+          ${charity ? `<hr style="border:none;border-top:1px solid #E3DED6;margin:16px 0"/><p><strong>Charity:</strong> ${charity}</p>` : ""}
+          ${homeValue ? `<p><strong>Home value:</strong> ${homeValue}</p>` : ""}
+          ${givingAmount ? `<p><strong>Est. donation:</strong> ${givingAmount}</p>` : ""}
         </div>
       `,
     });

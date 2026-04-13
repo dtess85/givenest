@@ -6,7 +6,9 @@ interface AgentCardProps {
   primaryCity: string | null;
   activeListingCount: number;
   isGivenest: boolean;
+  isFavorite?: boolean;
   onSelect: () => void;
+  onToggleFavorite?: () => void;
 }
 
 export default function AgentCard({
@@ -15,7 +17,9 @@ export default function AgentCard({
   primaryCity,
   activeListingCount,
   isGivenest,
+  isFavorite,
   onSelect,
+  onToggleFavorite,
 }: AgentCardProps) {
   const initials = name
     .split(" ")
@@ -25,9 +29,8 @@ export default function AgentCard({
     .join("");
 
   return (
-    <button
-      onClick={onSelect}
-      className={`flex w-full items-center gap-3 rounded-lg border bg-white px-4 py-3 text-left transition-colors hover:border-coral ${
+    <div
+      className={`flex w-full items-center gap-3 rounded-lg border bg-white px-4 py-3 transition-colors ${
         isGivenest ? "border-coral/40" : "border-border"
       }`}
     >
@@ -56,9 +59,36 @@ export default function AgentCard({
           )}
         </div>
       </div>
-      <div className="flex-shrink-0 rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral">
-        Request
+      <div className="flex flex-shrink-0 items-center gap-1">
+        {onToggleFavorite && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+            className="p-1.5 text-coral transition-colors hover:text-[#d4574a]"
+            aria-label={isFavorite ? "Remove from saved" : "Save agent"}
+          >
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill={isFavorite ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
+              />
+            </svg>
+          </button>
+        )}
+        <button
+          onClick={onSelect}
+          className="rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral"
+        >
+          Request
+        </button>
       </div>
-    </button>
+    </div>
   );
 }

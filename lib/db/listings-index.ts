@@ -358,9 +358,9 @@ export interface AgentRow {
 
 /** Paginated agent search for the directory API */
 export async function searchAgents(
-  opts: { q?: string; city?: string; page?: number; limit?: number }
+  opts: { q?: string; city?: string; letter?: string; featured?: boolean; page?: number; limit?: number }
 ): Promise<{ agents: AgentRow[]; total: number }> {
-  const { q, city, page = 1, limit = 48 } = opts;
+  const { q, city, letter, featured, page = 1, limit = 48 } = opts;
   const conditions: string[] = ["idx_participant = true"];
   const params: unknown[] = [];
   let paramIdx = 0;
@@ -382,6 +382,14 @@ export async function searchAgents(
     conditions.push(`primary_city = $${paramIdx}`);
     params.push(city);
   }
+  if (letter && /^[A-Za-z]$/.test(letter)) {
+    paramIdx++;
+    conditions.push(`UPPER(LEFT(SPLIT_PART(name, ' ', ARRAY_LENGTH(STRING_TO_ARRAY(name, ' '), 1)), 1)) = $${paramIdx}`);
+    params.push(letter.toUpperCase());
+  }
+  if (featured) {
+    conditions.push(`is_featured = true`);
+  }
 
   const where = conditions.join(" AND ");
 
@@ -397,10 +405,15 @@ export async function searchAgents(
   paramIdx++;
   params.push(offset);
 
-  // When searching, rank by similarity first; otherwise by listing count
+  // Extract last name for sorting: last word of the name field
+  const lastNameExpr = `SPLIT_PART(name, ' ', ARRAY_LENGTH(STRING_TO_ARRAY(name, ' '), 1))`;
+
+  // When searching, rank by similarity first; otherwise by last name (with letter filter) or listing count
   const orderBy = q && q.length >= 3
-    ? `is_givenest DESC, GREATEST(similarity(name, $1), similarity(COALESCE(office_name,''), $1)) DESC, name ASC`
-    : `is_givenest DESC, active_listing_count DESC, name ASC`;
+    ? `is_givenest DESC, GREATEST(similarity(name, $1), similarity(COALESCE(office_name,''), $1)) DESC, ${lastNameExpr} ASC`
+    : letter
+      ? `is_givenest DESC, ${lastNameExpr} ASC, name ASC`
+      : `is_givenest DESC, active_listing_count DESC, ${lastNameExpr} ASC`;
 
   const { rows } = await pool.query(
     `SELECT name, office_name, primary_city, active_listing_count, is_givenest

@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS listings (
   agent_name TEXT,                        -- ListAgentFullName
   status TEXT,                            -- mapped status (e.g. "For Sale")
   mls_status TEXT,                        -- raw MlsStatus from Spark
+  is_featured BOOLEAN DEFAULT false,
   modified_at TIMESTAMPTZ,               -- ModificationTimestamp from Spark
   synced_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -112,6 +113,7 @@ CREATE TABLE IF NOT EXISTS agents (
   email TEXT,                            -- stored but NOT exposed in UI
   associations TEXT[],
   is_givenest BOOLEAN DEFAULT false,
+  is_featured BOOLEAN DEFAULT false,
   active_listing_count INTEGER DEFAULT 0,
   idx_participant BOOLEAN DEFAULT true,
   modified_at TIMESTAMPTZ,
