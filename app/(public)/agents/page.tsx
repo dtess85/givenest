@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import AgentCard from "@/components/AgentCard";
-import ConsultForm from "@/components/ConsultForm";
+import LeadModal from "@/components/LeadModal";
 
 interface Agent {
   name: string;
@@ -50,9 +50,9 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(false);
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [favorites, setFavorites] = useState<Map<string, SavedAgent>>(new Map());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const formRef = useRef<HTMLDivElement>(null);
 
   // Whether we're in browse mode (search or letter filter active)
   const isBrowsing = !!(query || activeLetter);
@@ -140,7 +140,7 @@ export default function AgentsPage() {
 
   function handleSelect(agent: Agent) {
     setSelectedAgent(agent);
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+    setLeadModalOpen(true);
   }
 
   function handleLetterClick(letter: string) {
@@ -262,12 +262,12 @@ export default function AgentsPage() {
                           <a href={`mailto:${a.email}`} className="hover:text-coral transition-colors">{a.email}</a>
                         </div>
                       </div>
-                      <a
-                        href={`mailto:${a.email}`}
-                        className="flex-shrink-0 rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral"
+                      <button
+                        onClick={() => handleSelect({ name: a.name, office_name: "Givenest", primary_city: null, active_listing_count: 0, is_givenest: true })}
+                        className="flex-shrink-0 rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral cursor-pointer"
                       >
                         Contact
-                      </a>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -372,52 +372,14 @@ export default function AgentsPage() {
         )}
       </section>
 
-      {/* Consult form overlay */}
-      {selectedAgent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div ref={formRef} className="w-full max-w-[420px] rounded-lg border border-border bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h3 className="font-serif text-[15px] font-medium">
-                Request a consult
-              </h3>
-              <button
-                onClick={() => setSelectedAgent(null)}
-                className="text-[18px] text-muted hover:text-black"
-              >
-                ×
-              </button>
-            </div>
-            <div className="px-4 py-3">
-              <div className="mb-3 flex items-center gap-2">
-                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[9px] font-medium text-white">
-                  {selectedAgent.name
-                    .split(" ")
-                    .filter((w) => w[0] === w[0].toUpperCase())
-                    .slice(0, 2)
-                    .map((w) => w[0])
-                    .join("")}
-                </div>
-                <div>
-                  <div className="text-[13px] font-medium">{selectedAgent.name}</div>
-                  {selectedAgent.office_name && (
-                    <div className="text-[11px] text-muted">{selectedAgent.office_name}</div>
-                  )}
-                </div>
-              </div>
-              <div className="mb-3 rounded bg-pampas px-3 py-2 text-[11px] text-muted">
-                Givenest will coordinate with this agent on your behalf. 25% of the total
-                commission will be donated to a charity you choose at closing.
-              </div>
-              <ConsultForm
-                agentName={selectedAgent.name}
-                agentOffice={selectedAgent.office_name}
-                source="directory"
-                onSuccess={() => setTimeout(() => setSelectedAgent(null), 2000)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Lead Modal */}
+      <LeadModal
+        open={leadModalOpen}
+        onClose={() => { setLeadModalOpen(false); setSelectedAgent(null); }}
+        propertyAddress="Agent directory inquiry"
+        propertyPrice={500000}
+        defaultAgent={selectedAgent ? { name: selectedAgent.name, office_name: selectedAgent.office_name } : undefined}
+      />
     </>
   );
 }
