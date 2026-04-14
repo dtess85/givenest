@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { CHARITIES } from "@/lib/mock-data";
-import { fmt } from "@/lib/utils";
+import { fmt, getInitials } from "@/lib/utils";
 import { useUserLocation } from "@/lib/useUserLocation";
 import LeadModal from "@/components/LeadModal";
 
@@ -36,9 +36,13 @@ function HeartIcon({ filled }: { filled: boolean }) {
 }
 
 export default function Charities() {
+  const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<EveryOrgNonprofit[]>([]);
   const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<EveryOrgNonprofit[]>([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [favorites, setFavorites] = useState<Map<string, EveryOrgNonprofit>>(new Map());
   const [favoritesLoaded, setFavoritesLoaded] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -47,7 +51,9 @@ export default function Charities() {
   const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [selectedCharity, setSelectedCharity] = useState<{ name: string; ein: string } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
   const userLoc = useUserLocation();
 
   useEffect(() => {
@@ -65,11 +71,14 @@ export default function Charities() {
     } catch {}
   }, [favorites, favoritesLoaded]);
 
-  // Close dropdown on outside click
+  // Close filter + suggestions dropdown on outside click
   useEffect(() => {
     function handleMouseDown(e: MouseEvent) {
       if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
         setFilterOpen(false);
+      }
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleMouseDown);
@@ -99,12 +108,36 @@ export default function Charities() {
     return 0;
   };
 
+  // Live autocomplete suggestions (driven by `input`, not committed)
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!search.trim()) { setResults([]); return; }
+    const q = input.trim();
+    if (!q) { setSuggestions([]); setSuggestLoading(false); return; }
 
     debounceRef.current = setTimeout(async () => {
-      setLoading(true);
+      setSuggestLoading(true);
+      try {
+        const key = process.env.NEXT_PUBLIC_EVERY_ORG_KEY;
+        const res = await fetch(
+          `https://partners.every.org/v0.2/search/${encodeURIComponent(q)}?apiKey=${key}&take=6`
+        );
+        const data = await res.json();
+        setSuggestions(data.nonprofits ?? []);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSuggestLoading(false);
+      }
+    }, 220);
+  }, [input]);
+
+  // Full results — only fires when search is committed (Enter / Search button)
+  useEffect(() => {
+    if (resultsDebounceRef.current) clearTimeout(resultsDebounceRef.current);
+    if (!search.trim()) { setResults([]); setLoading(false); return; }
+
+    setLoading(true);
+    resultsDebounceRef.current = setTimeout(async () => {
       try {
         const key = process.env.NEXT_PUBLIC_EVERY_ORG_KEY;
         const res = await fetch(
@@ -117,8 +150,21 @@ export default function Charities() {
       } finally {
         setLoading(false);
       }
-    }, 350);
+    }, 0);
   }, [search]);
+
+  const commitSearch = (value?: string) => {
+    const v = (value ?? input).trim();
+    setSearch(v);
+    setDropdownOpen(false);
+  };
+
+  const clearSearch = () => {
+    setInput("");
+    setSearch("");
+    setSuggestions([]);
+    setDropdownOpen(false);
+  };
 
   const isSearching = !!search.trim();
   const favoritesList = Array.from(favorites.values());
@@ -142,8 +188,8 @@ export default function Charities() {
 
   return (
     <div>
-      <section className="relative flex min-h-[35vh] items-center overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
+      <section className="relative flex min-h-[35vh] items-center">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <img
             src="/images/charities-banner.png"
             alt="Community hands around a plant"
@@ -163,17 +209,73 @@ export default function Charities() {
             <em className="text-coral">Your choice.</em>
           </h1>
           <div className="flex max-w-[560px] items-start gap-2">
-            {/* Search pill */}
-            <div className="flex flex-1 overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
-              <input
-                className="flex-1 border-none bg-white px-[18px] py-[16px] text-[15px] font-light outline-none placeholder:text-[#c0bdb6]"
-                placeholder="Search any organization..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <button className="bg-coral px-[22px] py-[16px] text-sm font-medium text-white transition-colors hover:bg-[#d4574a]">
-                Search
-              </button>
+            {/* Search pill — autocomplete + commit on Enter/click */}
+            <div className="relative flex-1" ref={searchBoxRef}>
+              <form
+                onSubmit={(e) => { e.preventDefault(); commitSearch(); }}
+                className="flex overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]"
+              >
+                <input
+                  className="flex-1 border-none bg-white px-[18px] py-[16px] text-[15px] font-light outline-none placeholder:text-[#c0bdb6]"
+                  placeholder="Search any organization..."
+                  value={input}
+                  onChange={(e) => { setInput(e.target.value); setDropdownOpen(true); }}
+                  onFocus={() => { if (input.trim()) setDropdownOpen(true); }}
+                  onKeyDown={(e) => { if (e.key === "Escape") setDropdownOpen(false); }}
+                />
+                {input && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="flex items-center justify-center bg-white px-2 text-muted hover:text-black"
+                    aria-label="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="bg-coral px-[22px] py-[16px] text-sm font-medium text-white transition-colors hover:bg-[#d4574a]"
+                >
+                  Search
+                </button>
+              </form>
+
+              {/* Autocomplete dropdown */}
+              {dropdownOpen && input.trim() && (
+                <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-lg border border-border bg-white shadow-xl">
+                  {suggestLoading && suggestions.length === 0 && (
+                    <div className="px-4 py-3 text-[12px] text-muted">Searching…</div>
+                  )}
+                  {!suggestLoading && suggestions.length === 0 && (
+                    <div className="px-4 py-3 text-[12px] text-muted">No matches — press Enter to search anyway</div>
+                  )}
+                  {suggestions.slice(0, 6).map((s) => (
+                    <button
+                      key={s.ein || s.name}
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); chooseCharity(s.name, s.ein); setDropdownOpen(false); }}
+                      className="flex w-full items-center gap-3 border-b border-border px-4 py-[10px] text-left hover:bg-pampas"
+                    >
+                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[10px] font-medium text-white">
+                        {getInitials(s.name)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[13px] font-medium text-black">{s.name}</div>
+                        {s.location && <div className="truncate text-[11px] text-muted">{s.location}</div>}
+                      </div>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); commitSearch(); }}
+                    className="flex w-full items-center justify-between px-4 py-[10px] text-left text-[12px] text-coral hover:bg-pampas"
+                  >
+                    <span>See all results for &ldquo;{input.trim()}&rdquo;</span>
+                    <span aria-hidden>→</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Filter button + dropdown */}
@@ -307,13 +409,15 @@ export default function Charities() {
 
         {/* Become a featured charity — always visible */}
         <div className="mb-10">
-          <h2 className="mb-5 font-serif text-xl font-medium tracking-[-0.01em]">
-            Become a featured charity
-          </h2>
-          <div className="flex items-center gap-3 rounded-lg border border-dashed border-coral/40 bg-white px-4 py-3">
-            <p className="flex-1 text-[13px] font-light leading-[1.7] text-muted">
-              Partner with Givenest to get priority visibility and receive donations from every closing.
-            </p>
+          <div className="flex items-center gap-4 rounded-lg border border-dashed border-coral/40 bg-white px-5 py-5">
+            <div className="flex-1">
+              <h2 className="mb-2 font-serif text-xl font-medium tracking-[-0.01em]">
+                Become a featured charity
+              </h2>
+              <p className="font-serif italic text-[15px] leading-[1.4] text-black">
+                Partner with Givenest to get priority visibility and receive donations from every closing.
+              </p>
+            </div>
             <a
               href="mailto:dustin@givenest.com?subject=Featured Charity Inquiry"
               className="flex-shrink-0 rounded-md bg-coral px-3 py-[6px] text-[12px] font-medium text-white transition-colors hover:bg-[#d4574a]"

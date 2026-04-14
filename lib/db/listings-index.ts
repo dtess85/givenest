@@ -181,14 +181,17 @@ export async function searchListings(
   }
 
   // ── General: trigram search on address, neighborhood, zip, agent; exact on city ──
+  // For agent_name, replace inter-word spaces with `%` so "teresa porpiglia"
+  // matches "Teresa M Porpiglia" — middle initials shouldn't break the search.
   const pattern = `%${q}%`;
+  const agentPattern = `%${q.split(/\s+/).filter(Boolean).join("%")}%`;
   const { rows } = await pool.query(
     `SELECT spark_listing_key, address, city, price, neighborhood, agent_name,
-       CASE WHEN city ILIKE $1 THEN 4 WHEN neighborhood ILIKE $2 THEN 3 WHEN agent_name ILIKE $2 THEN 2 ELSE 1 END AS score
+       CASE WHEN city ILIKE $1 THEN 4 WHEN neighborhood ILIKE $2 THEN 3 WHEN agent_name ILIKE $4 THEN 2 ELSE 1 END AS score
      FROM listings
-     WHERE address ILIKE $2 OR neighborhood ILIKE $2 OR city ILIKE $1 OR zip = $1 OR agent_name ILIKE $2
+     WHERE address ILIKE $2 OR neighborhood ILIKE $2 OR city ILIKE $1 OR zip = $1 OR agent_name ILIKE $4
      ORDER BY score DESC, price DESC LIMIT $3`,
-    [q, pattern, limit]
+    [q, pattern, limit, agentPattern]
   );
 
   const qUpper = q.toUpperCase();
@@ -197,9 +200,15 @@ export async function searchListings(
       r.neighborhood && r.neighborhood.toUpperCase().includes(qUpper)
   );
 
+  // Same word-gap regex for the post-query agent check so "teresa porpiglia"
+  // recognizes "Teresa M Porpiglia" as an agent match.
+  const agentTokens = q.toUpperCase().split(/\s+/).filter(Boolean);
+  const agentRegex = new RegExp(
+    agentTokens.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*")
+  );
   const agentRow = rows.find(
     (r: { agent_name: string | null }) =>
-      r.agent_name && r.agent_name.toUpperCase().includes(qUpper)
+      r.agent_name && agentRegex.test(r.agent_name.toUpperCase())
   );
   const hasAgentMatch = !!agentRow && !hasSubdivisionMatch;
   const matchedAgentName: string | null = hasAgentMatch ? (agentRow as { agent_name: string }).agent_name : null;
@@ -235,6 +244,32 @@ export async function getListingKeysByAgent(agentName: string, limit = 200): Pro
      ORDER BY modified_at DESC NULLS LAST
      LIMIT $2`,
     [agentName, limit]
+  );
+  return rows.map((r: { spark_listing_key: string }) => r.spark_listing_key);
+}
+
+/**
+ * Look up Spark listing keys whose neighborhood (SubdivisionName) contains the
+ * given query — case-insensitive partial match. Spark's `SubdivisionName Eq`
+ * filter is case-sensitive and exact, which misses real-world variants like
+ * "STRATLAND ESTATES PHASE 1" vs "Stratland Estates". Resolving via our index
+ * keeps the buy-page filter consistent with the autocomplete dropdown.
+ *
+ * No status filter — the downstream Spark query already enforces the correct
+ * status, and the index's mls_status can be stale (e.g. listing went active
+ * after the last sync), which would incorrectly drop valid keys.
+ */
+export async function getListingKeysBySubdivision(
+  subdivision: string,
+  limit = 500
+): Promise<string[]> {
+  const { rows } = await pool.query(
+    `SELECT spark_listing_key
+     FROM listings
+     WHERE neighborhood ILIKE $1
+     ORDER BY modified_at DESC NULLS LAST
+     LIMIT $2`,
+    [`%${subdivision}%`, limit]
   );
   return rows.map((r: { spark_listing_key: string }) => r.spark_listing_key);
 }

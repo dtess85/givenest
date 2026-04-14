@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { getInitials } from "@/lib/utils";
 
 interface Agent {
   name: string;
@@ -74,12 +75,7 @@ export default function AgentPicker({ defaultAgent, onSelect }: AgentPickerProps
             <div className="px-3 py-2 text-[12px] text-muted">Searching…</div>
           )}
           {results.map((agent) => {
-            const initials = agent.name
-              .split(" ")
-              .filter((w) => w.length > 0 && w[0] === w[0].toUpperCase())
-              .slice(0, 2)
-              .map((w) => w[0])
-              .join("");
+            const initials = getInitials(agent.name);
             return (
               <button
                 key={agent.name}

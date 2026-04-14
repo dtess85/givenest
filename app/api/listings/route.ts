@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchSparkListings, countSparkListings } from "@/lib/spark";
 import { getActiveManualListings, manualListingToProperty } from "@/lib/db/listings";
-import { getListingKeysByAgent } from "@/lib/db/listings-index";
+import { getListingKeysByAgent, getListingKeysBySubdivision } from "@/lib/db/listings-index";
 import type { Property } from "@/lib/mock-data";
 
 // Property type UI label → ARMLS PropertySubType values
@@ -32,7 +32,7 @@ function applyManualFilters(listings: Property[], params: URLSearchParams): Prop
       // city field format: "Gilbert, AZ 85296"
       if (!p.city.includes(zip)) return false;
     }
-    if (subdivision && p.neighborhood?.toLowerCase() !== subdivision.toLowerCase()) return false;
+    if (subdivision && !p.neighborhood?.toLowerCase().includes(subdivision.toLowerCase())) return false;
     // Manual listings don't carry an agent field; if the user is filtering by agent,
     // exclude all manual listings.
     if (agent) return false;
@@ -94,8 +94,17 @@ export async function GET(request: Request) {
   conditions.push("StateOrProvince Eq 'AZ'");
   conditions.push("(PropertyType Eq 'A' Or PropertyType Eq 'Q' Or PropertyType Eq 'L')");
 
-  // Status — IDX only allows Active/Coming Soon (no Sold)
+  // Status — IDX only allows Active/Coming Soon/Pending (no Sold)
+  // When the user is browsing a specific subdivision/community we widen the
+  // default to include Pending + Contingent — the autocomplete dropdown shows
+  // those listings, so hiding them on the destination page is confusing
+  // ("autocomplete showed 3, page shows 1"). The status badge on each card
+  // makes the listing's true state clear.
   const rawStatus = searchParams.get("status");
+  const isSubdivisionBrowse = !!searchParams.get("subdivision");
+  const defaultStatuses = isSubdivisionBrowse
+    ? ["Active", "Active UCB", "Coming Soon", "Pending"]
+    : ["Active", "Active UCB", "Coming Soon"];
   if (rawStatus) {
     const statuses = rawStatus
       .split(",")
@@ -110,10 +119,10 @@ export async function GET(request: Request) {
     if (statuses.length > 0) {
       conditions.push(orGroup("MlsStatus", statuses));
     } else {
-      conditions.push(orGroup("MlsStatus", ["Active", "Active UCB", "Coming Soon"]));
+      conditions.push(orGroup("MlsStatus", defaultStatuses));
     }
   } else {
-    conditions.push(orGroup("MlsStatus", ["Active", "Active UCB", "Coming Soon"]));
+    conditions.push(orGroup("MlsStatus", defaultStatuses));
   }
 
   // Price range
@@ -141,8 +150,24 @@ export async function GET(request: Request) {
   if (zip) conditions.push(`PostalCode Eq '${zip.replace(/'/g, "")}'`);
 
   // Subdivision / community search
+  // Spark's `SubdivisionName Eq` is exact + case-sensitive, which misses
+  // real-world variants ("STRATLAND ESTATES PHASE 1" vs "Stratland Estates").
+  // Resolve the query to spark_listing_keys via our local index so the buy-page
+  // filter matches everything the autocomplete dropdown matched.
   const subdivision = searchParams.get("subdivision");
-  if (subdivision) conditions.push(`SubdivisionName Eq '${subdivision.replace(/'/g, "")}'`);
+  if (subdivision) {
+    const subdivisionKeys = await getListingKeysBySubdivision(subdivision);
+    if (subdivisionKeys.length === 0) {
+      return NextResponse.json(
+        { listings: [], pinnedListings: [], total: 0, totalPages: 0 },
+        { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } }
+      );
+    }
+    const keyGroup = subdivisionKeys
+      .map((k) => `ListingKey Eq '${k.replace(/'/g, "")}'`)
+      .join(" Or ");
+    conditions.push(`(${keyGroup})`);
+  }
 
   // Agent name search — Spark's ListAgentName is NOT searchable via SparkQL,
   // so we look up the matching spark_listing_keys from our Supabase index
