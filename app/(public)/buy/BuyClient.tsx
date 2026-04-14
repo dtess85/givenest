@@ -597,17 +597,22 @@ function BuyPage({ initial }: BuyClientProps) {
   }, [minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, selectedLocation, sortBy, userLat, userLng]);
 
   // Debounced refetch — waits for location detection on first load.
-  // Resets accumulated list and fetches page 1 whenever fetchListings identity changes (filter/sort change).
+  // Runs whenever fetchListings identity changes (filter / sort / lat-lng change).
+  //
+  // We intentionally do NOT clear `properties` before refetching anymore —
+  // the fetch response replaces the list in place (`setProperties(data.listings)`
+  // in fetchListings), so keeping old cards visible while the new ones load
+  // prevents a blank flash. This matters most on the first mount after SSR:
+  // GPS may upgrade lat/lng milliseconds after hydration, which would otherwise
+  // flush the SSR cards to an empty grid before the refetch even starts.
   useEffect(() => {
     if (!locationReady) return;
     // Skip the first fetch when the RSC shell already seeded page 1 — otherwise
-    // we'd re-request what the server just rendered and flash the skeleton.
-    // Subsequent filter/sort changes always run the fetch.
+    // we'd re-request what the server just rendered.
     if (hasHydratedInitialData.current) {
       hasHydratedInitialData.current = false;
       return;
     }
-    setProperties([]);
     setHasMore(true);
     setNextPage(1);
     const timer = setTimeout(() => fetchListings(1), 400);
@@ -1251,7 +1256,7 @@ function BuyPage({ initial }: BuyClientProps) {
         </div>
 
         <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3">
-          {loading
+          {loading && sorted.length === 0
             ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
             : sorted.map((h, idx) => {
                 const givingPool = h.donation ?? calcGivingPool(h.price);
