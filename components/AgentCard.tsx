@@ -1,5 +1,7 @@
 "use client";
 
+import { getInitials } from "@/lib/utils";
+
 interface AgentCardProps {
   name: string;
   officeName: string | null;
@@ -21,12 +23,7 @@ export default function AgentCard({
   onSelect,
   onToggleFavorite,
 }: AgentCardProps) {
-  const initials = name
-    .split(" ")
-    .filter((w) => w.length > 0 && w[0] === w[0].toUpperCase())
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("");
+  const initials = getInitials(name);
 
   return (
     <div

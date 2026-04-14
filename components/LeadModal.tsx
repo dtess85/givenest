@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import AgentPicker from "@/components/AgentPicker";
 import { calcGivingPool } from "@/lib/commission";
-import { fmt } from "@/lib/utils";
+import { fmt, getInitials } from "@/lib/utils";
 import { CHARITIES } from "@/lib/mock-data";
 import { useUserLocation } from "@/lib/useUserLocation";
 
@@ -81,7 +81,10 @@ export default function LeadModal({
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
+  type Screen = "agent" | "charity" | "info";
+  const [flow, setFlow] = useState<Screen[]>(["agent", "charity", "info"]);
   const [step, setStep] = useState(1);
+  const currentScreen: Screen = flow[step - 1] ?? "agent";
 
   // Agent
   const [agent, setAgent] = useState(defaultAgent ?? { name: "Kyndall Yates", office_name: "Givenest" });
@@ -137,6 +140,10 @@ export default function LeadModal({
       setAgent(defaultAgent ?? { name: "Kyndall Yates", office_name: "Givenest" });
       if (defaultCharities) setCharities(defaultCharities);
       setSent(false);
+      // If user came in via the charities page (charity pre-picked, no agent yet),
+      // flow is charity -> agent -> info. Otherwise default agent -> charity -> info.
+      const startWithCharity = !defaultAgent && !!defaultCharities && defaultCharities.length > 0;
+      setFlow(startWithCharity ? ["charity", "agent", "info"] : ["agent", "charity", "info"]);
       const startStep = (defaultAgent && defaultCharities && defaultCharities.length > 0) ? 3 : 1;
       setStep(startStep);
     }
@@ -244,12 +251,7 @@ export default function LeadModal({
 
   if (!open || !mounted) return null;
 
-  const initials = agent.name
-    .split(" ")
-    .filter((w) => w.length > 0 && w[0] === w[0].toUpperCase())
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("");
+  const initials = getInitials(agent.name);
 
   const STEP_HEIGHT = "min-h-[580px]";
 
@@ -289,8 +291,8 @@ export default function LeadModal({
           </div>
         ) : (
           <div className={`flex flex-col px-5 py-4 ${STEP_HEIGHT}`}>
-            {/* Step 1: Choose your agent */}
-            {step === 1 && (
+            {/* Choose your agent */}
+            {currentScreen === "agent" && (
               <div className="flex flex-1 flex-col">
                 <h3 className="font-serif text-xl font-medium leading-tight tracking-[-0.02em]">Choose your agent</h3>
                 <p className="mt-1 text-[13px] text-muted">
@@ -298,16 +300,23 @@ export default function LeadModal({
                 </p>
 
                 <div className="mt-5 flex-1">
-                  <AgentPicker
-                    defaultAgent={{
-                      name: "Kyndall Yates",
-                      office_name: "Givenest",
-                      primary_city: "Gilbert",
-                      active_listing_count: 0,
-                      is_givenest: true,
-                    }}
-                    onSelect={(a) => setAgent({ name: a.name, office_name: a.office_name })}
-                  />
+                  <div className="flex items-center gap-1">
+                    <div className="flex-1">
+                      <AgentPicker
+                        defaultAgent={{
+                          name: "Kyndall Yates",
+                          office_name: "Givenest",
+                          primary_city: "Gilbert",
+                          active_listing_count: 0,
+                          is_givenest: true,
+                        }}
+                        onSelect={(a) => setAgent({ name: a.name, office_name: a.office_name })}
+                      />
+                    </div>
+                    <div className="flex-shrink-0 p-1" aria-hidden>
+                      <div className="h-3.5 w-3.5" />
+                    </div>
+                  </div>
 
                   {/* Agent list: selected pinned to top */}
                   <div className="mb-1 mt-3 text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
@@ -318,12 +327,7 @@ export default function LeadModal({
                       const isSelected = agent.name === a.name;
                       const prevIsSelected = i > 0 && agent.name === agentListItems[i - 1].name;
                       const showDivider = !isSelected && prevIsSelected;
-                      const ai = a.name
-                        .split(" ")
-                        .filter((w) => w.length > 0 && w[0] === w[0].toUpperCase())
-                        .slice(0, 2)
-                        .map((w) => w[0])
-                        .join("");
+                      const ai = getInitials(a.name);
                       return (
                         <div key={a.name}>
                           {showDivider && (
@@ -352,7 +356,7 @@ export default function LeadModal({
                               ) : null}
                               {isSelected && <span className="ml-auto flex-shrink-0 text-[13px] text-coral">&#10003;</span>}
                             </button>
-                            {!a.isDefault && (
+                            {!a.isDefault ? (
                               <button
                                 type="button"
                                 onClick={() => toggleAgentFavorite(a)}
@@ -361,6 +365,10 @@ export default function LeadModal({
                               >
                                 <HeartIcon filled={agentFavorites.has(a.name)} className="h-3.5 w-3.5" />
                               </button>
+                            ) : (
+                              <div className="flex-shrink-0 p-1" aria-hidden>
+                                <div className="h-3.5 w-3.5" />
+                              </div>
                             )}
                           </div>
                         </div>
@@ -369,10 +377,19 @@ export default function LeadModal({
                   </div>
                 </div>
 
-                <div className="mt-6 flex justify-end">
+                <div className="mt-6 flex justify-between">
+                  {step > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setStep(step - 1)}
+                      className="rounded-md border border-border px-5 py-[10px] text-[13px] font-medium text-muted transition-colors hover:border-coral hover:text-coral cursor-pointer"
+                    >
+                      Back
+                    </button>
+                  ) : <span />}
                   <button
                     type="button"
-                    onClick={() => setStep(2)}
+                    onClick={() => setStep(step + 1)}
                     className="rounded-md bg-coral px-6 py-[10px] text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a] cursor-pointer"
                   >
                     Next
@@ -381,8 +398,8 @@ export default function LeadModal({
               </div>
             )}
 
-            {/* Step 2: Choose your charity */}
-            {step === 2 && (
+            {/* Choose your charity */}
+            {currentScreen === "charity" && (
               <div className="flex flex-1 flex-col">
                 <h3 className="font-serif text-xl font-medium leading-tight tracking-[-0.02em]">Choose a charity</h3>
                 <p className="mt-1 text-[13px] text-muted">
@@ -450,16 +467,18 @@ export default function LeadModal({
                 </div>
 
                 <div className="mt-6 flex justify-between">
+                  {step > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setStep(step - 1)}
+                      className="rounded-md border border-border px-5 py-[10px] text-[13px] font-medium text-muted transition-colors hover:border-coral hover:text-coral cursor-pointer"
+                    >
+                      Back
+                    </button>
+                  ) : <span />}
                   <button
                     type="button"
-                    onClick={() => setStep(1)}
-                    className="rounded-md border border-border px-5 py-[10px] text-[13px] font-medium text-muted transition-colors hover:border-coral hover:text-coral cursor-pointer"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStep(3)}
+                    onClick={() => setStep(step + 1)}
                     className="rounded-md bg-coral px-6 py-[10px] text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a] cursor-pointer"
                   >
                     {charities.length > 0 ? "Next" : "Skip"}
@@ -468,8 +487,8 @@ export default function LeadModal({
               </div>
             )}
 
-            {/* Step 3: Your info */}
-            {step === 3 && (
+            {/* Your info */}
+            {currentScreen === "info" && (
               <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
                 <h3 className="font-serif text-xl font-medium leading-tight tracking-[-0.02em]">Almost there</h3>
                 <p className="mt-1 text-[13px] text-muted">
@@ -509,13 +528,15 @@ export default function LeadModal({
                 </div>
 
                 <div className="mt-6 flex justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setStep(2)}
-                    className="rounded-md border border-border px-5 py-[10px] text-[13px] font-medium text-muted transition-colors hover:border-coral hover:text-coral cursor-pointer"
-                  >
-                    Back
-                  </button>
+                  {step > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setStep(step - 1)}
+                      className="rounded-md border border-border px-5 py-[10px] text-[13px] font-medium text-muted transition-colors hover:border-coral hover:text-coral cursor-pointer"
+                    >
+                      Back
+                    </button>
+                  ) : <span />}
                   <button
                     type="submit"
                     disabled={!canSubmit}

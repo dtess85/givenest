@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { getInitials } from "@/lib/utils";
 
 /* ── Types ── */
 
@@ -43,14 +44,7 @@ function fmt(n: number | null) {
   return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-function initials(name: string) {
-  return name
-    .split(" ")
-    .filter((w) => w.length > 0 && w[0] === w[0].toUpperCase())
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("");
-}
+const initials = getInitials;
 
 /* ── Page ── */
 

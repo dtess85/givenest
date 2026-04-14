@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import AgentCard from "@/components/AgentCard";
 import LeadModal from "@/components/LeadModal";
+import { getInitials } from "@/lib/utils";
 
 interface Agent {
   name: string;
@@ -21,7 +23,6 @@ interface SavedAgent {
 }
 
 const AGENT_FAVORITES_KEY = "givenest-agent-favorites";
-const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const FEATURED_LIMIT = 12;
 
 const GIVENEST_TEAM = [
@@ -40,8 +41,8 @@ const GIVENEST_TEAM = [
 ];
 
 export default function AgentsPage() {
+  const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
-  const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [featuredAgents, setFeaturedAgents] = useState<Agent[]>([]);
   const [total, setTotal] = useState(0);
@@ -52,10 +53,16 @@ export default function AgentsPage() {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [favorites, setFavorites] = useState<Map<string, SavedAgent>>(new Map());
+  const [suggestions, setSuggestions] = useState<Agent[]>([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suggestTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
 
-  // Whether we're in browse mode (search or letter filter active)
-  const isBrowsing = !!(query || activeLetter);
+  // Whether we're in browse mode (search committed) — agents are private until
+  // typed; we don't expose a public alphabetical roster.
+  const isBrowsing = !!query;
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -96,12 +103,11 @@ export default function AgentsPage() {
     })();
   }, []);
 
-  const fetchAgents = useCallback(async (q: string, letter: string | null, p: number) => {
+  const fetchAgents = useCallback(async (q: string, p: number) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (q) params.set("q", q);
-      if (letter) params.set("letter", letter);
       params.set("page", String(p));
       params.set("limit", "48");
       const res = await fetch(`/api/agents?${params}`);
@@ -115,42 +121,77 @@ export default function AgentsPage() {
     }
   }, []);
 
-  // Debounced search — only fetch when browsing
+  // Committed search — fires immediately when user hits Enter / Search
   useEffect(() => {
-    if (!query && !activeLetter) {
+    if (!query) {
       setAgents([]);
       setTotal(0);
       setTotalPages(0);
       return;
     }
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setPage(1);
-      fetchAgents(query, query ? null : activeLetter, 1);
-    }, 300);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [query, activeLetter, fetchAgents]);
+    setPage(1);
+    fetchAgents(query, 1);
+  }, [query, fetchAgents]);
 
   // Page change (only when browsing)
   useEffect(() => {
-    if (!query && !activeLetter) return;
-    fetchAgents(query, query ? null : activeLetter, page);
+    if (!query) return;
+    fetchAgents(query, page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
+
+  // Live autocomplete suggestions (driven by input, not committed)
+  useEffect(() => {
+    if (suggestTimerRef.current) clearTimeout(suggestTimerRef.current);
+    const q = input.trim();
+    if (!q) { setSuggestions([]); setSuggestLoading(false); return; }
+
+    suggestTimerRef.current = setTimeout(async () => {
+      setSuggestLoading(true);
+      try {
+        const params = new URLSearchParams({ q, page: "1", limit: "6" });
+        const res = await fetch(`/api/agents?${params}`);
+        if (!res.ok) { setSuggestions([]); return; }
+        const data = await res.json();
+        setSuggestions(data.agents ?? []);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSuggestLoading(false);
+      }
+    }, 220);
+    return () => { if (suggestTimerRef.current) clearTimeout(suggestTimerRef.current); };
+  }, [input]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function onMouseDown(e: MouseEvent) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, []);
+
+  const commitSearch = (value?: string) => {
+    const v = (value ?? input).trim();
+    setQuery(v);
+    setDropdownOpen(false);
+  };
+
+  const clearSearch = () => {
+    setInput("");
+    setQuery("");
+    setSuggestions([]);
+    setDropdownOpen(false);
+  };
 
   function handleSelect(agent: Agent) {
     setSelectedAgent(agent);
     setLeadModalOpen(true);
   }
 
-  function handleLetterClick(letter: string) {
-    setQuery("");
-    setActiveLetter((prev) => (prev === letter ? null : letter));
-    setPage(1);
-  }
-
-  // Separate givenest agents from browsing results
-  const externalAgents = agents.filter((a) => !a.is_givenest);
   const savedAgentsList = Array.from(favorites.values());
 
   return (
@@ -162,55 +203,98 @@ export default function AgentsPage() {
             Agent directory
           </div>
           <h1 className="mb-4 font-serif text-[clamp(28px,4vw,44px)] font-semibold leading-[1.15] tracking-[-0.02em]">
-            Find an agent. Fund a cause.
+            Find an agent. <span className="italic text-coral">Fund a cause.</span>
           </h1>
           <p className="text-[15px] leading-[1.7] text-muted">
-            Work with any Arizona Realtor through Givenest and 25% of the total commission
-            is donated to a charity of your choice — at no extra cost.
+            Work with any Arizona agent through givenest and 25% of the total commission
+            is donated to a charity of your choice — at no extra cost.{" "}
+            <Link href="/giving" className="text-coral underline-offset-2 hover:underline">
+              Learn more
+            </Link>
           </p>
         </div>
       </section>
 
       {/* Search + directory */}
       <section className="mx-auto max-w-[1100px] px-8 py-10">
-        {/* Search bar */}
-        <div className="mb-6">
-          <input
-            className="w-full rounded-lg border border-border bg-white px-4 py-3 text-[14px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
-            placeholder="Search by agent name or brokerage..."
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); if (e.target.value) setActiveLetter(null); }}
-          />
-        </div>
-
-        {/* A-Z index */}
-        {!query && (
-          <div className="mb-6 flex flex-wrap items-center gap-1">
-            <button
-              onClick={() => { setActiveLetter(null); setPage(1); }}
-              className={`rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors ${
-                !activeLetter
-                  ? "bg-coral text-white"
-                  : "text-muted hover:bg-pampas hover:text-black"
-              }`}
-            >
-              All
-            </button>
-            {LETTERS.map((letter) => (
+        {/* Search bar — autocomplete + commit on Enter/click */}
+        <div className="relative mb-6" ref={searchBoxRef}>
+          <form
+            onSubmit={(e) => { e.preventDefault(); commitSearch(); }}
+            className="flex overflow-hidden rounded-lg border border-border bg-white focus-within:border-coral"
+          >
+            <input
+              className="flex-1 border-none bg-white px-4 py-3 text-[14px] outline-none placeholder:text-[#c0bdb6]"
+              placeholder="Search by agent name or brokerage..."
+              value={input}
+              onChange={(e) => { setInput(e.target.value); setDropdownOpen(true); }}
+              onFocus={() => { if (input.trim()) setDropdownOpen(true); }}
+              onKeyDown={(e) => { if (e.key === "Escape") setDropdownOpen(false); }}
+            />
+            {input && (
               <button
-                key={letter}
-                onClick={() => handleLetterClick(letter)}
-                className={`rounded-md px-2 py-1 text-[12px] font-medium transition-colors ${
-                  activeLetter === letter
-                    ? "bg-coral text-white"
-                    : "text-muted hover:bg-pampas hover:text-black"
-                }`}
+                type="button"
+                onClick={clearSearch}
+                className="px-2 text-muted hover:text-black"
+                aria-label="Clear search"
               >
-                {letter}
+                ×
               </button>
-            ))}
-          </div>
-        )}
+            )}
+            <button
+              type="submit"
+              className="bg-coral px-5 text-[13px] font-medium text-white transition-colors hover:bg-[#d4574a]"
+            >
+              Search
+            </button>
+          </form>
+
+          {/* Autocomplete dropdown */}
+          {dropdownOpen && input.trim() && (
+            <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-lg border border-border bg-white shadow-xl">
+              {suggestLoading && suggestions.length === 0 && (
+                <div className="px-4 py-3 text-[12px] text-muted">Searching…</div>
+              )}
+              {!suggestLoading && suggestions.length === 0 && (
+                <div className="px-4 py-3 text-[12px] text-muted">No matches — press Enter to search anyway</div>
+              )}
+              {suggestions.slice(0, 6).map((a) => {
+                const initials = getInitials(a.name);
+                return (
+                  <button
+                    key={a.name}
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); handleSelect(a); setDropdownOpen(false); }}
+                    className="flex w-full items-center gap-3 border-b border-border px-4 py-[10px] text-left hover:bg-pampas"
+                  >
+                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[10px] font-medium text-white">
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-[13px] font-medium text-black">{a.name}</span>
+                        {a.is_givenest && (
+                          <span className="flex-shrink-0 rounded bg-coral/10 px-1.5 py-px text-[9px] font-semibold uppercase tracking-[0.05em] text-coral">Givenest</span>
+                        )}
+                      </div>
+                      <div className="truncate text-[11px] text-muted">
+                        {[a.office_name, a.primary_city].filter(Boolean).join(" · ")}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); commitSearch(); }}
+                className="flex w-full items-center justify-between px-4 py-[10px] text-left text-[12px] text-coral hover:bg-pampas"
+              >
+                <span>See all results for &ldquo;{input.trim()}&rdquo;</span>
+                <span aria-hidden>→</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* ── Default view: Givenest + Featured + Saved ── */}
         {!isBrowsing && (
@@ -307,26 +391,25 @@ export default function AgentsPage() {
             {!loading && (
               <div className="mb-6 text-[12px] text-muted">
                 {total.toLocaleString()} agent{total !== 1 ? "s" : ""} found
-                {activeLetter && ` starting with "${activeLetter}"`}
               </div>
             )}
 
             {/* Agent grid heading */}
             <div className="mb-4">
               <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
-                {query ? "Search results" : `Agents — ${activeLetter}`}
+                Search results
               </h2>
             </div>
 
             {loading ? (
               <div className="py-12 text-center text-[13px] text-muted">Loading agents...</div>
-            ) : externalAgents.length === 0 && agents.length === 0 ? (
+            ) : agents.length === 0 ? (
               <div className="py-12 text-center text-[13px] text-muted">
-                No agents found{query ? ` for "${query}"` : activeLetter ? ` starting with "${activeLetter}"` : ""}. Try a different search.
+                No agents found for &quot;{query}&quot;. Try a different search.
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {(query ? agents : externalAgents).map((agent) => (
+                {agents.map((agent) => (
                   <AgentCard
                     key={agent.name}
                     name={agent.name}
@@ -372,8 +455,8 @@ export default function AgentsPage() {
           <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
             Become a featured agent
           </h2>
-          <div className="flex items-center gap-3 rounded-lg border border-dashed border-coral/40 bg-white px-4 py-3">
-            <p className="flex-1 text-[13px] font-light leading-[1.7] text-muted">
+          <div className="flex items-center gap-4 rounded-lg border border-dashed border-coral/40 bg-white px-5 py-5">
+            <p className="flex-1 font-serif italic text-[15px] leading-[1.4] text-black">
               Partner with Givenest to get priority visibility and grow your business while giving back to the community.
             </p>
             <a
