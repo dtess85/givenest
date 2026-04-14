@@ -188,23 +188,12 @@ export default function Charities() {
 
   return (
     <div>
-      <section className="relative flex min-h-[35vh] items-center">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <img
-            src="/images/charities-banner.png"
-            alt="Community hands around a plant"
-            className="h-full w-full object-cover object-center"
-          />
-          <div
-            className="absolute inset-0"
-            style={{ background: "linear-gradient(to right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.2) 100%)" }}
-          />
-        </div>
+      <section className="relative flex min-h-[35vh] items-center border-b border-border bg-pampas">
         <div className="relative z-10 mx-auto w-full max-w-[1100px] px-8 py-[60px] md:px-12">
           <div className="mb-5 inline-block rounded-full bg-coral px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-white">
             Charity showcase
           </div>
-          <h1 className="mb-5 max-w-[700px] font-serif text-[clamp(38px,5vw,68px)] font-semibold leading-[1.1] tracking-[-0.02em] text-white" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.9), 0 4px 24px rgba(0,0,0,0.8)" }}>
+          <h1 className="mb-5 max-w-[700px] font-serif text-[clamp(38px,5vw,68px)] font-semibold leading-[1.1] tracking-[-0.02em]">
             1.8M+ charities.{" "}
             <em className="text-coral">Your choice.</em>
           </h1>
@@ -213,7 +202,7 @@ export default function Charities() {
             <div className="relative flex-1" ref={searchBoxRef}>
               <form
                 onSubmit={(e) => { e.preventDefault(); commitSearch(); }}
-                className="flex overflow-hidden rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.3)]"
+                className="flex overflow-hidden rounded-lg border border-border"
               >
                 <input
                   className="flex-1 border-none bg-white px-[18px] py-[16px] text-[15px] font-light outline-none placeholder:text-[#c0bdb6]"

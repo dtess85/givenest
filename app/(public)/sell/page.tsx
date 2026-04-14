@@ -57,7 +57,7 @@ export default function Sell() {
           <span className="mb-3 inline-block rounded-full bg-coral/[0.08] px-[10px] py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-coral">
             Seller portal
           </span>
-          <h1 className="font-serif text-[clamp(26px,3.5vw,44px)] font-medium leading-[1.2] tracking-[-0.02em]">
+          <h1 className="font-serif text-[clamp(28px,4vw,44px)] font-semibold leading-[1.15] tracking-[-0.02em]">
             Sell your home.{" "}
             <em className="text-coral">Grow a cause.</em>
           </h1>
@@ -281,6 +281,7 @@ export default function Sell() {
                   is_givenest: true,
                 }}
                 onSelect={(agent) => setChosenAgent({ name: agent.name, office_name: agent.office_name })}
+                size="md"
               />
             </div>
             <button

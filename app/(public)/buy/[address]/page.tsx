@@ -148,12 +148,40 @@ export default function PropertyDetail() {
   return (
     <>
     <div className="mx-auto max-w-[1200px] px-6 py-8">
-      <button
-        onClick={handleBack}
-        className="mb-5 inline-block text-[13px] text-muted transition-colors hover:text-black"
-      >
-        ← Back to search
-      </button>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <button
+          onClick={handleBack}
+          className="text-[13px] text-muted transition-colors hover:text-black"
+        >
+          ← Back to search
+        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLeadModalOpen(true)}
+            className="rounded-md bg-coral px-4 py-[7px] text-[12px] font-medium text-white transition-colors hover:bg-[#d4574a] lg:hidden"
+          >
+            Request
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              const url = typeof window !== "undefined" ? window.location.href : "";
+              const title = property?.address ?? "Givenest listing";
+              if (typeof navigator !== "undefined" && "share" in navigator) {
+                try { await navigator.share({ title, url }); return; } catch { /* user canceled */ }
+              }
+              try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
+            }}
+            aria-label="Share listing"
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted transition-colors hover:border-coral hover:text-coral"
+          >
+            <svg className="h-[17px] w-[17px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
       {/* Two-column grid: content left, GivingPanel right */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_360px]">

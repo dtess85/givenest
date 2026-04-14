@@ -14,9 +14,10 @@ interface Agent {
 interface AgentPickerProps {
   defaultAgent?: Agent;
   onSelect: (agent: Agent) => void;
+  size?: "sm" | "md";
 }
 
-export default function AgentPicker({ defaultAgent, onSelect }: AgentPickerProps) {
+export default function AgentPicker({ defaultAgent, onSelect, size = "sm" }: AgentPickerProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Agent[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -59,7 +60,9 @@ export default function AgentPicker({ defaultAgent, onSelect }: AgentPickerProps
   return (
     <div ref={wrapperRef} className="relative">
       <input
-        className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+        className={`w-full rounded-md border border-border bg-white outline-none placeholder:text-[#c0bdb6] focus:border-coral ${
+          size === "md" ? "px-[14px] py-[11px] text-sm" : "px-3 py-2 text-[13px]"
+        }`}
         placeholder="Search for an agent by name…"
         value={query}
         onChange={(e) => {
