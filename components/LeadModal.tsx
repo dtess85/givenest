@@ -261,7 +261,7 @@ export default function LeadModal({
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-[560px] h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto sm:rounded-lg border-t sm:border border-border bg-white shadow-xl"
+        className="flex w-full flex-col h-full sm:h-auto sm:max-w-[560px] sm:max-h-[90vh] overflow-y-auto sm:rounded-lg border-t sm:border border-border bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -277,7 +277,7 @@ export default function LeadModal({
         <StepIndicator current={step} />
 
         {sent ? (
-          <div className={`flex flex-col items-center justify-center px-5 py-10 ${STEP_HEIGHT}`}>
+          <div className={`flex flex-1 flex-col items-center justify-center px-5 py-10 ${STEP_HEIGHT}`}>
             <div className="mb-2 font-serif text-lg font-medium">Request sent</div>
             <p className="text-[13px] text-muted">
               We&apos;ll coordinate with {agent.name} and get back to you shortly.
@@ -290,7 +290,7 @@ export default function LeadModal({
             </button>
           </div>
         ) : (
-          <div className={`flex flex-col px-5 py-4 ${STEP_HEIGHT}`}>
+          <div className={`flex flex-1 flex-col px-5 py-4 ${STEP_HEIGHT}`}>
             {/* Choose your agent */}
             {currentScreen === "agent" && (
               <div className="flex flex-1 flex-col">
@@ -311,6 +311,7 @@ export default function LeadModal({
                           is_givenest: true,
                         }}
                         onSelect={(a) => setAgent({ name: a.name, office_name: a.office_name })}
+                        size="md"
                       />
                     </div>
                     <div className="flex-shrink-0 p-1" aria-hidden>
@@ -411,7 +412,7 @@ export default function LeadModal({
 
                 <div className="mt-5 flex-1">
                   <input
-                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                    className="w-full rounded-md border border-border bg-white px-[14px] py-[11px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
                     placeholder="Search 1.8M+ nonprofits..."
                     value={charitySearch}
                     onChange={(e) => setCharitySearch(e.target.value)}
@@ -506,21 +507,21 @@ export default function LeadModal({
 
                 <div className="mt-4 flex flex-1 flex-col gap-2">
                   <input
-                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                    className="w-full rounded-md border border-border bg-white px-[14px] py-[11px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
                     placeholder="Full name"
                     value={form.name}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   />
                   <input
                     type="email"
-                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                    className="w-full rounded-md border border-border bg-white px-[14px] py-[11px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
                     placeholder="Email address"
                     value={form.email}
                     onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   />
                   <input
                     type="tel"
-                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-[13px] outline-none placeholder:text-[#c0bdb6] focus:border-coral"
+                    className="w-full rounded-md border border-border bg-white px-[14px] py-[11px] text-sm outline-none placeholder:text-[#c0bdb6] focus:border-coral"
                     placeholder="Phone (optional)"
                     value={form.phone}
                     onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}

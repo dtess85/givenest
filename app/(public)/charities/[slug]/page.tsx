@@ -30,21 +30,7 @@ export default async function CharityProfilePage({ params }: { params: { slug: s
     <div>
       {/* Hero */}
       <section className="relative flex min-h-[50vh] items-end overflow-hidden bg-black">
-        {charity.cover_image_url ? (
-          <>
-            <img
-              src={charity.cover_image_url}
-              alt={charity.name}
-              className="absolute inset-0 h-full w-full object-cover object-center"
-            />
-            <div
-              className="absolute inset-0"
-              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.05) 100%)" }}
-            />
-          </>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a]" />
-        )}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a]" />
         <div className="relative z-10 mx-auto w-full max-w-[1100px] px-8 py-12">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {charity.category && (

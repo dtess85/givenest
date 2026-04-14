@@ -34,7 +34,7 @@ export default function Hero() {
           Every home funds a cause{" "}
           <em className="text-coral">you choose.</em>
         </h1>
-        <p className="mb-10 max-w-[460px] text-[17px] font-normal leading-[1.8] text-white" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.9), 0 4px 20px rgba(0,0,0,0.8)" }}>
+        <p className="mb-10 max-w-[460px] text-[18px] font-normal leading-[1.8] text-white" style={{ textShadow: "0 2px 6px rgba(0,0,0,1), 0 4px 16px rgba(0,0,0,0.95), 0 8px 32px rgba(0,0,0,0.85)" }}>
           Buy or sell on givenest and we donate to a charity of your choice at
           closing — at no extra cost.
         </p>
