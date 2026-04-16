@@ -6,6 +6,7 @@ import {
   BRAND,
   BrandTagline,
   DonationPill,
+  Wordmark,
   brandFontsOption,
   pickTagline,
 } from "@/lib/social/brand-overlay";
@@ -137,13 +138,13 @@ async function renderOneSlide({
           style={{
             position: "absolute",
             top: 72,
-            left: 0,
-            right: 0,
+            left: 60,
+            right: 60,
             display: "flex",
             justifyContent: "center",
           }}
         >
-          <BrandTagline fontSize={72} text={taglineText} />
+          <BrandTagline fontSize={72} text={taglineText} maxWidth={960} />
         </div>
 
         {/* Donation pill: bottom-left on every slide. */}
@@ -151,7 +152,7 @@ async function renderOneSlide({
           style={{
             position: "absolute",
             left: 56,
-            bottom: 56,
+            bottom: 120,
             display: "flex",
           }}
         >
@@ -161,6 +162,18 @@ async function renderOneSlide({
             paddingX={42}
             paddingY={21}
           />
+        </div>
+
+        {/* Persistent "givenest" wordmark — bottom-right. */}
+        <div
+          style={{
+            position: "absolute",
+            right: 56,
+            bottom: 56,
+            display: "flex",
+          }}
+        >
+          <Wordmark fontSize={44} />
         </div>
       </div>
     ),

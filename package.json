@@ -8,10 +8,14 @@
     "start": "next start",
     "lint": "next lint",
     "test:caption": "bash -c 'set -a; source .env.local; set +a; node --import tsx scripts/test-caption.ts \"$@\"' bash",
-    "test:classifier": "bash -c 'set -a; source .env.local; set +a; node --import tsx scripts/test-image-classifier.ts \"$@\"' bash"
+    "test:classifier": "bash -c 'set -a; source .env.local; set +a; node --import tsx scripts/test-image-classifier.ts \"$@\"' bash",
+    "remotion:studio": "remotion studio remotion/index.ts",
+    "remotion:render": "bash -c 'set -a; source .env.local; set +a; node --import tsx scripts/render-reel-local.ts \"$@\"' bash"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.89.0",
+    "@remotion/cli": "^4.0.448",
+    "@remotion/google-fonts": "^4.0.448",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "@vercel/blob": "^2.3.3",
@@ -19,10 +23,13 @@
     "pg": "^8.20.0",
     "react": "^18",
     "react-dom": "^18",
+    "remotion": "^4.0.448",
     "resend": "^6.10.0",
     "stripe": "^22.0.0"
   },
   "devDependencies": {
+    "@remotion/bundler": "^4.0.448",
+    "@remotion/renderer": "^4.0.448",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
     "@types/react": "^18",

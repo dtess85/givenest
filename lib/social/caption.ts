@@ -73,6 +73,11 @@ export function buildCarouselCaption(
 /** Rotation pool of hook phrasings used on-screen in the first 1–2s of a Reel. */
 export const REEL_HOOK_POOL: { id: string; render: (p: Property) => string }[] = [
   {
+    id: "every-home-does-good",
+    render: (p) =>
+      `Every home does good — this one could give ~${fmtDonation(calcGivingPool(p.price))} to a charity of your choice.`,
+  },
+  {
     id: "donation-direct",
     render: (p) => `This home gives ~${fmtDonation(calcGivingPool(p.price))} to AZ charities`,
   },
@@ -134,14 +139,28 @@ export function buildReelCaption(
  * pairs a listing image with an overlay line and a Ken Burns hint; the
  * composition resolves the Ken Burns into actual motion.
  *
- * Clip count: up to 6 (falls back to `images[0]` if fewer photos available).
- * Each clip runs 1.0–1.5s in the cinematic templates (→ ~15–25s total).
+ * Clip count: **6 clips** — matches the walkthrough-cinematic template's
+ * 6-sequence structure (hook + 3 walkthrough beats + donation + end card).
+ * Falls back to `images[0]` if fewer photos available so the schema is
+ * always satisfied.
+ *
+ * The `donationLabel` / `city` / `officeName` / `taglineText` are hoisted
+ * out of the clips array to match `ReelInputProps` — the template uses them
+ * for persistent elements (kicker, donation badge, end card).
  */
 export function buildReelScript(
   p: Property,
   officeName: string,
-  opts?: { hookId?: string; ctaId?: string }
-): ReelScript & { hookId: string; ctaId: string } {
+  opts?: { hookId?: string; ctaId?: string; taglineText?: string }
+): ReelScript & {
+  hookId: string;
+  ctaId: string;
+  /** Hoisted persistent props — matches remotion/types.ts `ReelInputProps`. */
+  taglineText: string;
+  donationLabel: string;
+  officeName: string;
+  city: string;
+} {
   const hook =
     REEL_HOOK_POOL.find((h) => h.id === opts?.hookId) ?? REEL_HOOK_POOL[0];
   const cta =
@@ -152,20 +171,33 @@ export function buildReelScript(
 
   const city = shortCity(p.city);
   const price = fmtPrice(p.price);
-  const donation = fmtDonation(calcGivingPool(p.price));
+  const donationLabel = `~${fmtDonation(calcGivingPool(p.price))}`;
 
   return {
     hookId: hook.id,
     ctaId: cta.id,
     hookText: hook.render(p),
     ctaText: cta.text,
+    taglineText: opts?.taglineText ?? "Every home does good",
+    donationLabel,
+    officeName,
+    city,
+    // 6 clips, avg 2.5s @ 30fps = 15s total.
+    // Clip 1 = hero (hook card overlays this), clips 2–4 = walkthrough beats
+    // with per-clip overlay text, clip 5 = donation pill (no text), clip 6 = end card.
     clips: [
-      { imageUrl: at(0), overlay: `${p.beds} bed · ${p.baths} bath`, kenBurns: "zoomIn" },
-      { imageUrl: at(1), overlay: fmtSqft(p.sqft),                    kenBurns: "panRight" },
-      { imageUrl: at(2), overlay: city,                               kenBurns: "panLeft" },
-      { imageUrl: at(3), overlay: `Listed at ${price}`,               kenBurns: "zoomOut" },
-      { imageUrl: at(4), overlay: `~${donation} to AZ charities`,     kenBurns: "zoomIn" },
-      { imageUrl: at(5), overlay: `Listed by ${officeName}`,          kenBurns: "panRight" },
+      // 1. Hero exterior — gentle zoom-in, hook card lives on top.
+      { imageUrl: at(0), overlay: "", kenBurns: "slowZoomIn" },
+      // 2. Interior wide — settling shot, overlay = beds/baths.
+      { imageUrl: at(1), overlay: `${p.beds} bed · ${p.baths} bath`, kenBurns: "slowPanRight" },
+      // 3. Kitchen — overlay = sqft.
+      { imageUrl: at(2), overlay: fmtSqft(p.sqft), kenBurns: "slowPanLeft" },
+      // 4. Living — overlay = price.
+      { imageUrl: at(3), overlay: `Listed at ${price}`, kenBurns: "slowPanRight" },
+      // 5. Aerial / exterior — donation pill overlays this clip (second-to-last).
+      { imageUrl: at(4), overlay: "", kenBurns: "slowPanLeft" },
+      // 6. Hero return — end card overlays this clip.
+      { imageUrl: at(5), overlay: "", kenBurns: "slowZoomIn" },
     ],
   };
 }

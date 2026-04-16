@@ -151,12 +151,17 @@ export function DonationPill({
   fontSize,
   paddingX,
   paddingY,
+  maxWidth,
 }: {
   /** Preformatted dollar string, e.g. "~$5,499". */
   amountLabel: string;
   fontSize: number;
   paddingX: number;
   paddingY: number;
+  /** Optional max width in px. When set, long labels wrap instead of
+   *  overflowing the frame. Omit on carousel slides where the copy fits
+   *  on a single line comfortably. */
+  maxWidth?: number;
 }) {
   const text = TAGLINE.pillTemplate.replace("{{AMOUNT}}", amountLabel);
   return (
@@ -166,15 +171,47 @@ export function DonationPill({
         backgroundColor: BRAND.coral,
         color: BRAND.white,
         fontSize,
-        fontFamily: "sans-serif",
+        fontFamily: "Lora",
         fontWeight: 600,
-        borderRadius: 999,
+        fontStyle: "italic",
+        borderRadius: 16,
         display: "flex",
-        alignSelf: "flex-start",
-        whiteSpace: "nowrap",
+        lineHeight: 1.2,
+        letterSpacing: "-0.01em",
+        ...(maxWidth !== undefined
+          ? { maxWidth, textAlign: "center" as const }
+          : { whiteSpace: "nowrap" as const }),
       }}
     >
       {text}
+    </div>
+  );
+}
+
+/** Givenest wordmark — Lora 600, "give" upright + "nest" coral italic.
+ *  Text-based so it scales crisply at any frame size and never goes stale.
+ *  Matches the Reel Wordmark helper in `remotion/compositions/shared`. */
+export function Wordmark({
+  fontSize,
+  color = BRAND.white,
+}: {
+  fontSize: number;
+  color?: string;
+}) {
+  return (
+    <div
+      style={{
+        fontFamily: "Lora",
+        fontWeight: 600,
+        fontSize,
+        letterSpacing: "-0.01em",
+        display: "flex",
+        color,
+        textShadow: "0 2px 8px rgba(0,0,0,0.55)",
+      }}
+    >
+      <span style={{ fontStyle: "normal" }}>give</span>
+      <span style={{ color: BRAND.coral, fontStyle: "italic" }}>nest</span>
     </div>
   );
 }
@@ -184,11 +221,16 @@ export function BrandTagline({
   fontSize,
   color = BRAND.white,
   text,
+  maxWidth,
 }: {
   fontSize: number;
   color?: string;
   /** Override the tagline copy. Use `pickTagline(slug).text` for rotation. */
   text?: string;
+  /** Hard ceiling on rendered pill width in px. Text wraps within. Every
+   *  caller should set this — Satori won't auto-wrap otherwise and the
+   *  pill will bleed off the frame on long taglines. */
+  maxWidth?: number;
 }) {
   return (
     <div
@@ -204,6 +246,8 @@ export function BrandTagline({
         backgroundColor: "rgba(0,0,0,0.50)",
         padding: `${Math.round(fontSize * 0.22)}px ${Math.round(fontSize * 0.4)}px`,
         borderRadius: 20,
+        textAlign: "center",
+        ...(maxWidth !== undefined ? { maxWidth } : {}),
       }}
     >
       {text ?? TAGLINE.primary}

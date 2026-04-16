@@ -114,11 +114,11 @@ export async function renderAndUploadStory(
             gap: 24,
           }}
         >
-          {/* Kicker pill — semi-transparent black background */}
+          {/* Kicker pill — white background, black text */}
           <div
             style={{
-              backgroundColor: "rgba(0,0,0,0.55)",
-              color: BRAND.white,
+              backgroundColor: BRAND.white,
+              color: BRAND.black,
               fontSize: 38,
               letterSpacing: 4,
               fontFamily: "sans-serif",
@@ -130,10 +130,10 @@ export async function renderAndUploadStory(
           >
             {`NEW AZ LISTING · ${city}`}
           </div>
-          <BrandTagline fontSize={88} text={tagline.text} />
+          <BrandTagline fontSize={88} text={tagline.text} maxWidth={960} />
         </div>
 
-        {/* Bottom: donation pill + CTA */}
+        {/* Bottom: donation pill + Learn More CTA */}
         <div
           style={{
             position: "absolute",
@@ -152,16 +152,17 @@ export async function renderAndUploadStory(
             fontSize={54}
             paddingX={54}
             paddingY={27}
+            maxWidth={920}
           />
           <div
             style={{
-              color: BRAND.white,
+              backgroundColor: BRAND.white,
+              color: BRAND.black,
               fontSize: 36,
               fontFamily: "sans-serif",
               fontWeight: 600,
               letterSpacing: 1,
               display: "flex",
-              border: "3px solid rgba(255,255,255,0.8)",
               borderRadius: 999,
               padding: "16px 48px",
             }}
