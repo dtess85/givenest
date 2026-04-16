@@ -1,21 +1,38 @@
 import { ImageResponse } from "next/og";
 import { put } from "@vercel/blob";
 import type { Property } from "@/lib/mock-data";
-import { buildStoryOverlay } from "@/lib/social/caption";
+import { shortCity } from "@/lib/social/caption";
+import { calcGivingPool } from "@/lib/commission";
+import {
+  BRAND,
+  BrandTagline,
+  DonationPill,
+  brandFontsOption,
+  pickTagline,
+} from "@/lib/social/brand-overlay";
 
 /**
  * Render a 9:16 (1080×1920) Story image: listing photo cropped-to-fit with
- * text overlays composited on top via Next.js built-in `ImageResponse`
+ * minimal brand overlays composited on top via Next.js built-in `ImageResponse`
  * (Satori-backed JSX → PNG). Upload the PNG to `@vercel/blob` and return its
  * public HTTPS URL — stored as `image_urls[0]` on the STORY draft row.
  *
- * Why `next/og`: zero-install, no sharp/FFmpeg, already available in the
- * Next.js runtime. Story images are the one thing we DO need to compose
- * (vs. Carousels which just reference Spark image URLs verbatim).
+ * Brand treatment (see `lib/social/brand-overlay.tsx`):
+ *   - Top: rotated Lora tagline (e.g. "Every home does good", "1.8M+ charities.
+ *     Your choice.", etc.) — picked deterministically from the listing slug.
+ *   - Bottom: coral "~$X to a cause of your choice" donation pill + CTA.
+ *   - NO address/specs/price — Stories are ephemeral, brand-forward visuals.
+ *     The listing detail link goes in the Story link sticker at publish time.
  */
 
 const STORY_WIDTH = 1080;
 const STORY_HEIGHT = 1920;
+
+const usd0 = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
 
 export interface RenderedStory {
   /** Public HTTPS URL of the rendered PNG (hosted on Vercel Blob). */
@@ -35,11 +52,15 @@ export async function renderAndUploadStory(
   p: Property,
   opts?: { blobToken?: string }
 ): Promise<RenderedStory> {
-  const overlay = buildStoryOverlay(p);
   const primaryImage = p.images?.[0];
   if (!primaryImage) {
     throw new Error(`[story-render] listing ${p.slug} has no primary image`);
   }
+
+  const city = shortCity(p.city);
+  const donationLabel = `~${usd0.format(Math.round(calcGivingPool(p.price)))}`;
+  const tagline = pickTagline(p.slug);
+  const fonts = await brandFontsOption();
 
   const imageResponse = new ImageResponse(
     (
@@ -50,8 +71,8 @@ export async function renderAndUploadStory(
           display: "flex",
           flexDirection: "column",
           position: "relative",
-          backgroundColor: "#000",
-          fontFamily: "Georgia, serif",
+          backgroundColor: BRAND.black,
+          fontFamily: "Lora",
         }}
       >
         {/* Background photo, cover-fit to 9:16 */}
@@ -69,109 +90,89 @@ export async function renderAndUploadStory(
             objectFit: "cover",
           }}
         />
-        {/* Dark scrim so overlay text stays legible on any photo */}
+        {/* Dark scrim — heavier at top (tagline) and bottom (donation pill). */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.80) 100%)",
+              "linear-gradient(180deg, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.10) 25%, rgba(0,0,0,0.10) 60%, rgba(0,0,0,0.70) 100%)",
             display: "flex",
           }}
         />
-        {/* Top strip */}
+
+        {/* Top: kicker + rotated Lora tagline */}
         <div
           style={{
             position: "absolute",
-            top: 80,
+            top: 120,
             left: 0,
             right: 0,
-            textAlign: "center",
-            color: "#fff",
-            fontSize: 44,
-            letterSpacing: 4,
-            fontFamily: "sans-serif",
-            fontWeight: 600,
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
-          {overlay.topStrip}
-        </div>
-        {/* Bottom content block: address + specs + price + donation + CTA */}
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 160,
-            padding: "0 80px",
-            color: "#fff",
             display: "flex",
             flexDirection: "column",
-            gap: 24,
+            alignItems: "center",
+            gap: 20,
           }}
         >
-          <div style={{ fontSize: 76, lineHeight: 1.1, fontWeight: 600 }}>
-            {overlay.address}
-          </div>
           <div
             style={{
-              fontSize: 42,
-              fontFamily: "sans-serif",
-              opacity: 0.92,
-            }}
-          >
-            {overlay.specs}
-          </div>
-          <div style={{ fontSize: 64, fontWeight: 700 }}>{overlay.price}</div>
-          <div
-            style={{
-              alignSelf: "flex-start",
-              marginTop: 12,
-              padding: "16px 28px",
-              backgroundColor: "#E85A4F",
-              color: "#fff",
-              fontSize: 34,
+              color: BRAND.white,
+              fontSize: 28,
+              letterSpacing: 6,
               fontFamily: "sans-serif",
               fontWeight: 600,
-              borderRadius: 999,
+              opacity: 0.85,
               display: "flex",
             }}
           >
-            {overlay.donationBadge}
+            {`🏡 NEW AZ LISTING · ${city}`}
           </div>
+          <BrandTagline fontSize={88} text={tagline.text} />
         </div>
-        {/* Bottom strip CTA */}
+
+        {/* Bottom: donation pill + CTA */}
         <div
           style={{
             position: "absolute",
-            bottom: 70,
             left: 0,
             right: 0,
-            textAlign: "center",
-            color: "#fff",
-            fontSize: 36,
-            fontFamily: "sans-serif",
-            letterSpacing: 2,
-            opacity: 0.85,
+            bottom: 140,
+            padding: "0 80px",
             display: "flex",
-            justifyContent: "center",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 32,
           }}
         >
-          {overlay.bottomStrip}
+          <DonationPill
+            amountLabel={donationLabel}
+            fontSize={36}
+            paddingX={36}
+            paddingY={18}
+          />
+          <div
+            style={{
+              color: BRAND.white,
+              fontSize: 34,
+              fontFamily: "sans-serif",
+              letterSpacing: 2,
+              opacity: 0.85,
+              display: "flex",
+            }}
+          >
+            Tap to view on Givenest
+          </div>
         </div>
       </div>
     ),
     {
       width: STORY_WIDTH,
       height: STORY_HEIGHT,
+      fonts,
     }
   );
 
   const arrayBuffer = await imageResponse.arrayBuffer();
-  // @vercel/blob's PutBody expects Buffer/Blob/stream — a raw Uint8Array isn't
-  // assignable. Wrap in a Node Buffer (zero-copy view over the same bytes).
   const body = Buffer.from(arrayBuffer);
   const yyyymmdd = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const pathname = `social/stories/${p.slug}-${yyyymmdd}.png`;

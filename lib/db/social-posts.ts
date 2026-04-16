@@ -16,11 +16,14 @@ export interface SocialPostRow {
   listing_slug: string | null;
   listing_source: "spark" | "manual" | null;
   listing_office_name: string | null;
-  listing_snapshot: (Property & { price_tier?: PriceTier }) | null;
+  listing_snapshot:
+    | (Property & { price_tier?: PriceTier; image_categories?: string[] })
+    | null;
   charity_id: string | null;
   charity_stat: Record<string, unknown> | null;
   caption: string;
   image_urls: string[];
+  image_categories: string[];
   video_url: string | null;
   media_type: "IMAGE" | "CAROUSEL" | "STORY" | "REEL";
   status: PostStatus;
@@ -74,7 +77,7 @@ export async function createDraft(draft: SocialPostDraft): Promise<SocialPostRow
   const { rows } = await sql`
     INSERT INTO social_posts (
       format, listing_slug, listing_source, listing_office_name, listing_snapshot,
-      caption, image_urls, video_url, media_type, status,
+      caption, image_urls, image_categories, video_url, media_type, status,
       scheduled_for, reel_template_id, reel_hook_id, reel_cta_id
     ) VALUES (
       ${draft.format},
@@ -84,6 +87,7 @@ export async function createDraft(draft: SocialPostDraft): Promise<SocialPostRow
       ${JSON.stringify(draft.listing_snapshot)}::jsonb,
       ${draft.caption},
       ${encodePgTextArray(draft.image_urls)}::text[],
+      ${encodePgTextArray(draft.image_categories ?? [])}::text[],
       ${draft.video_url ?? null},
       ${mediaType},
       'draft',
@@ -171,5 +175,26 @@ export async function getRecentReelTemplateIds(limit: number): Promise<string[]>
 /** Fetch a draft by id. Used by approval routes (Phase 3). */
 export async function getById(id: string): Promise<SocialPostRow | null> {
   const { rows } = await sql`SELECT * FROM social_posts WHERE id = ${id} LIMIT 1`;
+  return (rows[0] as SocialPostRow) ?? null;
+}
+
+/**
+ * Overwrite the caption on a draft row. Admin-only (auth enforced by the
+ * calling server action). `updated_at` is bumped explicitly because we don't
+ * install an auto-update trigger on the table.
+ *
+ * Returns the freshly-updated row so the UI can reconcile without a re-query.
+ */
+export async function updateCaption(
+  id: string,
+  caption: string
+): Promise<SocialPostRow | null> {
+  const { rows } = await sql`
+    UPDATE social_posts
+       SET caption = ${caption},
+           updated_at = NOW()
+     WHERE id = ${id}
+     RETURNING *
+  `;
   return (rows[0] as SocialPostRow) ?? null;
 }

@@ -1,7 +1,6 @@
 import type { Property } from "@/lib/mock-data";
 import type { ReelScript, StoryOverlay } from "@/lib/social/types";
 import { calcGivingPool } from "@/lib/commission";
-import { listingDetailUrl } from "@/lib/constants/givenest";
 
 /* -------------------------------------------------------------------------- */
 /* Formatting helpers                                                         */
@@ -44,6 +43,12 @@ function cityHashtag(cityField: string): string {
  * - Attribution line (MLS rule)
  * - Hashtag fuel
  *
+ * **No URL in caption** — Instagram caption URLs are plain text, not clickable.
+ * The clickable path is either (a) "link in bio" on organic posts, or (b) a
+ * Learn More CTA on the post when it's boosted via Meta Ads Manager. The
+ * destination URL is surfaced on the admin card and stored derivable from
+ * `listing_slug`; see `ctaUrlFor(row)`.
+ *
  * ≤ 2,200 chars, ≤ 30 hashtags (Instagram hard limits).
  */
 export function buildCarouselCaption(
@@ -52,7 +57,6 @@ export function buildCarouselCaption(
 ): string {
   const city = shortCity(p.city);
   const donation = calcGivingPool(p.price);
-  const url = listingDetailUrl(p.slug);
 
   const hashtags = [
     "#Givenest",
@@ -75,8 +79,7 @@ export function buildCarouselCaption(
     `If this home sold through Givenest, ~${fmtDonation(donation)} would fund`,
     `Arizona nonprofits. Every closing with Givenest gives back.`,
     "",
-    `Listed by ${officeName}. Offer or buy with Givenest:`,
-    url,
+    `Listed by ${officeName}. Offer through Givenest — link in bio 🔗 or DM for details.`,
     "",
     hashtags,
   ].join("\n");
@@ -121,6 +124,12 @@ export const REEL_CTA_POOL: { id: string; text: string }[] = [
 /**
  * Reel caption. First line < 200 chars (fits under Instagram's "See more"
  * fold). On-screen overlays carry the pitch — the caption is hashtag fuel.
+ *
+ * **No URL in caption** — organic Reels don't render clickable links. The
+ * clickable Learn More CTA appears only when the Reel is *boosted* through
+ * Meta Ads Manager; the destination URL is attached there, not here. The
+ * on-video CTA overlay (from `REEL_CTA_POOL`) tells viewers to DM or tap
+ * the bio link.
  */
 export function buildReelCaption(
   p: Property,
@@ -128,11 +137,11 @@ export function buildReelCaption(
 ): string {
   const city = shortCity(p.city);
   const donation = calcGivingPool(p.price);
-  const url = listingDetailUrl(p.slug);
 
-  const hashtags = [
-    "#Givenest",
-    cityHashtag(p.city),
+  // Dedupe the city hashtag against the fixed tail so we don't emit
+  // `#ParadiseValley` twice for Paradise Valley listings.
+  const cityTag = cityHashtag(p.city);
+  const tail = [
     "#ArizonaRealEstate",
     "#GiveBack",
     "#PhoenixRealEstate",
@@ -141,12 +150,13 @@ export function buildReelCaption(
     "#LuxuryRealEstate",
     "#ScottsdaleRealEstate",
     "#ParadiseValley",
-  ].join(" ");
+  ].filter((t) => t.toLowerCase() !== cityTag.toLowerCase());
+  const hashtags = ["#Givenest", cityTag, ...tail].join(" ");
 
   return [
     `New ${city} listing → ~${fmtDonation(donation)} to AZ charities 🏡`,
     "",
-    `Listed by ${officeName}. Offer with Givenest: ${url}`,
+    `Listed by ${officeName}. DM for details or tap the link in bio 🔗`,
     "",
     hashtags,
   ].join("\n");

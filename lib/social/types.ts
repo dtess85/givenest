@@ -48,6 +48,11 @@ export interface SocialPostDraft {
   /** Carousel: 2–10 HTTPS URLs. Story: 1. Reel: empty in Phase 1 (video
    *  URL is filled by the Remotion render job in Phase 2). */
   image_urls: string[];
+  /** Category per image, aligned index-for-index with `image_urls`. Used by
+   *  the admin card to show "Kitchen" / "Backyard" badges so mis-classifications
+   *  are easy to spot. Empty array if classification was unavailable (missing
+   *  API key, vendor outage). */
+  image_categories?: string[];
   /** Phase 2+ only — MP4 output from Remotion Lambda. */
   video_url?: string;
   scheduled_for?: Date;

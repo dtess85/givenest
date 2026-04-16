@@ -32,8 +32,11 @@ import {
 } from "@/lib/social/caption";
 import { dayFromDate, selectListingCandidate } from "@/lib/social/selection";
 import { renderAndUploadStory } from "@/lib/social/story-render";
+import { renderAndUploadCarouselSlides } from "@/lib/social/carousel-slide-render";
 import { createDraft } from "@/lib/db/social-posts";
 import type { ListingDay, SocialPostDraft } from "@/lib/social/types";
+import { classifyListingImages } from "@/lib/social/image-classifier";
+import { sortImagesForSocial, type OrderedImage } from "@/lib/social/image-order";
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -77,9 +80,62 @@ async function handle(request: Request): Promise<NextResponse> {
     }
 
     const { property: p, officeName, priceTier } = candidate;
-    const snapshot = { ...p, price_tier: priceTier };
+
+    // Classify every listing image with Anthropic vision, then reorder into
+    // social-friendly sequence. Cached on image-URL hash, so only the first
+    // draft of a listing hits the API; re-runs are free. If the API key is
+    // missing or classification fails outright, `ordered` falls back to the
+    // original MLS order (category="other", conf=0 for everything).
+    const sourceImages = p.images ?? [];
+    let ordered: OrderedImage[];
+    try {
+      const classifications = await classifyListingImages(sourceImages);
+      ordered = sortImagesForSocial(sourceImages, classifications);
+    } catch (err) {
+      console.error("[social-draft-listing] classification failed:", err);
+      ordered = sourceImages.map((url, i) => ({
+        url,
+        category: "other" as const,
+        confidence: 0,
+        originalIndex: i,
+      }));
+    }
+    const orderedUrls = ordered.map((o) => o.url);
+    const orderedCategories = ordered.map((o) => o.category);
+
+    // Freeze the reordered images into the snapshot so downstream consumers
+    // (reel render, publisher cron) use the same order as the admin UI. We
+    // also carry the parallel category array on the snapshot — the Reel row
+    // leaves `image_urls` empty in Phase 1, so this is where the admin UI
+    // reads per-clip categories from for REEL thumbnails.
+    const snapshot = {
+      ...p,
+      images: orderedUrls,
+      image_categories: orderedCategories,
+      price_tier: priceTier,
+    };
 
     // ── CAROUSEL ───────────────────────────────────────────────────────────
+    // Composite each of the top 5 Spark photos into a branded 1080×1350 slide
+    // (Lora tagline on slide 1, coral donation pill on every slide). Raw Spark
+    // URLs would publish without any Givenest visual identity; the composited
+    // PNGs are what actually get posted. If compositing fails for any reason
+    // we fall back to the raw URLs so the draft still lands.
+    const carouselSourceUrls = orderedUrls.slice(0, 5);
+    const carouselCategories = orderedCategories.slice(0, 5);
+    let carouselImageUrls: string[];
+    try {
+      const slides = await renderAndUploadCarouselSlides(p, carouselSourceUrls);
+      carouselImageUrls = slides.map((s) => s.url);
+    } catch (err) {
+      console.error(
+        "[social-draft-listing] CAROUSEL compositing failed for",
+        p.slug,
+        "— falling back to raw Spark URLs:",
+        err
+      );
+      carouselImageUrls = carouselSourceUrls;
+    }
     const carouselDraft: SocialPostDraft = {
       format: "CAROUSEL",
       listing_slug: p.slug,
@@ -87,7 +143,8 @@ async function handle(request: Request): Promise<NextResponse> {
       listing_office_name: officeName,
       listing_snapshot: snapshot,
       caption: buildCarouselCaption(p, officeName),
-      image_urls: (p.images ?? []).slice(0, 5),
+      image_urls: carouselImageUrls,
+      image_categories: carouselCategories,
     };
     const carouselRow = await createDraft(carouselDraft);
 
@@ -116,8 +173,11 @@ async function handle(request: Request): Promise<NextResponse> {
 
     // ── REEL ───────────────────────────────────────────────────────────────
     // Phase 1: insert the row with video_url=null and empty image_urls. The
-    // Phase 2 render cron picks it up and fills in the MP4.
-    const reelScript = buildReelScript(p, officeName);
+    // Phase 2 render cron picks it up and fills in the MP4. We feed the
+    // reordered images into the reel script so clip 1 = hero, clip 2 = best
+    // kitchen, etc. Rather than the raw MLS order.
+    const reorderedProperty = { ...p, images: orderedUrls };
+    const reelScript = buildReelScript(reorderedProperty, officeName);
     const reelDraft: SocialPostDraft = {
       format: "REEL",
       listing_slug: p.slug,

@@ -3,12 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "/usr/local/bin/node node_modules/next/dist/bin/next dev",
+    "dev": "bash -c 'set -a; source .env.local; set +a; /usr/local/bin/node node_modules/next/dist/bin/next dev'",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:caption": "bash -c 'set -a; source .env.local; set +a; node --import tsx scripts/test-caption.ts \"$@\"' bash",
+    "test:classifier": "bash -c 'set -a; source .env.local; set +a; node --import tsx scripts/test-image-classifier.ts \"$@\"' bash"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.89.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "@vercel/blob": "^2.3.3",
@@ -28,6 +31,7 @@
     "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

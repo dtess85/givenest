@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "dustin@givenest.com,kyndall@givenest.com")
   .split(",")
@@ -10,56 +10,64 @@ const protectedPaths = ["/charity/dashboard", "/admin"];
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow login page through without auth
+  // Allow the login page through without auth.
   if (pathname.startsWith("/admin/login")) {
     return NextResponse.next();
   }
 
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
-
   if (!isProtected) {
     return NextResponse.next();
   }
 
-  // Check for Supabase auth token in cookies
-  const accessToken = req.cookies.get("sb-access-token")?.value
-    ?? req.cookies.getAll().find((c) => c.name.endsWith("-auth-token"))?.value;
+  // Use @supabase/ssr so the server-side reads the chunked `sb-*-auth-token`
+  // cookies that the browser client writes (value is `base64-<session>`, not
+  // a raw JWT — any manual Bearer-header approach will fail to parse it).
+  //
+  // `response` is rebuilt inside `setAll` because `@supabase/ssr` may need to
+  // refresh+rewrite cookies on each request.
+  let response = NextResponse.next({ request: req });
 
-  if (!accessToken) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            req.cookies.set(name, value)
+          );
+          response = NextResponse.next({ request: req });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
     const loginUrl = new URL("/admin/login", req.url);
     loginUrl.searchParams.set("redirect_url", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Verify the token with Supabase
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
-    );
-    const { data: { user }, error } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      const loginUrl = new URL("/admin/login", req.url);
-      loginUrl.searchParams.set("redirect_url", pathname);
-      return NextResponse.redirect(loginUrl);
+  // Admin routes additionally require an ADMIN_EMAILS match.
+  if (pathname.startsWith("/admin")) {
+    const email = user.email?.toLowerCase();
+    if (!email || !ADMIN_EMAILS.includes(email)) {
+      return NextResponse.redirect(new URL("/", req.url));
     }
-
-    // Admin routes require admin email
-    if (pathname.startsWith("/admin")) {
-      const email = user.email?.toLowerCase();
-      if (!email || !ADMIN_EMAILS.includes(email)) {
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-    }
-  } catch {
-    const loginUrl = new URL("/admin/login", req.url);
-    loginUrl.searchParams.set("redirect_url", pathname);
-    return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
