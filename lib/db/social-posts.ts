@@ -198,3 +198,23 @@ export async function updateCaption(
   `;
   return (rows[0] as SocialPostRow) ?? null;
 }
+
+/**
+ * Stamp the rendered Reel MP4 URL on a REEL row. Called by
+ * `lib/social/reel-render.ts` after a Remotion render + Blob upload. Once
+ * this is populated the admin UI swaps from "source-clips placeholder" to a
+ * playable <video> preview.
+ */
+export async function updateVideoUrl(
+  id: string,
+  videoUrl: string
+): Promise<SocialPostRow | null> {
+  const { rows } = await sql`
+    UPDATE social_posts
+       SET video_url = ${videoUrl},
+           updated_at = NOW()
+     WHERE id = ${id}
+     RETURNING *
+  `;
+  return (rows[0] as SocialPostRow) ?? null;
+}

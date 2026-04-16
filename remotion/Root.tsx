@@ -4,6 +4,18 @@ import { WalkthroughCinematic } from "./compositions/reels/WalkthroughCinematic"
 import { DEFAULT_REEL_INPUT_PROPS, type ReelInputProps } from "./types";
 
 /**
+ * Remotion's `<Composition>` constrains its `Props` generic to
+ * `Record<string, unknown>`, which our strict `ReelInputProps` interface
+ * doesn't extend (it has specific keys, no index signature). A localized
+ * cast at the boundary satisfies the generic without weakening the typed
+ * shape everywhere else — the composition itself still reads props as
+ * `ReelInputProps`, Studio's schema editor still shows the fields, and the
+ * render CLI still enforces the shape.
+ */
+const WalkthroughCinematicForComposition =
+  WalkthroughCinematic as unknown as React.FC<Record<string, unknown>>;
+
+/**
  * Composition registry. One `<Composition>` per reel template.
  *
  * Dimensions: 1080×1920 (9:16) — Instagram's vertical Reel spec. Every
@@ -25,12 +37,14 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Composition
         id="walkthrough-cinematic"
-        component={WalkthroughCinematic}
+        component={WalkthroughCinematicForComposition}
         durationInFrames={REEL_DURATION_FRAMES}
         fps={REEL_FPS}
         width={REEL_WIDTH}
         height={REEL_HEIGHT}
-        defaultProps={DEFAULT_REEL_INPUT_PROPS satisfies ReelInputProps}
+        defaultProps={
+          DEFAULT_REEL_INPUT_PROPS as unknown as Record<string, unknown>
+        }
       />
     </>
   );

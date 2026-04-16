@@ -131,7 +131,11 @@ function PostCard({ row }: { row: SocialPostRow }) {
     row.format === "CAROUSEL"
       ? `Carousel slides (${gallery.length})`
       : row.format === "REEL"
-        ? `Reel source images (${gallery.length}${row.image_urls.length === 0 ? ", video renders in Phase 2" : ""})`
+        ? `Reel source images (${gallery.length}${
+            row.video_url
+              ? ", video above"
+              : ", awaiting render"
+          })`
         : "";
 
   /** Match Instagram's native aspect ratio per format so the admin preview
@@ -148,16 +152,32 @@ function PostCard({ row }: { row: SocialPostRow }) {
         ? "aspect-[9/16]"
         : "aspect-square";
 
+  // REEL rows swap the scrollable-hero for a <video> player once the
+  // Remotion render has been uploaded and `video_url` is populated. Until
+  // then they show the source-clips gallery (Phase 2 placeholder).
+  const showReelVideo = row.format === "REEL" && !!row.video_url;
+
   return (
     <div className="overflow-hidden rounded-[10px] border border-border bg-white">
       {/* Hero — scrollable through all slides/clips. Aspect ratio matches
           the Instagram format so the full composed image is visible. */}
-      <div className={`relative w-full bg-[#F0EDEA] ${heroAspect}`}>
-        <ScrollableHero
-          images={heroImages}
-          placeholderText={heroPlaceholder}
-          categoryLabel={CATEGORY_LABEL}
-        />
+      <div className={`relative w-full bg-black ${heroAspect}`}>
+        {showReelVideo ? (
+          /* eslint-disable-next-line jsx-a11y/media-has-caption */
+          <video
+            src={row.video_url!}
+            controls
+            preload="metadata"
+            playsInline
+            className="h-full w-full object-contain"
+          />
+        ) : (
+          <ScrollableHero
+            images={heroImages}
+            placeholderText={heroPlaceholder}
+            categoryLabel={CATEGORY_LABEL}
+          />
+        )}
         {/* Top-left: format badge. `z-10` so it sits over the scroll chevrons. */}
         <span
           className={`absolute left-3 top-3 z-10 rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${formatBadgeClass(row.format)}`}

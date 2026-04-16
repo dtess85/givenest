@@ -1,11 +1,13 @@
 /**
  * Local Reel renderer — pulls one listing snapshot, builds a ReelScript,
  * renders the WalkthroughCinematic composition to an MP4 via Remotion's Node
- * renderer, writes the file to `./out/`.
+ * renderer, writes the file to `./out/`, then (by default) uploads the MP4
+ * to Vercel Blob and stamps `social_posts.video_url` on the REEL row so it
+ * shows up playable in `/admin/social`.
  *
  * Two source modes:
  *   (A) HTTP (default): fetch the most-recent draft REEL row via the running
- *       Next.js dev server at http://localhost:3000/api/admin/social/latest-reel.
+ *       Next.js dev server at http://localhost:3000/api/dev/reel-source.
  *       The dev server can reach Supabase; a direct `pg` connection from this
  *       script cannot (Supabase's direct DB host is IPv6-only, and macOS's
  *       default resolver only requests A records).
@@ -13,9 +15,10 @@
  *       a local JSON. Used when you want a fully offline render.
  *
  * Usage:
- *   pnpm remotion:render                      # pull latest draft REEL from local dev
- *   pnpm remotion:render --slug <slug>        # pull a specific slug from local dev
+ *   pnpm remotion:render                      # render + upload + persist (default)
+ *   pnpm remotion:render --slug <slug>        # render a specific slug
  *   pnpm remotion:render --from ./demo.json   # render from a local snapshot JSON
+ *   pnpm remotion:render --local-only         # render MP4 to ./out/ only (no upload)
  */
 import { bundle } from "@remotion/bundler";
 import {
@@ -27,6 +30,7 @@ import fs from "node:fs/promises";
 
 import { buildReelScript } from "@/lib/social/caption";
 import { pickTagline } from "@/lib/social/brand-overlay";
+import { uploadReelToBlob } from "@/lib/social/reel-render";
 import type { Property } from "@/lib/mock-data";
 import type { ReelInputProps } from "../remotion/types";
 
@@ -38,18 +42,27 @@ interface ListingBundle {
   property: Property;
   officeName: string;
   slug: string;
+  /** Optional — when present we can PATCH video_url on the exact REEL row. */
+  reelId?: string;
 }
 
 /* -------------------------------------------------------------------------- */
 /* Arg parsing — tiny, zero-dep                                               */
 /* -------------------------------------------------------------------------- */
 
-function parseArgs(argv: string[]): { slug?: string; fromFile?: string } {
-  const args: { slug?: string; fromFile?: string } = {};
+function parseArgs(argv: string[]): {
+  slug?: string;
+  fromFile?: string;
+  localOnly: boolean;
+} {
+  const args: { slug?: string; fromFile?: string; localOnly: boolean } = {
+    localOnly: false,
+  };
   for (let i = 2; i < argv.length; i++) {
     const cur = argv[i];
     if (cur === "--slug" || cur === "-s") args.slug = argv[++i];
     else if (cur === "--from" || cur === "-f") args.fromFile = argv[++i];
+    else if (cur === "--local-only") args.localOnly = true;
   }
   return args;
 }
@@ -97,13 +110,13 @@ async function loadFromFile(filePath: string): Promise<ListingBundle> {
 /* -------------------------------------------------------------------------- */
 
 async function main() {
-  const { slug, fromFile } = parseArgs(process.argv);
+  const { slug, fromFile, localOnly } = parseArgs(process.argv);
 
   const src: ListingBundle = fromFile
     ? await loadFromFile(fromFile)
     : await fetchFromDevServer(slug);
 
-  const { property, officeName, slug: listingSlug } = src;
+  const { property, officeName, slug: listingSlug, reelId } = src;
   console.log(`[render-reel] listing: ${property.address} (${listingSlug})`);
   console.log(`[render-reel] images: ${property.images?.length ?? 0}`);
 
@@ -135,11 +148,17 @@ async function main() {
   });
 
   /* ---- Select composition & render ----------------------------------- */
+  // Cast to the generic Record shape Remotion's renderer API expects. Our
+  // ReelInputProps interface has specific keys; Remotion's renderer is
+  // generic over `Record<string, unknown>`. Same boundary-cast trick used
+  // in remotion/Root.tsx at the Composition registration.
+  const rendererInputProps = inputProps as unknown as Record<string, unknown>;
+
   console.log(`[render-reel] selecting composition ${COMPOSITION_ID}…`);
   const composition = await selectComposition({
     serveUrl: bundleLocation,
     id: COMPOSITION_ID,
-    inputProps,
+    inputProps: rendererInputProps,
   });
 
   await fs.mkdir(OUT_DIR, { recursive: true });
@@ -157,7 +176,7 @@ async function main() {
     serveUrl: bundleLocation,
     codec: "h264",
     outputLocation: outputPath,
-    inputProps,
+    inputProps: rendererInputProps,
     onProgress: ({ progress }) => {
       const pct = Math.round(progress * 100);
       process.stdout.write(`\r[render-reel] progress: ${pct}%   `);
@@ -170,6 +189,56 @@ async function main() {
     `\n[render-reel] done in ${elapsedSec}s · ${(stats.size / 1024 / 1024).toFixed(2)} MB`
   );
   console.log(`[render-reel] output: ${outputPath}`);
+
+  /* ---- Upload + persist (unless --local-only) ------------------------ */
+
+  if (localOnly) {
+    console.log(`[render-reel] --local-only: skipping Blob upload + DB update`);
+    return;
+  }
+
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.warn(
+      `[render-reel] BLOB_READ_WRITE_TOKEN not set — skipping upload. ` +
+        `Set it in .env.local or pass --local-only.`
+    );
+    return;
+  }
+
+  console.log(`[render-reel] uploading to Vercel Blob…`);
+  const uploadStart = Date.now();
+  const { url: blobUrl, size } = await uploadReelToBlob(outputPath, listingSlug);
+  const uploadSec = ((Date.now() - uploadStart) / 1000).toFixed(1);
+  console.log(
+    `[render-reel] uploaded in ${uploadSec}s · ${(size / 1024 / 1024).toFixed(2)} MB`
+  );
+  console.log(`[render-reel] blob url: ${blobUrl}`);
+
+  if (!reelId) {
+    console.log(
+      `[render-reel] no reelId in source bundle (likely --from a file) — ` +
+        `skipping DB stamp`
+    );
+    return;
+  }
+
+  console.log(`[render-reel] stamping video_url on row ${reelId}…`);
+  const patchRes = await fetch(`${DEV_BASE}/api/dev/reel-video-url`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.CRON_SECRET ?? ""}`,
+    },
+    body: JSON.stringify({ id: reelId, videoUrl: blobUrl }),
+  });
+  if (!patchRes.ok) {
+    throw new Error(
+      `PATCH video_url failed: ${patchRes.status} ${await patchRes.text().catch(() => "")}`
+    );
+  }
+  console.log(
+    `[render-reel] DB stamped — admin preview should now play the Reel ✓`
+  );
 }
 
 main().catch((err) => {

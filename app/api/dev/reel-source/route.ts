@@ -41,14 +41,14 @@ export async function GET(req: NextRequest) {
 
   const query = slug
     ? {
-        text: `SELECT listing_snapshot, listing_office_name, listing_slug
+        text: `SELECT id, listing_snapshot, listing_office_name, listing_slug
                FROM social_posts
                WHERE listing_slug = $1 AND format = 'REEL'
                ORDER BY created_at DESC LIMIT 1`,
         values: [slug],
       }
     : {
-        text: `SELECT listing_snapshot, listing_office_name, listing_slug
+        text: `SELECT id, listing_snapshot, listing_office_name, listing_slug
                FROM social_posts
                WHERE format = 'REEL' AND status = 'draft'
                ORDER BY created_at DESC LIMIT 1`,
@@ -68,5 +68,8 @@ export async function GET(req: NextRequest) {
     property: row.listing_snapshot,
     officeName: row.listing_office_name,
     slug: row.listing_slug,
+    // Returned so the local renderer can PATCH video_url back on the exact
+    // row after upload. Left out when --from <file.json> is used.
+    reelId: row.id,
   });
 }
