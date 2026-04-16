@@ -60,8 +60,7 @@ export function buildCarouselCaption(
     `${p.beds} bed · ${p.baths} bath · ${fmtSqft(p.sqft)}`,
     `Listed at ${fmtPrice(p.price)}`,
     "",
-    `If this home sold through Givenest, ~${fmtDonation(donation)} would fund`,
-    `Arizona nonprofits. Every closing with Givenest gives back.`,
+    `If this home sold through Givenest, ~${fmtDonation(donation)} would fund Arizona nonprofits. Every closing with Givenest gives back.`,
     "",
     `Listed by ${officeName}. Offer through Givenest — link in bio or DM for details.`,
   ].join("\n");
