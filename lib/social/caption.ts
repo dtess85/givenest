@@ -25,12 +25,6 @@ export function shortCity(cityField: string): string {
   return (comma === -1 ? cityField : cityField.slice(0, comma)).trim();
 }
 
-/** Hashtag form of a city name. "Paradise Valley" → "#ParadiseValley". */
-function cityHashtag(cityField: string): string {
-  const short = shortCity(cityField);
-  return "#" + short.replace(/[^A-Za-z0-9]/g, "");
-}
-
 /* -------------------------------------------------------------------------- */
 /* Carousel — long-form, detail-rich                                          */
 /* -------------------------------------------------------------------------- */
@@ -49,7 +43,8 @@ function cityHashtag(cityField: string): string {
  * destination URL is surfaced on the admin card and stored derivable from
  * `listing_slug`; see `ctaUrlFor(row)`.
  *
- * ≤ 2,200 chars, ≤ 30 hashtags (Instagram hard limits).
+ * ≤ 2,200 chars. No hashtags — Instagram's algorithm no longer rewards them
+ * for reach; clean captions convert better.
  */
 export function buildCarouselCaption(
   p: Property,
@@ -57,17 +52,6 @@ export function buildCarouselCaption(
 ): string {
   const city = shortCity(p.city);
   const donation = calcGivingPool(p.price);
-
-  const hashtags = [
-    "#Givenest",
-    "#ArizonaRealEstate",
-    cityHashtag(p.city),
-    "#PhoenixRealEstate",
-    "#GiveBack",
-    "#RealEstateWithPurpose",
-    "#AZHomes",
-    "#NewListing",
-  ].join(" ");
 
   return [
     `🏡 New Arizona listing in ${city}`,
@@ -80,8 +64,6 @@ export function buildCarouselCaption(
     `Arizona nonprofits. Every closing with Givenest gives back.`,
     "",
     `Listed by ${officeName}. Offer through Givenest — link in bio 🔗 or DM for details.`,
-    "",
-    hashtags,
   ].join("\n");
 }
 
@@ -123,13 +105,12 @@ export const REEL_CTA_POOL: { id: string; text: string }[] = [
 
 /**
  * Reel caption. First line < 200 chars (fits under Instagram's "See more"
- * fold). On-screen overlays carry the pitch — the caption is hashtag fuel.
+ * fold). On-screen overlays carry the pitch — the caption is just the hook
+ * + attribution. No hashtags.
  *
  * **No URL in caption** — organic Reels don't render clickable links. The
  * clickable Learn More CTA appears only when the Reel is *boosted* through
- * Meta Ads Manager; the destination URL is attached there, not here. The
- * on-video CTA overlay (from `REEL_CTA_POOL`) tells viewers to DM or tap
- * the bio link.
+ * Meta Ads Manager; the destination URL is attached there, not here.
  */
 export function buildReelCaption(
   p: Property,
@@ -138,27 +119,10 @@ export function buildReelCaption(
   const city = shortCity(p.city);
   const donation = calcGivingPool(p.price);
 
-  // Dedupe the city hashtag against the fixed tail so we don't emit
-  // `#ParadiseValley` twice for Paradise Valley listings.
-  const cityTag = cityHashtag(p.city);
-  const tail = [
-    "#ArizonaRealEstate",
-    "#GiveBack",
-    "#PhoenixRealEstate",
-    "#AZHomes",
-    "#NewListing",
-    "#LuxuryRealEstate",
-    "#ScottsdaleRealEstate",
-    "#ParadiseValley",
-  ].filter((t) => t.toLowerCase() !== cityTag.toLowerCase());
-  const hashtags = ["#Givenest", cityTag, ...tail].join(" ");
-
   return [
     `New ${city} listing → ~${fmtDonation(donation)} to AZ charities 🏡`,
     "",
     `Listed by ${officeName}. DM for details or tap the link in bio 🔗`,
-    "",
-    hashtags,
   ].join("\n");
 }
 
