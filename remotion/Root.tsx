@@ -1,6 +1,7 @@
 import React from "react";
 import { Composition } from "remotion";
 import { WalkthroughCinematic } from "./compositions/reels/WalkthroughCinematic";
+import { QuickTour } from "./compositions/reels/QuickTour";
 import { DEFAULT_REEL_INPUT_PROPS, type ReelInputProps } from "./types";
 
 /**
@@ -12,8 +13,10 @@ import { DEFAULT_REEL_INPUT_PROPS, type ReelInputProps } from "./types";
  * `ReelInputProps`, Studio's schema editor still shows the fields, and the
  * render CLI still enforces the shape.
  */
-const WalkthroughCinematicForComposition =
-  WalkthroughCinematic as unknown as React.FC<Record<string, unknown>>;
+const asCompositionComponent = (
+  c: React.FC<ReelInputProps>
+): React.FC<Record<string, unknown>> =>
+  c as unknown as React.FC<Record<string, unknown>>;
 
 /**
  * Composition registry. One `<Composition>` per reel template.
@@ -37,7 +40,18 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Composition
         id="walkthrough-cinematic"
-        component={WalkthroughCinematicForComposition}
+        component={asCompositionComponent(WalkthroughCinematic)}
+        durationInFrames={REEL_DURATION_FRAMES}
+        fps={REEL_FPS}
+        width={REEL_WIDTH}
+        height={REEL_HEIGHT}
+        defaultProps={
+          DEFAULT_REEL_INPUT_PROPS as unknown as Record<string, unknown>
+        }
+      />
+      <Composition
+        id="quick-tour"
+        component={asCompositionComponent(QuickTour)}
         durationInFrames={REEL_DURATION_FRAMES}
         fps={REEL_FPS}
         width={REEL_WIDTH}

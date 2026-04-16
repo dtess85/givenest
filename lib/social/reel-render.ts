@@ -34,11 +34,15 @@ export interface UploadReelResult {
 export async function uploadReelToBlob(
   filePath: string,
   slug: string,
-  opts?: { blobToken?: string }
+  opts?: { blobToken?: string; template?: string }
 ): Promise<UploadReelResult> {
   const body = await fs.readFile(filePath);
   const yyyymmdd = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const pathname = `social/reels/${slug}-${yyyymmdd}.mp4`;
+  // Template in the pathname so different templates render for the same
+  // listing don't clobber each other — and so the Blob console groups them
+  // cleanly (social/reels/walkthrough-cinematic/... vs quick-tour/...).
+  const template = opts?.template ?? "unknown";
+  const pathname = `social/reels/${template}/${slug}-${yyyymmdd}.mp4`;
 
   const { url } = await put(pathname, body, {
     access: "public",

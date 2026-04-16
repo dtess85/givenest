@@ -42,14 +42,22 @@ import { loadFonts } from "../shared/fonts";
 
 loadFonts();
 
-// Clip layout — frame-accurate durations & where each clip starts.
-const CLIPS: { start: number; duration: number }[] = [
-  { start: 0,   duration: 60 },   // 1. Hook (2s) — statement has time to land
-  { start: 60,  duration: 90 },   // 2. Interior wide (3s) — settling shot
-  { start: 150, duration: 75 },   // 3. Kitchen (2.5s)
-  { start: 225, duration: 75 },   // 4. Living (2.5s)
-  { start: 300, duration: 75 },   // 5. Donation beat (2.5s)
-  { start: 375, duration: 75 },   // 6. End card (2.5s)
+// Clip layout — frame-accurate durations, where each beat starts, and
+// which `clips[i]` (from buildReelScript's 8-clip payload) sources each
+// beat's image + overlay. Explicit sourceIdx means buildReelScript can add
+// new clip slots (e.g. city, office attribution) without silently
+// reshuffling what walkthrough-cinematic shows.
+const CLIPS: {
+  start: number;
+  duration: number;
+  sourceIdx: number;
+}[] = [
+  { start: 0,   duration: 60, sourceIdx: 0 }, // 1. Hook
+  { start: 60,  duration: 90, sourceIdx: 1 }, // 2. Interior — beds/baths
+  { start: 150, duration: 75, sourceIdx: 2 }, // 3. Kitchen — sqft
+  { start: 225, duration: 75, sourceIdx: 4 }, // 4. Living — price (skips city at idx 3)
+  { start: 300, duration: 75, sourceIdx: 6 }, // 5. Donation beat — aerial
+  { start: 375, duration: 75, sourceIdx: 7 }, // 6. End card — hero return
 ];
 
 // Crossfade duration between clips (in frames). 8 frames ≈ 0.27s @ 30fps.
@@ -68,7 +76,9 @@ export const WalkthroughCinematic: React.FC<ReelInputProps> = ({
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       {/* Full-duration clips with crossfades. Each Sequence owns its own
-          Ken Burns motion; opacity interpolation handles the fade-in. */}
+          Ken Burns motion; opacity interpolation handles the fade-in. Pulls
+          image + motion from `clips[sourceIdx]` rather than by position, so
+          the template controls which slots of the payload it cares about. */}
       {CLIPS.map((clip, i) => (
         <Sequence
           key={i}
@@ -77,8 +87,8 @@ export const WalkthroughCinematic: React.FC<ReelInputProps> = ({
         >
           <ClipFade fadeInFrames={CROSSFADE_FRAMES}>
             <KenBurns
-              src={clips[i]?.imageUrl ?? ""}
-              direction={clips[i]?.kenBurns ?? "slowZoomIn"}
+              src={clips[clip.sourceIdx]?.imageUrl ?? ""}
+              direction={clips[clip.sourceIdx]?.kenBurns ?? "slowZoomIn"}
               durationInFrames={clip.duration + CROSSFADE_FRAMES}
             />
           </ClipFade>
@@ -104,15 +114,16 @@ export const WalkthroughCinematic: React.FC<ReelInputProps> = ({
         <HookCard hookText={hookText} />
       </Sequence>
 
-      {/* Per-clip text overlays for clips 2–4. Skip clip 1 (hook), clip 5
-          (donation), clip 6 (end card) — those have their own full-screen cards. */}
+      {/* Per-clip text overlays for beats 2–4. Skip beat 1 (hook), beat 5
+          (donation), beat 6 (end card) — those have their own full-screen
+          cards. Each overlay pulls from `clips[sourceIdx].overlay`. */}
       {CLIPS.slice(1, 4).map((clip, idx) => {
-        const clipIndex = idx + 1; // 1..3
-        const overlayText = clips[clipIndex]?.overlay ?? "";
+        const beatNumber = idx + 2; // 2..4 (for key / debug)
+        const overlayText = clips[clip.sourceIdx]?.overlay ?? "";
         if (!overlayText) return null;
         return (
           <Sequence
-            key={`overlay-${clipIndex}`}
+            key={`overlay-${beatNumber}`}
             from={clip.start}
             durationInFrames={clip.duration}
           >

@@ -139,10 +139,10 @@ export function buildReelCaption(
  * pairs a listing image with an overlay line and a Ken Burns hint; the
  * composition resolves the Ken Burns into actual motion.
  *
- * Clip count: **6 clips** — matches the walkthrough-cinematic template's
- * 6-sequence structure (hook + 3 walkthrough beats + donation + end card).
- * Falls back to `images[0]` if fewer photos available so the schema is
- * always satisfied.
+ * Clip count: **8 clips** — covers the widest template in use (quick-tour,
+ * 8 beats). walkthrough-cinematic only references clips[0..5] and silently
+ * ignores the extras. Falls back to `images[0]` when the listing has fewer
+ * than 8 photos so the schema is always satisfied.
  *
  * The `donationLabel` / `city` / `officeName` / `taglineText` are hoisted
  * out of the clips array to match `ReelInputProps` — the template uses them
@@ -182,22 +182,28 @@ export function buildReelScript(
     donationLabel,
     officeName,
     city,
-    // 6 clips, avg 2.5s @ 30fps = 15s total.
-    // Clip 1 = hero (hook card overlays this), clips 2–4 = walkthrough beats
-    // with per-clip overlay text, clip 5 = donation pill (no text), clip 6 = end card.
+    // 8 clips — covers the widest template (quick-tour). Walkthrough-cinematic
+    // uses clips[0..5] and ignores the last two. Each clip carries its own
+    // default `overlay` + `kenBurns` hint; templates can override when their
+    // pacing demands different motion (e.g. quick-tour swaps in whip motion).
     clips: [
-      // 1. Hero exterior — gentle zoom-in, hook card lives on top.
+      // 1. Hero exterior — hook card lives on top.
       { imageUrl: at(0), overlay: "", kenBurns: "slowZoomIn" },
-      // 2. Interior wide — settling shot, overlay = beds/baths.
+      // 2. Interior wide — beds/baths.
       { imageUrl: at(1), overlay: `${p.beds} bed · ${p.baths} bath`, kenBurns: "slowPanRight" },
-      // 3. Kitchen — overlay = sqft.
+      // 3. Kitchen — sqft.
       { imageUrl: at(2), overlay: fmtSqft(p.sqft), kenBurns: "slowPanLeft" },
-      // 4. Living — overlay = price.
-      { imageUrl: at(3), overlay: `Listed at ${price}`, kenBurns: "slowPanRight" },
-      // 5. Aerial / exterior — donation pill overlays this clip (second-to-last).
-      { imageUrl: at(4), overlay: "", kenBurns: "slowPanLeft" },
-      // 6. Hero return — end card overlays this clip.
-      { imageUrl: at(5), overlay: "", kenBurns: "slowZoomIn" },
+      // 4. Primary bedroom — city (quick-tour only; walkthrough stops at 3 beats).
+      { imageUrl: at(3), overlay: city, kenBurns: "slowZoomIn" },
+      // 5. Living — price.
+      { imageUrl: at(4), overlay: `Listed at ${price}`, kenBurns: "slowPanRight" },
+      // 6. Outdoor / pool — no text overlay (office attribution lives on the
+      // end card, so this beat just lets the photo breathe).
+      { imageUrl: at(5), overlay: "", kenBurns: "zoomIn" },
+      // 7. Aerial / exterior — donation pill overlays (both templates).
+      { imageUrl: at(6), overlay: "", kenBurns: "slowPanLeft" },
+      // 8. Hero return — end card overlays (both templates).
+      { imageUrl: at(7), overlay: "", kenBurns: "slowZoomIn" },
     ],
   };
 }

@@ -15,10 +15,11 @@
  *       a local JSON. Used when you want a fully offline render.
  *
  * Usage:
- *   pnpm remotion:render                      # render + upload + persist (default)
- *   pnpm remotion:render --slug <slug>        # render a specific slug
- *   pnpm remotion:render --from ./demo.json   # render from a local snapshot JSON
- *   pnpm remotion:render --local-only         # render MP4 to ./out/ only (no upload)
+ *   pnpm remotion:render                             # walkthrough-cinematic, upload+persist
+ *   pnpm remotion:render --template quick-tour        # quick-tour template
+ *   pnpm remotion:render --slug <slug>                # render a specific slug
+ *   pnpm remotion:render --from ./demo.json           # render from a local snapshot JSON
+ *   pnpm remotion:render --local-only                 # render MP4 to ./out/ only (no upload)
  */
 import { bundle } from "@remotion/bundler";
 import {
@@ -34,7 +35,11 @@ import { uploadReelToBlob } from "@/lib/social/reel-render";
 import type { Property } from "@/lib/mock-data";
 import type { ReelInputProps } from "../remotion/types";
 
-const COMPOSITION_ID = "walkthrough-cinematic";
+/** Registered composition IDs in remotion/Root.tsx. Keep in sync. */
+const VALID_COMPOSITIONS = ["walkthrough-cinematic", "quick-tour"] as const;
+type CompositionId = (typeof VALID_COMPOSITIONS)[number];
+
+const DEFAULT_COMPOSITION: CompositionId = "walkthrough-cinematic";
 const OUT_DIR = path.resolve(process.cwd(), "out");
 const DEV_BASE = process.env.DRAFT_BASE_URL ?? "http://localhost:3000";
 
@@ -54,15 +59,32 @@ function parseArgs(argv: string[]): {
   slug?: string;
   fromFile?: string;
   localOnly: boolean;
+  template: CompositionId;
 } {
-  const args: { slug?: string; fromFile?: string; localOnly: boolean } = {
+  const args: {
+    slug?: string;
+    fromFile?: string;
+    localOnly: boolean;
+    template: CompositionId;
+  } = {
     localOnly: false,
+    template: DEFAULT_COMPOSITION,
   };
   for (let i = 2; i < argv.length; i++) {
     const cur = argv[i];
     if (cur === "--slug" || cur === "-s") args.slug = argv[++i];
     else if (cur === "--from" || cur === "-f") args.fromFile = argv[++i];
     else if (cur === "--local-only") args.localOnly = true;
+    else if (cur === "--template" || cur === "-t") {
+      const next = argv[++i] as CompositionId;
+      if (!VALID_COMPOSITIONS.includes(next)) {
+        console.error(
+          `Unknown --template "${next}". Valid: ${VALID_COMPOSITIONS.join(", ")}`
+        );
+        process.exit(1);
+      }
+      args.template = next;
+    }
   }
   return args;
 }
@@ -110,13 +132,14 @@ async function loadFromFile(filePath: string): Promise<ListingBundle> {
 /* -------------------------------------------------------------------------- */
 
 async function main() {
-  const { slug, fromFile, localOnly } = parseArgs(process.argv);
+  const { slug, fromFile, localOnly, template } = parseArgs(process.argv);
 
   const src: ListingBundle = fromFile
     ? await loadFromFile(fromFile)
     : await fetchFromDevServer(slug);
 
   const { property, officeName, slug: listingSlug, reelId } = src;
+  console.log(`[render-reel] template: ${template}`);
   console.log(`[render-reel] listing: ${property.address} (${listingSlug})`);
   console.log(`[render-reel] images: ${property.images?.length ?? 0}`);
 
@@ -154,18 +177,20 @@ async function main() {
   // in remotion/Root.tsx at the Composition registration.
   const rendererInputProps = inputProps as unknown as Record<string, unknown>;
 
-  console.log(`[render-reel] selecting composition ${COMPOSITION_ID}…`);
+  console.log(`[render-reel] selecting composition ${template}…`);
   const composition = await selectComposition({
     serveUrl: bundleLocation,
-    id: COMPOSITION_ID,
+    id: template,
     inputProps: rendererInputProps,
   });
 
   await fs.mkdir(OUT_DIR, { recursive: true });
   const yyyymmdd = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  // Template in the filename so renders of the same listing via different
+  // templates don't clobber each other in ./out/.
   const outputPath = path.join(
     OUT_DIR,
-    `reel-${listingSlug}-${yyyymmdd}.mp4`
+    `reel-${listingSlug}-${template}-${yyyymmdd}.mp4`
   );
 
   console.log(`[render-reel] rendering MP4 → ${outputPath}`);
@@ -207,7 +232,9 @@ async function main() {
 
   console.log(`[render-reel] uploading to Vercel Blob…`);
   const uploadStart = Date.now();
-  const { url: blobUrl, size } = await uploadReelToBlob(outputPath, listingSlug);
+  const { url: blobUrl, size } = await uploadReelToBlob(outputPath, listingSlug, {
+    template,
+  });
   const uploadSec = ((Date.now() - uploadStart) / 1000).toFixed(1);
   console.log(
     `[render-reel] uploaded in ${uploadSec}s · ${(size / 1024 / 1024).toFixed(2)} MB`
