@@ -156,14 +156,17 @@ export async function renderAndUploadStory(
           <div
             style={{
               color: BRAND.white,
-              fontSize: 34,
+              fontSize: 36,
               fontFamily: "sans-serif",
-              letterSpacing: 2,
-              opacity: 0.85,
+              fontWeight: 600,
+              letterSpacing: 1,
               display: "flex",
+              border: "3px solid rgba(255,255,255,0.8)",
+              borderRadius: 999,
+              padding: "16px 48px",
             }}
           >
-            Tap to view on Givenest
+            Learn More
           </div>
         </div>
       </div>
