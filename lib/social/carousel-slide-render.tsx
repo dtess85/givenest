@@ -157,9 +157,9 @@ async function renderOneSlide({
         >
           <DonationPill
             amountLabel={donationLabel}
-            fontSize={30}
-            paddingX={28}
-            paddingY={14}
+            fontSize={45}
+            paddingX={42}
+            paddingY={21}
           />
         </div>
       </div>

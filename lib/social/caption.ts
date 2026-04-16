@@ -54,7 +54,7 @@ export function buildCarouselCaption(
   const donation = calcGivingPool(p.price);
 
   return [
-    `🏡 New Arizona listing in ${city}`,
+    `New Arizona listing in ${city}`,
     "",
     p.address,
     `${p.beds} bed · ${p.baths} bath · ${fmtSqft(p.sqft)}`,
@@ -63,7 +63,7 @@ export function buildCarouselCaption(
     `If this home sold through Givenest, ~${fmtDonation(donation)} would fund`,
     `Arizona nonprofits. Every closing with Givenest gives back.`,
     "",
-    `Listed by ${officeName}. Offer through Givenest — link in bio 🔗 or DM for details.`,
+    `Listed by ${officeName}. Offer through Givenest — link in bio or DM for details.`,
   ].join("\n");
 }
 
@@ -100,7 +100,7 @@ export const REEL_CTA_POOL: { id: string; text: string }[] = [
   { id: "dm-details", text: "DM for details" },
   { id: "dm-interested", text: "Interested? DM us" },
   { id: "link-bio", text: "Tap the link in bio" },
-  { id: "would-you", text: "Would you live here? 👇" },
+  { id: "would-you", text: "Would you live here?" },
 ];
 
 /**
@@ -120,9 +120,9 @@ export function buildReelCaption(
   const donation = calcGivingPool(p.price);
 
   return [
-    `New ${city} listing → ~${fmtDonation(donation)} to AZ charities 🏡`,
+    `New ${city} listing — ~${fmtDonation(donation)} to AZ charities`,
     "",
-    `Listed by ${officeName}. DM for details or tap the link in bio 🔗`,
+    `Listed by ${officeName}. DM for details or tap the link in bio.`,
   ].join("\n");
 }
 
@@ -187,7 +187,7 @@ export function buildStoryOverlay(p: Property): StoryOverlay {
   const city = shortCity(p.city);
   const donation = fmtDonation(calcGivingPool(p.price));
   return {
-    topStrip: `🏡 NEW AZ LISTING · ${city}`,
+    topStrip: `NEW AZ LISTING · ${city}`,
     address: p.address,
     specs: `${p.beds}bd · ${p.baths}ba · ${fmtSqft(p.sqft)}`,
     price: fmtPrice(p.price),

@@ -101,7 +101,7 @@ export async function renderAndUploadStory(
           }}
         />
 
-        {/* Top: kicker + rotated Lora tagline */}
+        {/* Top: kicker pill + rotated Lora tagline */}
         <div
           style={{
             position: "absolute",
@@ -111,21 +111,24 @@ export async function renderAndUploadStory(
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 20,
+            gap: 24,
           }}
         >
+          {/* Kicker pill — semi-transparent black background */}
           <div
             style={{
+              backgroundColor: "rgba(0,0,0,0.55)",
               color: BRAND.white,
-              fontSize: 28,
-              letterSpacing: 6,
+              fontSize: 38,
+              letterSpacing: 4,
               fontFamily: "sans-serif",
               fontWeight: 600,
-              opacity: 0.85,
+              padding: "14px 36px",
+              borderRadius: 999,
               display: "flex",
             }}
           >
-            {`🏡 NEW AZ LISTING · ${city}`}
+            {`NEW AZ LISTING · ${city}`}
           </div>
           <BrandTagline fontSize={88} text={tagline.text} />
         </div>
@@ -146,9 +149,9 @@ export async function renderAndUploadStory(
         >
           <DonationPill
             amountLabel={donationLabel}
-            fontSize={36}
-            paddingX={36}
-            paddingY={18}
+            fontSize={54}
+            paddingX={54}
+            paddingY={27}
           />
           <div
             style={{
