@@ -106,8 +106,8 @@ export async function renderAndUploadStory(
           style={{
             position: "absolute",
             top: 120,
-            left: 0,
-            right: 0,
+            left: 60,
+            right: 60,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",

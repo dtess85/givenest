@@ -45,7 +45,7 @@ export const TAGLINE = {
   primary: TAGLINE_POOL[0].text,
   /** Shown on the donation pill. `{{AMOUNT}}` is replaced with the rendered
    *  dollar figure at compose time (e.g. "~$5,499"). */
-  pillTemplate: "{{AMOUNT}} to a cause of your choice",
+  pillTemplate: "{{AMOUNT}} to a charity of your choice",
 };
 
 /* -------------------------------------------------------------------------- */
@@ -179,7 +179,7 @@ export function DonationPill({
   );
 }
 
-/** Lora 600 tagline. Pass `text` for rotation; defaults to pool[0]. */
+/** Lora 600 tagline with semi-transparent dark background pill. */
 export function BrandTagline({
   fontSize,
   color = BRAND.white,
@@ -197,9 +197,12 @@ export function BrandTagline({
         fontWeight: 600,
         color,
         fontSize,
-        lineHeight: 1.1,
+        lineHeight: 1.2,
         letterSpacing: "-0.01em",
         display: "flex",
+        backgroundColor: "rgba(0,0,0,0.50)",
+        padding: `${Math.round(fontSize * 0.22)}px ${Math.round(fontSize * 0.4)}px`,
+        borderRadius: 20,
       }}
     >
       {text ?? TAGLINE.primary}
