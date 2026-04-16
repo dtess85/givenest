@@ -195,6 +195,7 @@ export function BrandTagline({
       style={{
         fontFamily: "Lora",
         fontWeight: 600,
+        fontStyle: "italic",
         color,
         fontSize,
         lineHeight: 1.2,
