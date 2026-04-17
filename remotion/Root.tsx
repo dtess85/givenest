@@ -1,7 +1,19 @@
 import React from "react";
 import { Composition } from "remotion";
 import { WalkthroughCinematic } from "./compositions/reels/WalkthroughCinematic";
-import { QuickTour } from "./compositions/reels/QuickTour";
+import {
+  QuickTour,
+  QUICK_TOUR_DURATION_FRAMES,
+} from "./compositions/reels/QuickTour";
+import {
+  DetailsCloseup,
+  DETAILS_CLOSEUP_DURATION_FRAMES,
+} from "./compositions/reels/DetailsCloseup";
+import {
+  PriceReveal,
+  PRICE_REVEAL_DURATION_FRAMES,
+} from "./compositions/reels/PriceReveal";
+import { StatsHeavy } from "./compositions/reels/StatsHeavy";
 import { DEFAULT_REEL_INPUT_PROPS, type ReelInputProps } from "./types";
 
 /**
@@ -52,6 +64,39 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="quick-tour"
         component={asCompositionComponent(QuickTour)}
+        durationInFrames={QUICK_TOUR_DURATION_FRAMES}
+        fps={REEL_FPS}
+        width={REEL_WIDTH}
+        height={REEL_HEIGHT}
+        defaultProps={
+          DEFAULT_REEL_INPUT_PROPS as unknown as Record<string, unknown>
+        }
+      />
+      <Composition
+        id="details-closeup"
+        component={asCompositionComponent(DetailsCloseup)}
+        durationInFrames={DETAILS_CLOSEUP_DURATION_FRAMES}
+        fps={REEL_FPS}
+        width={REEL_WIDTH}
+        height={REEL_HEIGHT}
+        defaultProps={
+          DEFAULT_REEL_INPUT_PROPS as unknown as Record<string, unknown>
+        }
+      />
+      <Composition
+        id="price-reveal"
+        component={asCompositionComponent(PriceReveal)}
+        durationInFrames={PRICE_REVEAL_DURATION_FRAMES}
+        fps={REEL_FPS}
+        width={REEL_WIDTH}
+        height={REEL_HEIGHT}
+        defaultProps={
+          DEFAULT_REEL_INPUT_PROPS as unknown as Record<string, unknown>
+        }
+      />
+      <Composition
+        id="stats-heavy"
+        component={asCompositionComponent(StatsHeavy)}
         durationInFrames={REEL_DURATION_FRAMES}
         fps={REEL_FPS}
         width={REEL_WIDTH}

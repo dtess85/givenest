@@ -16,6 +16,7 @@ import {
   DonationBadge,
   EndCard,
   Wordmark,
+  ClipFade,
 } from "../shared/BrandOverlays";
 import { loadFonts } from "../shared/fonts";
 
@@ -157,22 +158,6 @@ export const WalkthroughCinematic: React.FC<ReelInputProps> = ({
 /* -------------------------------------------------------------------------- */
 /* Local helpers — keep them in this file since they're template-specific.    */
 /* -------------------------------------------------------------------------- */
-
-/** Opacity-ramp wrapper used for cross-fading clips. Just fades in; the
- *  underlying clip under it handles its own Ken Burns. */
-const ClipFade: React.FC<{
-  fadeInFrames: number;
-  children: React.ReactNode;
-}> = ({ fadeInFrames, children }) => {
-  const frame = useCurrentFrame();
-  const opacity = interpolate(frame, [0, fadeInFrames], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  return (
-    <AbsoluteFill style={{ opacity }}>{children}</AbsoluteFill>
-  );
-};
 
 /** Mini spring for the donation badge — pops in at the start of its
  *  sequence and holds until the end. */

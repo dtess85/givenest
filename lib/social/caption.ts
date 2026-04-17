@@ -160,6 +160,10 @@ export function buildReelScript(
   donationLabel: string;
   officeName: string;
   city: string;
+  address: string;
+  yearBuilt?: number;
+  lotSize?: string;
+  pricePerSqft?: string;
 } {
   const hook =
     REEL_HOOK_POOL.find((h) => h.id === opts?.hookId) ?? REEL_HOOK_POOL[0];
@@ -173,6 +177,12 @@ export function buildReelScript(
   const price = fmtPrice(p.price);
   const donationLabel = `~${fmtDonation(calcGivingPool(p.price))}`;
 
+  // Derived fields used by details-closeup and other editorial templates.
+  const pricePerSqft =
+    p.sqft && p.sqft > 0
+      ? `$${Math.round(p.price / p.sqft).toLocaleString()}/sqft`
+      : undefined;
+
   return {
     hookId: hook.id,
     ctaId: cta.id,
@@ -182,6 +192,10 @@ export function buildReelScript(
     donationLabel,
     officeName,
     city,
+    address: p.address,
+    yearBuilt: p.yearBuilt,
+    lotSize: p.lotSize,
+    pricePerSqft,
     // 8 clips — covers the widest template (quick-tour). Walkthrough-cinematic
     // uses clips[0..5] and ignores the last two. Each clip carries its own
     // default `overlay` + `kenBurns` hint; templates can override when their

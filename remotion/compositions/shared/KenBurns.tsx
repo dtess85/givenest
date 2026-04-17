@@ -179,6 +179,26 @@ function resolveMotion(
         origin: "center center",
       };
     }
+    case "macro": {
+      // Tight crop (1.7×) with slight vertical drift — simulates a
+      // slow push-in from a macro lens. Used by details-closeup.
+      return {
+        scale: 1.7,
+        translateX: 0,
+        translateY: 1.5 - 3 * t,
+        origin: "center center",
+      };
+    }
+    case "macroPanRight": {
+      // Same tight crop, but drifts horizontally. Alternates with "macro"
+      // across beats so the template doesn't feel monotone.
+      return {
+        scale: 1.7,
+        translateX: -2 + 4 * t,
+        translateY: 0,
+        origin: "center center",
+      };
+    }
     case "hardCut":
     default: {
       return {

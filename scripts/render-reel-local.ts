@@ -36,7 +36,13 @@ import type { Property } from "@/lib/mock-data";
 import type { ReelInputProps } from "../remotion/types";
 
 /** Registered composition IDs in remotion/Root.tsx. Keep in sync. */
-const VALID_COMPOSITIONS = ["walkthrough-cinematic", "quick-tour"] as const;
+const VALID_COMPOSITIONS = [
+  "walkthrough-cinematic",
+  "quick-tour",
+  "details-closeup",
+  "price-reveal",
+  "stats-heavy",
+] as const;
 type CompositionId = (typeof VALID_COMPOSITIONS)[number];
 
 const DEFAULT_COMPOSITION: CompositionId = "walkthrough-cinematic";
@@ -156,6 +162,10 @@ async function main() {
     donationLabel: script.donationLabel,
     officeName: script.officeName,
     city: script.city,
+    address: script.address,
+    yearBuilt: script.yearBuilt,
+    lotSize: script.lotSize,
+    pricePerSqft: script.pricePerSqft,
     clips: script.clips,
   };
 

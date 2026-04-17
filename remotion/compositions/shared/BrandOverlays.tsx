@@ -42,6 +42,32 @@ export const Scrim: React.FC = () => (
 );
 
 /* -------------------------------------------------------------------------- */
+/* ClipFade — opacity ramp wrapper used for crossfades between clips.         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Wraps a clip so it fades in over `fadeInFrames`. Used by templates that
+ * crossfade between beats (walkthrough-cinematic, details-closeup, lifestyle).
+ * Quick-tour and price-reveal intentionally skip this for hard-cut pacing.
+ *
+ * The calling template places this INSIDE a `<Sequence>` whose duration
+ * covers the clip + the fade-in — that's how one clip can fade in while the
+ * previous one is still on screen. Stacking order in the AbsoluteFill tree
+ * handles the crossfade visually; no explicit blend mode needed.
+ */
+export const ClipFade: React.FC<{
+  fadeInFrames: number;
+  children: React.ReactNode;
+}> = ({ fadeInFrames, children }) => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [0, fadeInFrames], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  return <AbsoluteFill style={{ opacity }}>{children}</AbsoluteFill>;
+};
+
+/* -------------------------------------------------------------------------- */
 /* Hook card — shown in first ~2s, big Lora statement on dark pill.           */
 /* -------------------------------------------------------------------------- */
 
@@ -244,6 +270,132 @@ export const DonationBadge: React.FC<DonationBadgeProps> = ({
       </div>
     </div>
   );
+};
+
+/* -------------------------------------------------------------------------- */
+/* Vignette — radial darkening, softens image edges (editorial feel).         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Vignette overlay — concentric dark radial gradient. Used by
+ * `details-closeup` to give each frame a "spotlight" feel, pulling the
+ * viewer's eye to the center of the crop (where the macro detail sits).
+ * Not a replacement for Scrim — they stack (vignette darkens edges,
+ * scrim darkens top/bottom for text legibility).
+ */
+export const Vignette: React.FC = () => (
+  <AbsoluteFill
+    style={{
+      background:
+        "radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%)",
+    }}
+  />
+);
+
+/* -------------------------------------------------------------------------- */
+/* CornerCaption — small Lora italic caption anchored to a frame corner.      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Small editorial-style caption that sits in a frame corner, à la a
+ * magazine photo credit. Not a big centered pill — the whole point is
+ * that it reads as photo meta, not as a primary message. Used by
+ * `details-closeup` to label details without hijacking the composition.
+ */
+export const CornerCaption: React.FC<{
+  text: string;
+  /** Which corner to anchor to. Defaults to "bottom-left". */
+  corner?: "bottom-left" | "bottom-right" | "top-left" | "top-right";
+  durationInFrames: number;
+}> = ({ text, corner = "bottom-left", durationInFrames }) => {
+  const frame = useCurrentFrame();
+  const enter = interpolate(frame, [0, 10], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const exit = interpolate(
+    frame,
+    [durationInFrames - 10, durationInFrames],
+    [1, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+  const opacity = enter * exit;
+
+  // Keep corners well inside the safe area — IG crops ~100px off the top
+  // and ~200px off the bottom for chrome, so pin to ~180 top / ~240 bottom.
+  const positionStyle: React.CSSProperties = (() => {
+    switch (corner) {
+      case "bottom-left":  return { left: 60, bottom: 240 };
+      case "bottom-right": return { right: 60, bottom: 240 };
+      case "top-left":     return { left: 60, top: 180 };
+      case "top-right":    return { right: 60, top: 180 };
+    }
+  })();
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        ...positionStyle,
+        display: "flex",
+        maxWidth: 640,
+        opacity,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "Lora",
+          fontWeight: 600,
+          fontStyle: "italic",
+          color: BRAND.white,
+          fontSize: 34,
+          lineHeight: 1.3,
+          letterSpacing: "0.01em",
+          textShadow: "0 2px 8px rgba(0,0,0,0.75)",
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/* CounterText — animated number tween (stats-heavy template).                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Animates a number from 0 to `to` over the life of its sequence, using a
+ * spring so the counter eases into its final value rather than ticking
+ * linearly. `format(n)` turns the interpolated value into a display string
+ * (e.g. `"$" + Math.round(n).toLocaleString()`).
+ *
+ * Used by `stats-heavy` for the infographic feel. Each number beat becomes
+ * a moment of "watching it count up", which is a different register from
+ * the rest of the templates where text just appears.
+ */
+export const CounterText: React.FC<{
+  to: number;
+  format: (n: number) => string;
+  /** Fraction of the clip over which the counter animates. Rest is hold. */
+  rampFraction?: number;
+  /** Typography hook; accepts any style. */
+  style?: React.CSSProperties;
+}> = ({ to, format, rampFraction = 0.65, style }) => {
+  const frame = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
+
+  // Spring from 0 → 1 over the ramp window, then hold at 1.
+  const rampFrames = Math.max(1, Math.floor(durationInFrames * rampFraction));
+  const progress = spring({
+    frame,
+    fps,
+    config: { damping: 20, stiffness: 120, mass: 1 },
+    durationInFrames: rampFrames,
+  });
+  const value = progress * to;
+
+  return <div style={style}>{format(value)}</div>;
 };
 
 /* -------------------------------------------------------------------------- */

@@ -20,29 +20,25 @@ import { loadFonts } from "../shared/fonts";
 /**
  * Quick-tour Reel template.
  *
- * The fast-paced cousin of walkthrough-cinematic. Same 15s total, but 8
- * clips instead of 6, punchier 1.5s mid-section beats, whip/hard-zoom
- * motion, no crossfades (hard cuts between clips), and an overlay on
- * every walkthrough clip instead of just half of them. Hook is shorter
- * (1.5s vs 2s) to get into the tour faster.
+ * The fast-paced cousin of walkthrough-cinematic. Punchy 1.5s mid-section
+ * beats, whip/hard-zoom motion, hard cuts (no crossfades), and an overlay
+ * on every walkthrough clip. Hook is shorter (1.5s vs 2s) to get into the
+ * tour faster.
  *
  * The point of this template existing: prove that `shared/KenBurns` +
- * `shared/BrandOverlays` actually share between templates. If this works
- * without touching shared code, templates 3 and 4 are copy-paste. If not,
- * refactor now while there are only two templates to reconcile.
+ * `shared/BrandOverlays` actually share between templates.
  *
- * Structure (15s @ 30fps = 450 frames):
+ * Structure (13.5s @ 30fps = 405 frames, 7 beats):
  *
- *   Frames    Clip  Content                      Overlay            Motion
- *   --------------------------------------------------------------------------
- *   0–44      1     Hero exterior                HOOK                whipRight
- *   45–89     2     Interior wide                beds/baths          whipLeft
- *   90–134    3     Kitchen                      sqft                zoomIn
- *   135–179   4     Primary bedroom              city                whipRight
- *   180–224   5     Living                       Listed at {price}   whipLeft
- *   225–269   6     Outdoor / pool               {office} listing    zoomOut
- *   270–359   7     Aerial / exterior            DONATION pill       slowZoomIn
- *   360–450   8     Hero return                  END CARD            zoomIn
+ *   Frames    Beat  Content                      Overlay            Source  Motion
+ *   ---------------------------------------------------------------------------------
+ *   0–44      1     Hero exterior                HOOK               clip 0  whipRight
+ *   45–89     2     Interior wide                beds/baths         clip 1  whipLeft
+ *   90–134    3     Kitchen                      sqft               clip 2  zoomIn
+ *   135–179   4     Primary bedroom              year+lot (or $sf)  clip 3  whipRight
+ *   180–224   5     Living                       Listed at {price}  clip 4  whipLeft
+ *   225–314   6     Aerial / exterior            DONATION pill      clip 6  slowZoomIn
+ *   315–404   7     Hero return                  END CARD           clip 7  zoomIn
  *
  * Kicker + Wordmark + Scrim run full-duration (shared with
  * walkthrough-cinematic).
@@ -50,25 +46,25 @@ import { loadFonts } from "../shared/fonts";
 
 loadFonts();
 
-// Clip layout. Starts, durations in frames, and template-imposed Ken Burns
-// motion per clip. QuickTour overrides whatever `clips[i].kenBurns` the
-// caller sent (`buildReelScript` hard-codes slow/cinematic motion — good
-// for walkthrough-cinematic, wrong for quick-tour's punchier pace). Future
-// cleanup: move the per-clip motion decision to a template-aware builder
-// in lib/social/caption.ts so this file doesn't need to know.
+/** 13.5s runtime — shorter than the 15s default because the silent
+ *  outdoor beat was cut. Overridden per-composition in Root.tsx. */
+export const QUICK_TOUR_DURATION_FRAMES = 405;
+
+// Clip layout. Each entry now carries explicit `sourceIdx` so removing
+// middle beats doesn't scramble the 1:1 mapping to the 8-slot payload.
 const CLIPS: {
   start: number;
   duration: number;
+  sourceIdx: number;
   motion: KenBurnsDirection;
 }[] = [
-  { start: 0,   duration: 45, motion: "whipRight" },   // 1. Hook
-  { start: 45,  duration: 45, motion: "whipLeft" },    // 2. Interior wide
-  { start: 90,  duration: 45, motion: "zoomIn" },      // 3. Kitchen
-  { start: 135, duration: 45, motion: "whipRight" },   // 4. Bedroom
-  { start: 180, duration: 45, motion: "whipLeft" },    // 5. Living
-  { start: 225, duration: 45, motion: "zoomOut" },     // 6. Outdoor / reveal
-  { start: 270, duration: 90, motion: "slowZoomIn" },  // 7. Donation — breathe
-  { start: 360, duration: 90, motion: "zoomIn" },      // 8. End card
+  { start: 0,   duration: 45, sourceIdx: 0, motion: "whipRight" },   // 1. Hook
+  { start: 45,  duration: 45, sourceIdx: 1, motion: "whipLeft" },    // 2. Interior wide
+  { start: 90,  duration: 45, sourceIdx: 2, motion: "zoomIn" },      // 3. Kitchen
+  { start: 135, duration: 45, sourceIdx: 3, motion: "whipRight" },   // 4. Bedroom
+  { start: 180, duration: 45, sourceIdx: 4, motion: "whipLeft" },    // 5. Living
+  { start: 225, duration: 90, sourceIdx: 6, motion: "slowZoomIn" },  // 6. Donation — breathe
+  { start: 315, duration: 90, sourceIdx: 7, motion: "zoomIn" },      // 7. End card
 ];
 
 export const QuickTour: React.FC<ReelInputProps> = ({
@@ -78,16 +74,33 @@ export const QuickTour: React.FC<ReelInputProps> = ({
   officeName,
   city,
   clips,
+  yearBuilt,
+  lotSize,
+  pricePerSqft,
 }) => {
   const { durationInFrames } = useVideoConfig();
+
+  // Beat 4's overlay — city was too redundant with the persistent "NEW AZ
+  // LISTING · {city}" kicker. Pick a real detail stat instead, with the
+  // same priority as details-closeup: year+lot first (architectural
+  // context), then year alone, lot alone, or $/sqft. Returns null if
+  // nothing specific is available — beat 4 then plays silent rather than
+  // showing fluff.
+  const beat4Caption: string | null = (() => {
+    const yearPart = yearBuilt ? `Built ${yearBuilt}` : null;
+    const lotPart = lotSize ? `${lotSize} lot` : null;
+    const combined = [yearPart, lotPart].filter(Boolean).join(" · ");
+    if (combined) return combined;
+    if (pricePerSqft) return pricePerSqft;
+    return null;
+  })();
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       {/* Clips — hard cuts, no crossfade. Each Sequence just owns its
-          own Ken Burns motion and mounts the clip for its duration. The
-          motion direction comes from the template-local CLIPS table, not
-          from `clips[i].kenBurns`, because buildReelScript picks motion
-          for walkthrough-cinematic's pacing. */}
+          own Ken Burns motion and mounts the clip for its duration. Pulls
+          image from `clips[sourceIdx]` (not by position) so removing or
+          rearranging beats doesn't scramble the payload mapping. */}
       {CLIPS.map((clip, i) => (
         <Sequence
           key={i}
@@ -95,7 +108,7 @@ export const QuickTour: React.FC<ReelInputProps> = ({
           durationInFrames={clip.duration}
         >
           <KenBurns
-            src={clips[i]?.imageUrl ?? ""}
+            src={clips[clip.sourceIdx]?.imageUrl ?? ""}
             direction={clip.motion}
             durationInFrames={clip.duration}
           />
@@ -121,16 +134,22 @@ export const QuickTour: React.FC<ReelInputProps> = ({
         <HookCard hookText={hookText} />
       </Sequence>
 
-      {/* Per-clip overlays — clips 2–6 (every walkthrough beat). Pulls
-          text from `clips[i].overlay`; same payload shape as
-          walkthrough-cinematic uses. */}
-      {CLIPS.slice(1, 6).map((clip, idx) => {
-        const clipIndex = idx + 1; // 1..5
-        const overlayText = clips[clipIndex]?.overlay ?? "";
+      {/* Per-beat overlays for beats 2–5. Beats pull from payload
+          `clips[sourceIdx].overlay`; beat 4 swaps the redundant city
+          label for a year/lot/$-per-sqft detail. Empty strings render
+          nothing — the photo plays silent. */}
+      {CLIPS.slice(1, 5).map((clip, idx) => {
+        const beatNumber = idx + 2; // 2..5
+        // Beat 4 uses the computed year/lot caption (or fallback), else
+        // pull overlay straight from the payload slot this beat sources.
+        const overlayText =
+          beatNumber === 4
+            ? beat4Caption
+            : clips[clip.sourceIdx]?.overlay ?? "";
         if (!overlayText) return null;
         return (
           <Sequence
-            key={`overlay-${clipIndex}`}
+            key={`overlay-${beatNumber}`}
             from={clip.start}
             durationInFrames={clip.duration}
           >
@@ -139,20 +158,20 @@ export const QuickTour: React.FC<ReelInputProps> = ({
         );
       })}
 
-      {/* Donation badge — clip 7 (second-to-last). No entry fade wrapper
+      {/* Donation badge — beat 6 (second-to-last). No entry fade wrapper
           here — the hard-cut into the longer donation beat lets the
           message land more punchily, truer to the quick-tour pace. */}
       <Sequence
-        from={CLIPS[6].start}
-        durationInFrames={CLIPS[6].duration}
+        from={CLIPS[5].start}
+        durationInFrames={CLIPS[5].duration}
       >
         <DonationBadge donationLabel={donationLabel} />
       </Sequence>
 
-      {/* End card — clip 8 through end-of-reel. */}
+      {/* End card — beat 7 through end-of-reel. */}
       <Sequence
-        from={CLIPS[7].start}
-        durationInFrames={durationInFrames - CLIPS[7].start}
+        from={CLIPS[6].start}
+        durationInFrames={durationInFrames - CLIPS[6].start}
       >
         <EndCard ctaText={ctaText} officeName={officeName} />
       </Sequence>
