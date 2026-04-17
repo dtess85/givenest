@@ -134,7 +134,10 @@ export const Kicker: React.FC<KickerProps> = ({ city }) => {
     <div
       style={{
         position: "absolute",
-        top: 100,
+        // Pulled deep into the safe area — Instagram's username avatar row
+        // + audio track eats ~220px from the top of a 1920px-tall Reel on
+        // modern phones. 100 used to get clipped by the audio track.
+        top: 240,
         left: 0,
         right: 0,
         display: "flex",
@@ -242,7 +245,9 @@ export const DonationBadge: React.FC<DonationBadgeProps> = ({
     <div
       style={{
         position: "absolute",
-        bottom: 240,
+        // Raised from 240 → 360 to clear the lifted Wordmark (bottom: 240)
+        // and to stay out of Instagram's bottom chrome.
+        bottom: 360,
         left: 0,
         right: 0,
         display: "flex",
@@ -415,7 +420,11 @@ export const Wordmark: React.FC = () => {
     <div
       style={{
         position: "absolute",
-        bottom: 70,
+        // Lifted well above Instagram's bottom chrome — action rail (heart/
+        // comment/share), caption row, and the home indicator take the
+        // bottom ~200px of the Reel frame on modern phones. 70 was deep
+        // inside that unsafe zone and getting cropped.
+        bottom: 240,
         left: 0,
         right: 0,
         display: "flex",
@@ -466,7 +475,9 @@ export const EndCard: React.FC<EndCardProps> = ({ ctaText, officeName }) => {
       style={{
         justifyContent: "flex-end",
         alignItems: "center",
-        paddingBottom: 200,
+        // Raised from 200 → 340 so the CTA + "Listed by" stack sits above
+        // the lifted Wordmark (bottom: 240) and clears IG's bottom chrome.
+        paddingBottom: 340,
       }}
     >
       <div
