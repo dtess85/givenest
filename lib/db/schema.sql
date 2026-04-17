@@ -154,3 +154,63 @@ CREATE TABLE IF NOT EXISTS transactions (
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Instagram content pipeline. One row per draft (Carousel / Story / Reel /
+-- Charity). See lib/db/migrations/006_social_posts.sql for the authoritative
+-- definition + indexes.
+CREATE TABLE IF NOT EXISTS social_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform TEXT NOT NULL DEFAULT 'instagram',
+  format TEXT NOT NULL,
+  listing_slug TEXT,
+  listing_source TEXT,
+  listing_office_name TEXT,
+  listing_snapshot JSONB,
+  charity_id UUID REFERENCES charities(id),
+  charity_stat JSONB,
+  caption TEXT NOT NULL,
+  image_urls TEXT[] NOT NULL DEFAULT '{}',
+  video_url TEXT,
+  media_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft',
+  scheduled_for TIMESTAMPTZ,
+  render_job_id TEXT,
+  render_started_at TIMESTAMPTZ,
+  render_completed_at TIMESTAMPTZ,
+  reel_template_id TEXT,
+  reel_hook_id TEXT,
+  reel_cta_id TEXT,
+  ig_container_id TEXT,
+  ig_media_id TEXT,
+  ig_permalink TEXT,
+  approved_by TEXT,
+  approved_at TIMESTAMPTZ,
+  rejected_reason TEXT,
+  retry_count INTEGER NOT NULL DEFAULT 0,
+  last_error_code TEXT,
+  last_error_message TEXT,
+  last_attempt_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT social_posts_format_chk
+    CHECK (format IN ('CAROUSEL','STORY','REEL','CHARITY')),
+  CONSTRAINT social_posts_status_chk
+    CHECK (status IN ('draft','rendering','approved','publishing','published','failed','rejected','skipped')),
+  CONSTRAINT social_posts_image_count_chk
+    CHECK (array_length(image_urls, 1) IS NULL OR array_length(image_urls, 1) BETWEEN 0 AND 10),
+  CONSTRAINT social_posts_ref_chk
+    CHECK (
+      (format = 'CHARITY' AND charity_id IS NOT NULL) OR
+      (format <> 'CHARITY' AND listing_slug IS NOT NULL)
+    )
+);
+CREATE INDEX IF NOT EXISTS social_posts_publish_idx
+  ON social_posts(scheduled_for) WHERE status = 'approved';
+CREATE INDEX IF NOT EXISTS social_posts_slug_status_idx
+  ON social_posts(listing_slug, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS social_posts_status_created_idx
+  ON social_posts(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS social_posts_format_idx
+  ON social_posts(format, created_at DESC);
+CREATE INDEX IF NOT EXISTS social_posts_reel_template_idx
+  ON social_posts(reel_template_id, created_at DESC) WHERE format = 'REEL';

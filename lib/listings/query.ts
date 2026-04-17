@@ -1,6 +1,7 @@
 import { fetchSparkListings, countSparkListings } from "@/lib/spark";
 import { getActiveManualListings, manualListingToProperty } from "@/lib/db/listings";
 import { getListingKeysByAgent, getListingKeysBySubdivision } from "@/lib/db/listings-index";
+import { GIVENEST_OFFICE_ID } from "@/lib/constants/givenest";
 import type { Property } from "@/lib/mock-data";
 
 export interface ListingsQueryResult {
@@ -231,8 +232,8 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
   };
   const orderby = SORT_MAP[sort] ?? "-ListingContractDate";
 
-  // Givenest ARMLS office ID — used to pin our own listings to page 1 of Recommended/Nearest
-  const GIVENEST_OFFICE_ID = "20260331163530092165000000";
+  // Pin our own listings to page 1 of Recommended/Nearest via the Givenest office id
+  // (defined in @/lib/constants/givenest).
   const givenestFilterPromise =
     (sort === "recommended" || sort === "nearest") && page === 1
       ? fetchSparkListings(filter + ` And ListOfficeId Eq '${GIVENEST_OFFICE_ID}'`, 20, 1, "-ListingContractDate")
