@@ -92,6 +92,8 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
   const [hasSubdivisionMatch, setHasSubdivisionMatch] = useState(false);
   const [hasAgentMatch, setHasAgentMatch] = useState(false);
   const [matchedAgentName, setMatchedAgentName] = useState<string | null>(null);
+  const [hasBrokerageMatch, setHasBrokerageMatch] = useState(false);
+  const [matchedBrokerageName, setMatchedBrokerageName] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const addressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -122,6 +124,8 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
         setHasSubdivisionMatch(data.hasSubdivisionMatch ?? false);
         setHasAgentMatch(data.hasAgentMatch ?? false);
         setMatchedAgentName(data.matchedAgentName ?? null);
+        setHasBrokerageMatch(data.hasBrokerageMatch ?? false);
+        setMatchedBrokerageName(data.matchedBrokerageName ?? null);
       } catch {
         setAddressResults([]);
       } finally {
@@ -151,6 +155,7 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
     else if (loc.type === "zip" && loc.zip) params.set("zip", loc.zip);
     else if (loc.type === "subdivision" && loc.subdivision) params.set("subdivision", loc.subdivision);
     else if (loc.type === "agent" && loc.agent) params.set("agent", loc.agent);
+    else if (loc.type === "brokerage" && loc.brokerage) params.set("brokerage", loc.brokerage);
     router.push(`/buy${params.toString() ? "?" + params.toString() : ""}`);
   }
 
@@ -161,7 +166,7 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
 
   const showDropdown =
     dropdownOpen &&
-    (citySuggestions.length > 0 || zipSuggestions.length > 0 || addressLoading || addressResults.length > 0);
+    (citySuggestions.length > 0 || zipSuggestions.length > 0 || addressLoading || addressResults.length > 0 || hasSubdivisionMatch || hasAgentMatch || hasBrokerageMatch);
 
   // ── Variant-dependent shell styling ──────────────────────────────────────
   const shellClass =
@@ -310,6 +315,28 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
                   <div className="min-w-0 flex-1">
                     <div className="text-[13px] font-medium text-[#2a2825]">{matchedAgentName}</div>
                     <div className="text-[11px] text-muted">See all listings by this agent</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Browse brokerage's listings shortcut */}
+              {hasBrokerageMatch && matchedBrokerageName && (
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    navigateToLocation({ type: "brokerage", label: matchedBrokerageName, brokerage: matchedBrokerageName });
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-[9px] text-left hover:bg-[#F9F7F4] transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
+                    <path d="M3 21h18" /><path d="M5 21V7l8-4v18" /><path d="M19 21V11l-6-4" />
+                  </svg>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-medium text-[#2a2825]">{matchedBrokerageName}</div>
+                    <div className="text-[11px] text-muted">See all listings from this brokerage</div>
                   </div>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
                     <path d="M9 18l6-6-6-6" />

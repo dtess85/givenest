@@ -1,7 +1,8 @@
 import { fetchSparkListings, countSparkListings } from "@/lib/spark";
 import { getActiveManualListings, manualListingToProperty } from "@/lib/db/listings";
-import { getListingKeysByAgent, getListingKeysBySubdivision } from "@/lib/db/listings-index";
+import { getListingKeysByAgent, getListingKeysBySubdivision, getOfficeIdsByBrokerageName, enrichWithShortSlugs } from "@/lib/db/listings-index";
 import { GIVENEST_OFFICE_ID } from "@/lib/constants/givenest";
+import { CITY_ALIASES } from "@/lib/az-locations";
 import type { Property } from "@/lib/mock-data";
 
 export interface ListingsQueryResult {
@@ -110,6 +111,7 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
   const defaultStatuses = isSubdivisionBrowse
     ? ["Active", "Active UCB", "Coming Soon", "Pending"]
     : ["Active", "Active UCB", "Coming Soon"];
+  let resolvedStatuses: string[];
   if (rawStatus) {
     const statuses = rawStatus
       .split(",")
@@ -121,13 +123,19 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
         return null;
       })
       .filter((s): s is NonNullable<typeof s> => s !== null);
-    if (statuses.length > 0) {
-      conditions.push(orGroup("MlsStatus", statuses));
-    } else {
-      conditions.push(orGroup("MlsStatus", defaultStatuses));
-    }
+    resolvedStatuses = statuses.length > 0 ? statuses : defaultStatuses;
   } else {
-    conditions.push(orGroup("MlsStatus", defaultStatuses));
+    resolvedStatuses = defaultStatuses;
+  }
+  const statusGroup = orGroup("MlsStatus", resolvedStatuses);
+  // Keep Givenest's own pending listings visible even when the resolved
+  // status filter would otherwise exclude "Pending".
+  if (!resolvedStatuses.includes("Pending")) {
+    conditions.push(
+      `(${statusGroup} Or (ListOfficeId Eq '${GIVENEST_OFFICE_ID}' And MlsStatus Eq 'Pending'))`
+    );
+  } else {
+    conditions.push(statusGroup);
   }
 
   // Price range
@@ -146,9 +154,27 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
     }
   }
 
-  // City search
+  // City search. Some AZ towns have multiple MLS city values (see CITY_ALIASES),
+  // so we expand into an Or-group to catch inconsistent data entry.
   const city = searchParams.get("city");
-  if (city) conditions.push(`City Eq '${city.replace(/'/g, "")}'`);
+  if (city) {
+    const safeCity = city.replace(/'/g, "");
+    const aliases = CITY_ALIASES[safeCity] ?? [safeCity];
+    conditions.push(orGroup("City", aliases));
+  }
+
+  // Brokerage search — SparkQL's `ListOfficeName Eq` is not filterable, so we
+  // resolve the display name to the set of Spark office ids that share it
+  // (via the agents table) and filter by id. One brand can span many offices
+  // (e.g. HomeSmart has 10+ franchise branches).
+  const brokerage = searchParams.get("brokerage");
+  if (brokerage) {
+    const officeIds = await getOfficeIdsByBrokerageName(brokerage);
+    if (officeIds.length === 0) {
+      return { listings: [], pinnedListings: [], total: 0, totalPages: 0 };
+    }
+    conditions.push(orGroup("ListOfficeId", officeIds));
+  }
 
   // Zip code search
   const zip = searchParams.get("zip");
@@ -201,11 +227,29 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
   if (maxHoa && Number(maxHoa) > 0)
     conditions.push(`AssociationFee Le ${maxHoa}`);
 
-  // Geo-filter for recommended/nearest sorts
+  // Snapshot of conditions BEFORE the geo bounds are added — used for the
+  // Givenest pin so our own listings stay visible statewide even when the
+  // main query is narrowed to the user's proximity window. Without this,
+  // a Givenest listing in Lakeside would appear on SSR (no lat/lng yet)
+  // and vanish once the client refetches with the user's IP/GPS location.
+  const nonGeoConditions = [...conditions];
+
+  // Geo-filter for recommended/nearest sorts. Only applied when there's no
+  // explicit location filter — if the user picked a city/zip/subdivision/
+  // agent/brokerage, their IP-based proximity bounds shouldn't narrow the
+  // result set (e.g. searching "Pinetop-Lakeside" from a Phoenix IP would
+  // otherwise return zero because Lakeside sits outside the Phoenix box).
   const lat = searchParams.get("lat");
   const lng = searchParams.get("lng");
   const sort = searchParams.get("sort") ?? "recommended";
-  if (lat && lng && (sort === "recommended" || sort === "nearest")) {
+  const hasExplicitLocation = !!(
+    searchParams.get("city") ||
+    searchParams.get("zip") ||
+    searchParams.get("subdivision") ||
+    searchParams.get("agent") ||
+    searchParams.get("brokerage")
+  );
+  if (lat && lng && !hasExplicitLocation && (sort === "recommended" || sort === "nearest")) {
     const userLat = parseFloat(lat);
     const userLng = parseFloat(lng);
     if (!isNaN(userLat) && !isNaN(userLng)) {
@@ -219,6 +263,7 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
   }
 
   const filter = conditions.join(" And ");
+  const givenestBaseFilter = nonGeoConditions.join(" And ");
   const limit = Number(searchParams.get("limit") ?? "50");
   const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
 
@@ -236,7 +281,7 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
   // (defined in @/lib/constants/givenest).
   const givenestFilterPromise =
     (sort === "recommended" || sort === "nearest") && page === 1
-      ? fetchSparkListings(filter + ` And ListOfficeId Eq '${GIVENEST_OFFICE_ID}'`, 20, 1, "-ListingContractDate")
+      ? fetchSparkListings(givenestBaseFilter + ` And ListOfficeId Eq '${GIVENEST_OFFICE_ID}'`, 20, 1, "-ListingContractDate")
       : Promise.resolve({ listings: [] as Property[] });
 
   // Run count + listings + givenest pin + manual listings in parallel
@@ -251,15 +296,21 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
   const manualProperties = manualRows.map(manualListingToProperty);
   const filteredManual = applyManualFilters(manualProperties, searchParams);
 
-  // Merge: manual listings first, then Spark-pinned, dedup by slug
-  const seenSlugs = new Set<string>();
+  // Merge: manual listings first, then Spark-pinned, dedup by sparkKey (or
+  // slug if no sparkKey — manual listings have their own "manual-<uuid>" slug).
+  const seen = new Set<string>();
   const pinnedListings: Property[] = [];
   for (const p of [...filteredManual, ...sparkPinned]) {
-    if (!seenSlugs.has(p.slug)) {
-      seenSlugs.add(p.slug);
+    const key = p.sparkKey ?? p.slug;
+    if (!seen.has(key)) {
+      seen.add(key);
       pinnedListings.push(p);
     }
   }
+
+  // Swap raw Spark keys for short `gpid-XXXXXXXX` slugs wherever we have one
+  // in the index. One bulk DB query per listings request.
+  await enrichWithShortSlugs([...listings, ...pinnedListings]);
 
   const totalPages = Math.ceil(total / limit) || 1;
   return { listings, pinnedListings, total, totalPages };

@@ -97,6 +97,12 @@ CREATE INDEX IF NOT EXISTS listings_agent_trgm_idx ON listings USING GIN(agent_n
 -- Add list_office_name to listings (idempotent for existing installs)
 ALTER TABLE listings ADD COLUMN IF NOT EXISTS list_office_name TEXT;
 
+-- Short, permanent public slug for `/buy/gpid-XXXXXXXX` URLs. Nullable only
+-- during backfill — once populated the column is effectively write-once
+-- (upsert uses COALESCE to preserve the existing value). See lib/short-id.ts.
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS short_id TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS listings_short_id_idx ON listings(short_id) WHERE short_id IS NOT NULL;
+
 -- ARMLS member roster — synced daily from Spark /v1/accounts
 CREATE TABLE IF NOT EXISTS agents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -17,7 +17,7 @@ export const maxDuration = 300; // 5 min — full sync takes ~70s, well within P
  */
 
 import { NextResponse } from "next/server";
-import { upsertListings, type ListingUpsertData } from "@/lib/db/listings-index";
+import { upsertListings, assignMissingShortIds, type ListingUpsertData } from "@/lib/db/listings-index";
 
 const SPARK_BASE = "https://replication.sparkapi.com/v1";
 const TOKEN = process.env.SPARK_API_TOKEN;
@@ -244,13 +244,22 @@ export async function GET(request: Request) {
     }
   }
 
+  // Assign short_ids to any newly-inserted rows (drains rows missing one).
+  let shortIdsAssigned = 0;
+  while (true) {
+    const n = await assignMissingShortIds(1000);
+    if (n === 0) break;
+    shortIdsAssigned += n;
+  }
+
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-  console.log(`Listings sync (${isFull ? "full" : "incremental"}): fetched=${totalFetched} upserted=${totalUpserted} in ${elapsed}s`);
+  console.log(`Listings sync (${isFull ? "full" : "incremental"}): fetched=${totalFetched} upserted=${totalUpserted} shortIds=${shortIdsAssigned} in ${elapsed}s`);
 
   return NextResponse.json({
     mode: isFull ? "full" : "incremental",
     fetched: totalFetched,
     upserted: totalUpserted,
+    shortIdsAssigned,
     elapsedSeconds: parseFloat(elapsed),
   });
   } catch (err) {

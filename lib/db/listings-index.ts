@@ -1,4 +1,6 @@
 import { pool } from "./index";
+import { generateShortId, makePublicSlug } from "../short-id";
+import type { Property } from "../mock-data";
 
 export interface ListingIndexRow {
   id: string;
@@ -222,10 +224,131 @@ export async function searchListings(
   };
 }
 
+/**
+ * Resolve the best-matching brokerage name for a user query. Sourced from the
+ * `agents.office_name` column (the listings table's `list_office_name` is
+ * still backfilling). Returns the most-populated office that ILIKE-matches
+ * the query, or null if nothing matches.
+ */
+export async function findBrokerageMatch(q: string): Promise<string | null> {
+  const trimmed = q.trim();
+  if (trimmed.length < 2) return null;
+  const { rows } = await pool.query(
+    `SELECT office_name
+     FROM agents
+     WHERE office_name ILIKE $1 AND office_name <> ''
+     GROUP BY office_name
+     ORDER BY COUNT(*) DESC
+     LIMIT 1`,
+    [`%${trimmed}%`]
+  );
+  return rows[0]?.office_name ?? null;
+}
+
+/**
+ * Resolve a brokerage display name to the set of Spark office ids that share
+ * it. SparkQL's `ListOfficeName Eq` is not filterable, so we thread office
+ * ids — and one brand (e.g. "HomeSmart") can span dozens of franchise offices,
+ * each with its own id.
+ */
+export async function getOfficeIdsByBrokerageName(
+  officeName: string,
+  limit = 50
+): Promise<string[]> {
+  const { rows } = await pool.query(
+    `SELECT DISTINCT office_id
+     FROM agents
+     WHERE office_name = $1 AND office_id IS NOT NULL
+     LIMIT $2`,
+    [officeName, limit]
+  );
+  return rows.map((r: { office_id: string }) => r.office_id);
+}
+
 /** Count how many rows are in the listings index (used to detect empty table) */
 export async function countListingsIndex(): Promise<number> {
   const { rows } = await pool.query("SELECT COUNT(*)::int AS n FROM listings");
   return rows[0]?.n ?? 0;
+}
+
+/**
+ * Walk every row missing a short_id and assign one, retrying on the (very
+ * rare) UNIQUE-index collision. Safe to re-run at any time; idempotent.
+ * Returns the number of rows populated. Used by both the backfill script and
+ * the sync cron for newly inserted listings.
+ */
+export async function assignMissingShortIds(batch = 500): Promise<number> {
+  const { rows } = await pool.query(
+    `SELECT id FROM listings WHERE short_id IS NULL LIMIT $1`,
+    [batch]
+  );
+  let assigned = 0;
+  for (const row of rows) {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const shortId = generateShortId();
+      try {
+        const res = await pool.query(
+          `UPDATE listings SET short_id = $1 WHERE id = $2 AND short_id IS NULL`,
+          [shortId, row.id]
+        );
+        if ((res.rowCount ?? 0) > 0) assigned++;
+        break;
+      } catch (e) {
+        const code = (e as { code?: string }).code;
+        if (code === "23505") continue; // unique_violation → retry with new id
+        throw e;
+      }
+    }
+  }
+  return assigned;
+}
+
+/** Bulk map spark_listing_key → short_id for listings already in the index. */
+export async function getShortIdsForSparkKeys(
+  keys: string[]
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (keys.length === 0) return out;
+  const { rows } = await pool.query(
+    `SELECT spark_listing_key, short_id FROM listings
+     WHERE short_id IS NOT NULL AND spark_listing_key = ANY($1)`,
+    [keys]
+  );
+  for (const r of rows as { spark_listing_key: string; short_id: string }[]) {
+    out.set(r.spark_listing_key, r.short_id);
+  }
+  return out;
+}
+
+/** Reverse-lookup a short_id to its spark_listing_key (for URL resolution). */
+export async function getSparkKeyByShortId(shortId: string): Promise<string | null> {
+  const { rows } = await pool.query(
+    `SELECT spark_listing_key FROM listings WHERE short_id = $1 LIMIT 1`,
+    [shortId]
+  );
+  return rows[0]?.spark_listing_key ?? null;
+}
+
+/**
+ * Given a batch of Property objects fresh from Spark, rewrite each `slug` to
+ * its short `gpid-XXXXXXXX` form (when the listing has been backfilled) and
+ * stash the original Spark ListingKey on `sparkKey` for server-side callers.
+ * Listings without a short_id in the index keep the raw Spark key as slug,
+ * so existing links + callers still resolve.
+ */
+export async function enrichWithShortSlugs<T extends Property>(
+  listings: T[]
+): Promise<T[]> {
+  if (listings.length === 0) return listings;
+  // sparkKey defaults to the current slug if not already set by a caller.
+  for (const l of listings) if (!l.sparkKey) l.sparkKey = l.slug;
+  const keys = listings.map((l) => l.sparkKey!).filter(Boolean);
+  const shortIdMap = await getShortIdsForSparkKeys(keys);
+  for (const l of listings) {
+    const sid = l.sparkKey ? shortIdMap.get(l.sparkKey) : undefined;
+    if (sid) l.slug = makePublicSlug(sid);
+  }
+  return listings;
 }
 
 /**

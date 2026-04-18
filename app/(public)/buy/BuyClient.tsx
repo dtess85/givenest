@@ -37,6 +37,7 @@ function locationFromParams(p: URLSearchParams): LocationSuggestion | null {
   const zip = p.get("zip");
   const subdivision = p.get("subdivision");
   const agent = p.get("agent");
+  const brokerage = p.get("brokerage");
   if (city) {
     return (
       AZ_LOCATIONS.find((l) => l.type === "city" && l.city === city) ??
@@ -54,6 +55,9 @@ function locationFromParams(p: URLSearchParams): LocationSuggestion | null {
   }
   if (agent) {
     return { type: "agent", label: agent, agent };
+  }
+  if (brokerage) {
+    return { type: "brokerage", label: brokerage, brokerage };
   }
   return null;
 }
@@ -313,6 +317,8 @@ function BuyPage({ initial }: BuyClientProps) {
   const [hasSubdivisionMatch, setHasSubdivisionMatch] = useState(false);
   const [hasAgentMatch, setHasAgentMatch] = useState(false);
   const [matchedAgentName, setMatchedAgentName] = useState<string | null>(null);
+  const [hasBrokerageMatch, setHasBrokerageMatch] = useState(false);
+  const [matchedBrokerageName, setMatchedBrokerageName] = useState<string | null>(null);
 
   // User geolocation — seeded from the RSC shell's IP lookup when available
   // so the first paint doesn't block on /api/user-location or a GPS prompt.
@@ -493,6 +499,8 @@ function BuyPage({ initial }: BuyClientProps) {
       setHasSubdivisionMatch(false);
       setHasAgentMatch(false);
       setMatchedAgentName(null);
+      setHasBrokerageMatch(false);
+      setMatchedBrokerageName(null);
       setAddressSearchLoading(false);
       return;
     }
@@ -506,12 +514,16 @@ function BuyPage({ initial }: BuyClientProps) {
         setHasSubdivisionMatch(data.hasSubdivisionMatch ?? false);
         setHasAgentMatch(data.hasAgentMatch ?? false);
         setMatchedAgentName(data.matchedAgentName ?? null);
+        setHasBrokerageMatch(data.hasBrokerageMatch ?? false);
+        setMatchedBrokerageName(data.matchedBrokerageName ?? null);
       } catch {
         setAddressResults([]);
         setIsMlsSearch(false);
         setHasSubdivisionMatch(false);
         setHasAgentMatch(false);
         setMatchedAgentName(null);
+        setHasBrokerageMatch(false);
+        setMatchedBrokerageName(null);
       } finally {
         setAddressSearchLoading(false);
       }
@@ -539,6 +551,7 @@ function BuyPage({ initial }: BuyClientProps) {
     if (selectedLocation?.zip) params.set("zip", selectedLocation.zip);
     if (selectedLocation?.subdivision) params.set("subdivision", selectedLocation.subdivision);
     if (selectedLocation?.agent) params.set("agent", selectedLocation.agent);
+    if (selectedLocation?.brokerage) params.set("brokerage", selectedLocation.brokerage);
     params.set("page", String(targetPage));
     // Fetch a larger batch for location-based sorts so the client-side distance
     // sort has enough nearby listings to fill the first screenful with same-city results.
@@ -682,6 +695,7 @@ function BuyPage({ initial }: BuyClientProps) {
     if (selectedLocation?.zip) p.set("zip", selectedLocation.zip);
     if (selectedLocation?.subdivision) p.set("subdivision", selectedLocation.subdivision);
     if (selectedLocation?.agent) p.set("agent", selectedLocation.agent);
+    if (selectedLocation?.brokerage) p.set("brokerage", selectedLocation.brokerage);
     if (minPrice > 0) p.set("minPrice", String(minPrice));
     if (maxPrice !== Infinity) p.set("maxPrice", String(maxPrice));
     if (propertyTypes.size > 0) p.set("type", Array.from(propertyTypes).join(","));
@@ -826,7 +840,7 @@ function BuyPage({ initial }: BuyClientProps) {
               </div>
 
               {/* Autocomplete dropdown */}
-              {searchDropdownOpen && (citySuggestions.length > 0 || zipSuggestions.length > 0 || addressSearchLoading || addressResults.length > 0) && (
+              {searchDropdownOpen && (citySuggestions.length > 0 || zipSuggestions.length > 0 || addressSearchLoading || addressResults.length > 0 || hasSubdivisionMatch || hasAgentMatch || hasBrokerageMatch) && (
                 <div className="absolute left-0 top-[calc(100%+4px)] z-40 w-full min-w-[300px] overflow-hidden rounded-[10px] border border-border bg-white shadow-xl">
 
                   {/* Cities section */}
@@ -918,6 +932,28 @@ function BuyPage({ initial }: BuyClientProps) {
                           <div className="min-w-0 flex-1">
                             <div className="text-[13px] font-medium text-[#2a2825]">{matchedAgentName}</div>
                             <div className="text-[11px] text-muted">See all listings by this agent</div>
+                          </div>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Browse brokerage's listings shortcut */}
+                      {hasBrokerageMatch && matchedBrokerageName && (
+                        <button
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectLocation({ type: "brokerage", label: matchedBrokerageName, brokerage: matchedBrokerageName });
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-[9px] text-left hover:bg-[#F9F7F4] transition-colors"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
+                            <path d="M3 21h18" /><path d="M5 21V7l8-4v18" /><path d="M19 21V11l-6-4" />
+                          </svg>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[13px] font-medium text-[#2a2825]">{matchedBrokerageName}</div>
+                            <div className="text-[11px] text-muted">See all listings from this brokerage</div>
                           </div>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
                             <path d="M9 18l6-6-6-6" />
@@ -1187,6 +1223,10 @@ function BuyPage({ initial }: BuyClientProps) {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
+                  </svg>
+                ) : selectedLocation.type === "brokerage" ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                    <path d="M3 21h18" /><path d="M5 21V7l8-4v18" /><path d="M19 21V11l-6-4" />
                   </svg>
                 ) : (
                   <HomeGridIcon />

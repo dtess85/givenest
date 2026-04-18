@@ -15,6 +15,7 @@ const FILTER_KEYS = [
   "zip",
   "subdivision",
   "agent",
+  "brokerage",
   "type",
   "status",
   "minPrice",

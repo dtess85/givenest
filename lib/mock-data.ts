@@ -7,7 +7,15 @@ export interface Property {
   baths: number;
   sqft: number;
   type: string;
+  /**
+   * Canonical identifier used in /buy/<slug> URLs. Short `gpid-XXXXXXXX` form
+   * when the listing has a populated `short_id` in the index; falls back to
+   * the raw Spark listing key for listings not yet backfilled (the detail
+   * route resolves both).
+   */
   slug: string;
+  /** The raw Spark ListingKey. Used by API routes that fetch detail from Spark. */
+  sparkKey?: string;
   donation?: number; // optional override for estimated donation
   status?: "For Sale" | "Pending" | "Contingent" | "Sold" | "Coming Soon" | "For Rent";
   images?: string[]; // paths relative to /public
