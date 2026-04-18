@@ -1,10 +1,11 @@
 export type LocationSuggestion = {
-  type: "city" | "zip" | "subdivision" | "agent";
+  type: "city" | "zip" | "subdivision" | "agent" | "brokerage";
   label: string;
   city?: string;
   zip?: string;
   subdivision?: string; // exact SubdivisionName Eq value to pass to the API
   agent?: string;       // exact ListAgentName Eq value to pass to the API
+  brokerage?: string;   // exact ListOfficeName Eq value to pass to the API
   lat?: number;
   lng?: number;
 };
@@ -45,6 +46,31 @@ export const AZ_LOCATIONS: LocationSuggestion[] = [
   { type: "city", label: "Sahuarita, AZ",      city: "Sahuarita",      lat: 31.9582, lng: -110.9671 },
   // Coconino County
   { type: "city", label: "Flagstaff, AZ",      city: "Flagstaff",      lat: 35.1983, lng: -111.6513 },
+  { type: "city", label: "Williams, AZ",       city: "Williams",       lat: 35.2495, lng: -112.1901 },
+  // Gila County / Rim Country
+  { type: "city", label: "Payson, AZ",         city: "Payson",         lat: 34.2306, lng: -111.3247 },
+  { type: "city", label: "Globe, AZ",          city: "Globe",          lat: 33.3942, lng: -110.7865 },
+  // White Mountains (Navajo / Apache County) — MLS uses hyphenated town names
+  // inconsistently; see CITY_ALIASES below so selecting "Pinetop-Lakeside"
+  // also matches listings filed under "Pinetop" or "Lakeside" alone.
+  { type: "city", label: "Pinetop-Lakeside, AZ", city: "Pinetop-Lakeside", lat: 34.1500, lng: -109.9570 },
+  { type: "city", label: "Show Low, AZ",       city: "Show Low",       lat: 34.2542, lng: -110.0298 },
+  { type: "city", label: "Snowflake, AZ",      city: "Snowflake",      lat: 34.5139, lng: -110.0782 },
+  { type: "city", label: "Taylor, AZ",         city: "Taylor",         lat: 34.4639, lng: -110.0951 },
+  { type: "city", label: "Heber-Overgaard, AZ",city: "Heber-Overgaard",lat: 34.4108, lng: -110.5740 },
+  { type: "city", label: "Eagar, AZ",          city: "Eagar",          lat: 34.1117, lng: -109.2929 },
+  { type: "city", label: "Springerville, AZ",  city: "Springerville",  lat: 34.1334, lng: -109.2882 },
+  // Verde Valley
+  { type: "city", label: "Cottonwood, AZ",     city: "Cottonwood",     lat: 34.7397, lng: -112.0099 },
+  { type: "city", label: "Camp Verde, AZ",     city: "Camp Verde",     lat: 34.5636, lng: -111.8543 },
+  // Mohave County
+  { type: "city", label: "Kingman, AZ",        city: "Kingman",        lat: 35.1894, lng: -114.0530 },
+  { type: "city", label: "Lake Havasu City, AZ",city: "Lake Havasu City",lat: 34.4839, lng: -114.3225 },
+  { type: "city", label: "Bullhead City, AZ",  city: "Bullhead City",  lat: 35.1478, lng: -114.5683 },
+  // Cochise County
+  { type: "city", label: "Sierra Vista, AZ",   city: "Sierra Vista",   lat: 31.5455, lng: -110.2773 },
+  // Yuma County
+  { type: "city", label: "Yuma, AZ",           city: "Yuma",           lat: 32.6927, lng: -114.6277 },
 
   // Gilbert zip codes
   { type: "zip", label: "85233 – Gilbert, AZ", zip: "85233" },
@@ -112,3 +138,13 @@ export const AZ_LOCATIONS: LocationSuggestion[] = [
 ];
 
 export const POPULAR_CITIES = AZ_LOCATIONS.filter((l) => l.type === "city").slice(0, 8);
+
+/**
+ * Towns where ARMLS stores listings under multiple city values (e.g. the
+ * official hyphenated name AND the historical separate community names).
+ * Expanded into an `Or` group when building the SparkQL City filter.
+ */
+export const CITY_ALIASES: Record<string, string[]> = {
+  "Pinetop-Lakeside": ["Pinetop-Lakeside", "Pinetop", "Lakeside"],
+  "Heber-Overgaard": ["Heber-Overgaard", "Heber", "Overgaard"],
+};

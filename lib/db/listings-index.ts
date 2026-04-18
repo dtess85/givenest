@@ -222,6 +222,47 @@ export async function searchListings(
   };
 }
 
+/**
+ * Resolve the best-matching brokerage name for a user query. Sourced from the
+ * `agents.office_name` column (the listings table's `list_office_name` is
+ * still backfilling). Returns the most-populated office that ILIKE-matches
+ * the query, or null if nothing matches.
+ */
+export async function findBrokerageMatch(q: string): Promise<string | null> {
+  const trimmed = q.trim();
+  if (trimmed.length < 2) return null;
+  const { rows } = await pool.query(
+    `SELECT office_name
+     FROM agents
+     WHERE office_name ILIKE $1 AND office_name <> ''
+     GROUP BY office_name
+     ORDER BY COUNT(*) DESC
+     LIMIT 1`,
+    [`%${trimmed}%`]
+  );
+  return rows[0]?.office_name ?? null;
+}
+
+/**
+ * Resolve a brokerage display name to the set of Spark office ids that share
+ * it. SparkQL's `ListOfficeName Eq` is not filterable, so we thread office
+ * ids — and one brand (e.g. "HomeSmart") can span dozens of franchise offices,
+ * each with its own id.
+ */
+export async function getOfficeIdsByBrokerageName(
+  officeName: string,
+  limit = 50
+): Promise<string[]> {
+  const { rows } = await pool.query(
+    `SELECT DISTINCT office_id
+     FROM agents
+     WHERE office_name = $1 AND office_id IS NOT NULL
+     LIMIT $2`,
+    [officeName, limit]
+  );
+  return rows.map((r: { office_id: string }) => r.office_id);
+}
+
 /** Count how many rows are in the listings index (used to detect empty table) */
 export async function countListingsIndex(): Promise<number> {
   const { rows } = await pool.query("SELECT COUNT(*)::int AS n FROM listings");
