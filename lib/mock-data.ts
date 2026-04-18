@@ -47,6 +47,8 @@ export interface CharityItem {
   closings: number;
   ein?: string;
   description?: string;
+  /** When set, the card links to the public profile page at /charities/{slug}. */
+  slug?: string;
 }
 
 export interface AgentItem {
@@ -85,9 +87,9 @@ export const PROPERTIES: Property[] = [
 ];
 
 export const CHARITIES: CharityItem[] = [
-  { id: 1, name: "Gilbert Christian Schools", category: "Education", city: "Gilbert, AZ", total: 0, closings: 0, ein: "86-0878481", description: "Providing Christ-centered education from preschool through high school in the East Valley." },
-  { id: 2, name: "Orchard: Africa", category: "International", city: "South Africa", total: 0, closings: 0, ein: "82-1339324", description: "Empowering vulnerable communities in Africa through education, clean water, and sustainable development." },
-  { id: 3, name: "House of Refuge", category: "Housing", city: "Mesa, AZ", total: 0, closings: 0, ein: "86-0671519", description: "Transitional housing and support services for homeless families with children in the East Valley." },
+  { id: 1, name: "Gilbert Christian Schools", category: "Education", city: "Gilbert, AZ", total: 0, closings: 0, ein: "86-0878481", slug: "gilbert-christian-schools", description: "Providing Christ-centered education from preschool through high school in the East Valley." },
+  { id: 2, name: "Orchard: Africa", category: "International", city: "South Africa", total: 0, closings: 0, ein: "82-1339324", slug: "orchard-africa", description: "Empowering vulnerable communities in Africa through education, clean water, and sustainable development." },
+  { id: 3, name: "House of Refuge", category: "Housing", city: "Mesa, AZ", total: 0, closings: 0, ein: "86-0671519", slug: "house-of-refuge", description: "Transitional housing and support services for homeless families with children in the East Valley." },
 ];
 
 export const AGENTS: AgentItem[] = [
