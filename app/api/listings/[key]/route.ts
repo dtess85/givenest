@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { fetchSparkListing } from "@/lib/spark";
 import { getManualListingById, manualListingToProperty } from "@/lib/db/listings";
+import { getSparkKeyByShortId, enrichWithShortSlugs } from "@/lib/db/listings-index";
+import { parsePublicSlug } from "@/lib/short-id";
 import { pool } from "@/lib/db";
 
 async function getDescriptionOverride(sparkKey: string): Promise<string | null> {
@@ -21,11 +23,11 @@ export async function GET(
   { params }: { params: { key: string } }
 ) {
   try {
-    const key = params.key;
+    const slug = params.key;
 
     // Manual listing slugs: "manual-{uuid}"
-    if (key.startsWith("manual-")) {
-      const id = key.slice("manual-".length);
+    if (slug.startsWith("manual-")) {
+      const id = slug.slice("manual-".length);
       const row = await getManualListingById(id);
       if (!row) {
         return NextResponse.json({ error: "Listing not found" }, { status: 404 });
@@ -35,6 +37,7 @@ export async function GET(
       if (row.spark_listing_key) {
         const live = await fetchSparkListing(row.spark_listing_key, { noCache: true });
         if (live) {
+          await enrichWithShortSlugs([live]);
           return NextResponse.json(
             { listing: live, fetchedAt: new Date().toISOString() },
             { headers: { "Cache-Control": "no-store" } }
@@ -47,15 +50,24 @@ export async function GET(
       );
     }
 
+    // Resolve short gpid slug → Spark listing key. Raw Spark keys still work
+    // so Google-indexed long URLs continue to resolve.
+    const shortId = parsePublicSlug(slug);
+    const sparkKey = shortId ? await getSparkKeyByShortId(shortId) : slug;
+    if (!sparkKey) {
+      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+    }
+
     // Spark listing key — always fetch live so detail page shows real-time data
     const [listing, descOverride] = await Promise.all([
-      fetchSparkListing(key, { noCache: true }),
-      getDescriptionOverride(key),
+      fetchSparkListing(sparkKey, { noCache: true }),
+      getDescriptionOverride(sparkKey),
     ]);
     if (!listing) {
       return NextResponse.json({ error: "Listing not found" }, { status: 404 });
     }
     if (descOverride) listing.description = descOverride;
+    await enrichWithShortSlugs([listing]);
     return NextResponse.json(
       { listing, fetchedAt: new Date().toISOString() },
       { headers: { "Cache-Control": "no-store" } }

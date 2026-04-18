@@ -1,22 +1,27 @@
 import type { Metadata } from "next";
 import { fetchSparkListing } from "@/lib/spark";
 import { getManualListingById, manualListingToProperty } from "@/lib/db/listings";
+import { getSparkKeyByShortId } from "@/lib/db/listings-index";
+import { parsePublicSlug } from "@/lib/short-id";
+import { listingDetailUrl } from "@/lib/constants/givenest";
 import { fmt } from "@/lib/utils";
 
 export async function generateMetadata(
   { params }: { params: { address: string } }
 ): Promise<Metadata> {
-  const key = params.address;
+  const slug = params.address;
 
   try {
     let property = null;
 
-    if (key.startsWith("manual-")) {
-      const id = key.slice("manual-".length);
+    if (slug.startsWith("manual-")) {
+      const id = slug.slice("manual-".length);
       const row = await getManualListingById(id);
       if (row) property = manualListingToProperty(row);
     } else {
-      property = await fetchSparkListing(key);
+      const shortId = parsePublicSlug(slug);
+      const sparkKey = shortId ? await getSparkKeyByShortId(shortId) : slug;
+      if (sparkKey) property = await fetchSparkListing(sparkKey);
     }
 
     if (!property) {
@@ -41,7 +46,7 @@ export async function generateMetadata(
       openGraph: {
         title,
         description,
-        url: `https://givenest.com/buy/${key}`,
+        url: listingDetailUrl(property.slug),
         siteName: "Givenest",
         type: "website",
         ...(image && {

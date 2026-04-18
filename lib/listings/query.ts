@@ -1,6 +1,6 @@
 import { fetchSparkListings, countSparkListings } from "@/lib/spark";
 import { getActiveManualListings, manualListingToProperty } from "@/lib/db/listings";
-import { getListingKeysByAgent, getListingKeysBySubdivision, getOfficeIdsByBrokerageName } from "@/lib/db/listings-index";
+import { getListingKeysByAgent, getListingKeysBySubdivision, getOfficeIdsByBrokerageName, enrichWithShortSlugs } from "@/lib/db/listings-index";
 import { GIVENEST_OFFICE_ID } from "@/lib/constants/givenest";
 import { CITY_ALIASES } from "@/lib/az-locations";
 import type { Property } from "@/lib/mock-data";
@@ -296,15 +296,21 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
   const manualProperties = manualRows.map(manualListingToProperty);
   const filteredManual = applyManualFilters(manualProperties, searchParams);
 
-  // Merge: manual listings first, then Spark-pinned, dedup by slug
-  const seenSlugs = new Set<string>();
+  // Merge: manual listings first, then Spark-pinned, dedup by sparkKey (or
+  // slug if no sparkKey — manual listings have their own "manual-<uuid>" slug).
+  const seen = new Set<string>();
   const pinnedListings: Property[] = [];
   for (const p of [...filteredManual, ...sparkPinned]) {
-    if (!seenSlugs.has(p.slug)) {
-      seenSlugs.add(p.slug);
+    const key = p.sparkKey ?? p.slug;
+    if (!seen.has(key)) {
+      seen.add(key);
       pinnedListings.push(p);
     }
   }
+
+  // Swap raw Spark keys for short `gpid-XXXXXXXX` slugs wherever we have one
+  // in the index. One bulk DB query per listings request.
+  await enrichWithShortSlugs([...listings, ...pinnedListings]);
 
   const totalPages = Math.ceil(total / limit) || 1;
   return { listings, pinnedListings, total, totalPages };

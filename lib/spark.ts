@@ -170,6 +170,7 @@ export function sparkToProperty(listing: SparkListing): Property {
   return {
     id: parseInt(listing.Id.slice(-8), 10) || 0,
     slug: listing.Id,
+    sparkKey: listing.Id,
     address,
     city: `${f.City}, ${f.StateOrProvince} ${f.PostalCode}`,
     price: f.ListPrice,
