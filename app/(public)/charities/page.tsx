@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { CHARITIES } from "@/lib/mock-data";
 import { fmt, getInitials } from "@/lib/utils";
 import { useUserLocation } from "@/lib/useUserLocation";
@@ -193,7 +194,7 @@ export default function Charities() {
           <div className="mb-5 inline-block rounded-full bg-coral px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-white">
             Charity showcase
           </div>
-          <h1 className="mb-5 max-w-[700px] font-serif text-[clamp(38px,5vw,68px)] font-semibold leading-[1.1] tracking-[-0.02em]">
+          <h1 className="mb-5 max-w-[700px] font-serif text-[clamp(38px,5vw,68px)] font-medium leading-[1.1] tracking-[-0.02em]">
             1.8M+ charities.{" "}
             <em className="text-coral">Your choice.</em>
           </h1>
@@ -369,29 +370,42 @@ export default function Charities() {
             <p className="py-6 text-center text-sm text-muted">No charities match the selected filters</p>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {filteredCharities.map((c) => (
-                <div key={c.id} className="flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-3">
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
-                    {c.name.split(" ").filter((w) => w.length > 0 && w[0] === w[0].toUpperCase()).slice(0, 2).map((w) => w[0]).join("")}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-medium truncate">{c.name}</span>
-                      <span className="flex-shrink-0 rounded bg-coral/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.05em] text-coral">{c.category}</span>
+              {filteredCharities.map((c) => {
+                const inner = (
+                  <>
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral text-[11px] font-medium text-white">
+                      {c.name.split(" ").filter((w) => w.length > 0 && w[0] === w[0].toUpperCase()).slice(0, 2).map((w) => w[0]).join("")}
                     </div>
-                    <div className="text-[11px] text-muted">{c.city}</div>
-                    {c.description && (
-                      <p className="mt-1 text-[12px] font-light leading-[1.5] text-muted line-clamp-2">{c.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] font-medium truncate">{c.name}</span>
+                        <span className="flex-shrink-0 rounded bg-coral/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.05em] text-coral">{c.category}</span>
+                      </div>
+                      <div className="text-[11px] text-muted">{c.city}</div>
+                      {c.description && (
+                        <p className="mt-1 text-[12px] font-light leading-[1.5] text-muted line-clamp-2">{c.description}</p>
+                      )}
+                    </div>
+                  </>
+                );
+                return (
+                  <div key={c.id} className="flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-3 transition-colors hover:border-coral/40">
+                    {c.slug ? (
+                      <Link href={`/charities/${c.slug}`} className="flex min-w-0 flex-1 items-center gap-3">
+                        {inner}
+                      </Link>
+                    ) : (
+                      <div className="flex min-w-0 flex-1 items-center gap-3">{inner}</div>
                     )}
+                    <button
+                      onClick={() => chooseCharity(c.name, c.ein ?? "")}
+                      className="flex-shrink-0 rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral cursor-pointer"
+                    >
+                      Choose
+                    </button>
                   </div>
-                  <button
-                    onClick={() => chooseCharity(c.name, c.ein ?? "")}
-                    className="flex-shrink-0 rounded-md border border-border px-3 py-[6px] text-[12px] transition-colors hover:border-coral hover:text-coral cursor-pointer"
-                  >
-                    Choose
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>}
