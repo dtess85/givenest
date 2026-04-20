@@ -92,9 +92,12 @@ export const HookCard: React.FC<HookCardProps> = ({ hookText }) => {
   return (
     <AbsoluteFill
       style={{
-        justifyContent: "center",
+        justifyContent: "flex-end",
         alignItems: "center",
-        padding: "0 60px",
+        // Sit above the Wordmark (bottom: 240) — same clearance EndCard uses.
+        paddingBottom: 340,
+        paddingLeft: 60,
+        paddingRight: 60,
       }}
     >
       <div
@@ -103,14 +106,14 @@ export const HookCard: React.FC<HookCardProps> = ({ hookText }) => {
           fontWeight: 600,
           fontStyle: "italic",
           color: BRAND.white,
-          fontSize: 72,
-          lineHeight: 1.2,
+          fontSize: 44,
+          lineHeight: 1.25,
           letterSpacing: "-0.01em",
           textAlign: "center",
-          backgroundColor: "rgba(0,0,0,0.60)",
-          padding: "32px 44px",
-          borderRadius: 24,
-          maxWidth: 940,
+          backgroundColor: "rgba(0,0,0,0.55)",
+          padding: "20px 28px",
+          borderRadius: 18,
+          maxWidth: 820,
           opacity,
           transform: `translateY(${translateY}px)`,
         }}
@@ -149,15 +152,16 @@ export const Kicker: React.FC<KickerProps> = ({ city }) => {
           backgroundColor: BRAND.white,
           color: BRAND.black,
           fontSize: 36,
-          letterSpacing: 4,
-          fontFamily: "sans-serif",
-          fontWeight: 600,
+          letterSpacing: 0,
+          fontFamily: "Lora",
+          fontWeight: 500,
+          fontStyle: "italic",
           padding: "14px 36px",
           borderRadius: 999,
           whiteSpace: "nowrap",
         }}
       >
-        {`NEW AZ LISTING · ${city}`}
+        {`New AZ listing · ${city}`}
       </div>
     </div>
   );
@@ -510,20 +514,22 @@ export const EndCard: React.FC<EndCardProps> = ({ ctaText, officeName }) => {
         >
           {ctaText}
         </div>
-        <div
-          style={{
-            fontFamily: "sans-serif",
-            fontWeight: 500,
-            color: BRAND.white,
-            fontSize: 26,
-            letterSpacing: 1,
-            textAlign: "center",
-            opacity: 0.85,
-            textShadow: "0 2px 6px rgba(0,0,0,0.6)",
-          }}
-        >
-          {`Listed by ${officeName}`}
-        </div>
+        {officeName.trim().toLowerCase() !== "givenest" && (
+          <div
+            style={{
+              fontFamily: "sans-serif",
+              fontWeight: 500,
+              color: BRAND.white,
+              fontSize: 26,
+              letterSpacing: 1,
+              textAlign: "center",
+              opacity: 0.85,
+              textShadow: "0 2px 6px rgba(0,0,0,0.6)",
+            }}
+          >
+            {`Listed by ${officeName}`}
+          </div>
+        )}
       </div>
     </AbsoluteFill>
   );
