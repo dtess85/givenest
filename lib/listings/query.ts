@@ -75,16 +75,33 @@ function applyManualFilters(listings: Property[], params: URLSearchParams): Prop
     if (minBedsFilter && Number(minBedsFilter) > 0 && p.beds < Number(minBedsFilter)) return false;
     if (minBathsFilter && Number(minBathsFilter) > 0 && p.baths < Number(minBathsFilter)) return false;
 
-    // Status
+    // Status — mirrors the server-side flatMap so "Under Contract / Pending"
+    // and "Sold" actually narrow the manual-listings list.
     if (rawStatus) {
-      const requestedStatuses = rawStatus.split(",").map((s) => {
-        if (s === "For Sale" || s === "Active") return "For Sale";
-        if (s === "Coming Soon") return "Coming Soon";
-        if (s === "Contingent") return "Contingent";
-        if (s === "Pending") return "Pending";
-        return s;
+      const requestedStatuses = rawStatus.split(",").flatMap((s): string[] => {
+        if (s === "For Sale" || s === "Active") return ["For Sale"];
+        if (s === "Coming Soon") return ["Coming Soon"];
+        if (s === "Contingent") return ["Contingent"];
+        if (s === "Pending") return ["Pending"];
+        if (s === "Under Contract / Pending") return ["Contingent", "Pending"];
+        if (s === "Sold") return ["Sold"];
+        return [];
       });
-      if (p.status && !requestedStatuses.includes(p.status)) return false;
+      if (requestedStatuses.length > 0 && p.status && !requestedStatuses.includes(p.status)) return false;
+    }
+
+    // Year built (minYear/maxYear)
+    const minYr = params.get("minYear");
+    const maxYr = params.get("maxYear");
+    if (minYr && Number(minYr) > 0 && p.yearBuilt && p.yearBuilt < Number(minYr)) return false;
+    if (maxYr && Number(maxYr) > 0 && p.yearBuilt && p.yearBuilt > Number(maxYr)) return false;
+
+    // New Construction — same YearBuilt proxy used on the Spark side.
+    const manualListingType = params.get("listingType");
+    const manualListingTypes = manualListingType ? manualListingType.split(",") : [];
+    if (manualListingTypes.includes("New Construction")) {
+      const cutoff = new Date().getFullYear() - 1;
+      if (!p.yearBuilt || p.yearBuilt < cutoff) return false;
     }
 
     return true;
@@ -113,17 +130,22 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
     : ["Active", "Active UCB", "Coming Soon"];
   let resolvedStatuses: string[];
   if (rawStatus) {
+    // Each UI label can fan out to multiple MLS statuses (e.g. "Under Contract /
+    // Pending" covers both Active-Under-Contract and Pending). Flatten so the
+    // OR group contains every matching ARMLS value, then dedupe.
     const statuses = rawStatus
       .split(",")
-      .map((s) => {
-        if (s === "For Sale" || s === "Active") return "Active";
-        if (s === "Coming Soon") return "Coming Soon";
-        if (s === "Contingent") return "Active UCB";
-        if (s === "Pending") return "Pending";
-        return null;
-      })
-      .filter((s): s is NonNullable<typeof s> => s !== null);
-    resolvedStatuses = statuses.length > 0 ? statuses : defaultStatuses;
+      .flatMap((s): string[] => {
+        if (s === "For Sale" || s === "Active") return ["Active"];
+        if (s === "Coming Soon") return ["Coming Soon"];
+        if (s === "Contingent") return ["Active UCB"];
+        if (s === "Pending") return ["Pending"];
+        if (s === "Under Contract / Pending") return ["Active UCB", "Pending"];
+        if (s === "Sold") return ["Closed"];
+        return [];
+      });
+    const uniq = Array.from(new Set(statuses));
+    resolvedStatuses = uniq.length > 0 ? uniq : defaultStatuses;
   } else {
     resolvedStatuses = defaultStatuses;
   }
@@ -227,11 +249,41 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
   if (maxHoa && Number(maxHoa) > 0)
     conditions.push(`AssociationFee Le ${maxHoa}`);
 
+  // Year built range — pushed to the server so the filter applies across ALL
+  // pages rather than just the 12-item page already in memory client-side.
+  const minYear = searchParams.get("minYear");
+  const maxYear = searchParams.get("maxYear");
+  if (minYear && Number(minYear) > 0) conditions.push(`YearBuilt Ge ${minYear}`);
+  if (maxYear && Number(maxYear) > 0) conditions.push(`YearBuilt Le ${maxYear}`);
+
+  // Max days on market — use OnMarketDate as the cutoff. Server-side filtering
+  // means "Listed within last 7 days" actually shows 7-day listings, not
+  // whatever 7-day listings happened to be on the current page.
+  const maxDom = searchParams.get("maxDom");
+  if (maxDom && Number(maxDom) > 0) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - Number(maxDom));
+    const iso = cutoff.toISOString().slice(0, 10);
+    conditions.push(`OnMarketDate Ge ${iso}`);
+  }
+
+  // New Construction — "New Construction" UI checkbox maps to YearBuilt Ge
+  // (currentYear - 1). ARMLS has a NewConstructionYN flag but it's not in our
+  // field set; YearBuilt is a close-enough proxy and already available.
+  const listingType = searchParams.get("listingType");
+  const requestedListingTypes = listingType ? listingType.split(",") : [];
+  if (requestedListingTypes.includes("New Construction")) {
+    const cutoffYear = new Date().getFullYear() - 1;
+    conditions.push(`YearBuilt Ge ${cutoffYear}`);
+  }
+
   // Snapshot of conditions BEFORE the geo bounds are added — used for the
   // Givenest pin so our own listings stay visible statewide even when the
   // main query is narrowed to the user's proximity window. Without this,
   // a Givenest listing in Lakeside would appear on SSR (no lat/lng yet)
   // and vanish once the client refetches with the user's IP/GPS location.
+  // Year/DOM/NewConstruction conditions are intentionally INSIDE the snapshot
+  // so the pin honors those user filters.
   const nonGeoConditions = [...conditions];
 
   // Geo-filter for recommended/nearest sorts. Only applied when there's no
@@ -277,10 +329,12 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
   };
   const orderby = SORT_MAP[sort] ?? "-ListingContractDate";
 
-  // Pin our own listings to page 1 of Recommended/Nearest via the Givenest office id
-  // (defined in @/lib/constants/givenest).
+  // Pin our own listings to page 1 of Recommended via the Givenest office id
+  // (defined in @/lib/constants/givenest). "Closest to me" is pure distance —
+  // no pinning — so a user browsing by nearest still sees true nearest first,
+  // even if the closest home isn't one of ours.
   const givenestFilterPromise =
-    (sort === "recommended" || sort === "nearest") && page === 1
+    sort === "recommended" && page === 1
       ? fetchSparkListings(givenestBaseFilter + ` And ListOfficeId Eq '${GIVENEST_OFFICE_ID}'`, 20, 1, "-ListingContractDate")
       : Promise.resolve({ listings: [] as Property[] });
 

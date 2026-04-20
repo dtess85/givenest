@@ -267,6 +267,14 @@ function HomeGridIcon() {
   );
 }
 
+/** Returns true if the listing has at least one open house on or after today. */
+function hasUpcomingOpenHouse(openHouses: Property["openHouses"]): boolean {
+  if (!openHouses?.length) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return openHouses.some((oh) => new Date(oh.date + "T00:00:00") >= today);
+}
+
 /** Haversine distance in miles between two lat/lng points */
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 3959;
@@ -356,22 +364,25 @@ function BuyPage({ initial }: BuyClientProps) {
     const s = searchParams.get("status");
     return s ? new Set(s.split(",")) : new Set();
   });
-  const [openHousesOnly, setOpenHousesOnly] = useState(false);
+  const [openHousesOnly, setOpenHousesOnly] = useState(() => searchParams.get("openHouses") === "1");
   // Listing type
-  const [listingTypes, setListingTypes] = useState<Set<string>>(new Set());
+  const [listingTypes, setListingTypes] = useState<Set<string>>(() => {
+    const t = searchParams.get("listingType");
+    return t ? new Set(t.split(",")) : new Set();
+  });
   // Beds / baths
   const [minBeds, setMinBeds] = useState<number | null>(() => { const v = searchParams.get("minBeds"); return v ? Number(v) : null; });
   const [minBaths, setMinBaths] = useState<number | null>(() => { const v = searchParams.get("minBaths"); return v ? Number(v) : null; });
   // Property facts
   const [minSqft, setMinSqft] = useState(() => searchParams.get("minSqft") ?? "");
   const [maxSqft, setMaxSqft] = useState(() => searchParams.get("maxSqft") ?? "");
-  const [minYear, setMinYear] = useState<number | null>(null);
-  const [maxYear, setMaxYear] = useState<number | null>(null);
+  const [minYear, setMinYear] = useState<number | null>(() => { const v = searchParams.get("minYear"); return v ? Number(v) : null; });
+  const [maxYear, setMaxYear] = useState<number | null>(() => { const v = searchParams.get("maxYear"); return v ? Number(v) : null; });
   const [maxHoa, setMaxHoa] = useState<number | null>(() => {
     const h = searchParams.get("maxHoa");
     return h ? Number(h) : null;
   });
-  const [maxDom, setMaxDom] = useState<number | null>(null);
+  const [maxDom, setMaxDom] = useState<number | null>(() => { const v = searchParams.get("maxDom"); return v ? Number(v) : null; });
 
   // Live listings from Spark API — seeded from the RSC shell so page 1 is
   // visible instantly on hydration.
@@ -547,6 +558,13 @@ function BuyPage({ initial }: BuyClientProps) {
     if (minSqft) params.set("minSqft", minSqft);
     if (maxSqft) params.set("maxSqft", maxSqft);
     if (maxHoa !== null) params.set("maxHoa", String(maxHoa));
+    if (minYear !== null) params.set("minYear", String(minYear));
+    if (maxYear !== null) params.set("maxYear", String(maxYear));
+    if (maxDom !== null) params.set("maxDom", String(maxDom));
+    // Server understands "New Construction" (→ YearBuilt Ge lastYear) via listingType.
+    // "Givenest Listings" / "MLS Listings" are still applied client-side — they
+    // filter on listOfficeName which we already have in the Property payload.
+    if (listingTypes.has("New Construction")) params.set("listingType", "New Construction");
     if (selectedLocation?.city) params.set("city", selectedLocation.city);
     if (selectedLocation?.zip) params.set("zip", selectedLocation.zip);
     if (selectedLocation?.subdivision) params.set("subdivision", selectedLocation.subdivision);
@@ -607,7 +625,7 @@ function BuyPage({ initial }: BuyClientProps) {
       else setLoadingMore(false);
       loadingRef.current = false;
     }
-  }, [minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, selectedLocation, sortBy, userLat, userLng]);
+  }, [minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, minYear, maxYear, maxDom, listingTypes, selectedLocation, sortBy, userLat, userLng]);
 
   // Debounced refetch — waits for location detection on first load.
   // Runs whenever fetchListings identity changes (filter / sort / lat-lng change).
@@ -700,16 +718,21 @@ function BuyPage({ initial }: BuyClientProps) {
     if (maxPrice !== Infinity) p.set("maxPrice", String(maxPrice));
     if (propertyTypes.size > 0) p.set("type", Array.from(propertyTypes).join(","));
     if (statuses.size > 0) p.set("status", Array.from(statuses).join(","));
+    if (listingTypes.size > 0) p.set("listingType", Array.from(listingTypes).join(","));
+    if (openHousesOnly) p.set("openHouses", "1");
     if (minBeds !== null) p.set("minBeds", String(minBeds));
     if (minBaths !== null) p.set("minBaths", String(minBaths));
     if (minSqft) p.set("minSqft", minSqft);
     if (maxSqft) p.set("maxSqft", maxSqft);
+    if (minYear !== null) p.set("minYear", String(minYear));
+    if (maxYear !== null) p.set("maxYear", String(maxYear));
     if (maxHoa !== null) p.set("maxHoa", String(maxHoa));
+    if (maxDom !== null) p.set("maxDom", String(maxDom));
     if (sortBy !== "recommended") p.set("sort", sortBy);
     const qs = p.toString();
     router.replace(qs ? `?${qs}` : "?", { scroll: false });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationReady, selectedLocation, minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, sortBy]);
+  }, [locationReady, selectedLocation, minPrice, maxPrice, propertyTypes, statuses, listingTypes, openHousesOnly, minBeds, minBaths, minSqft, maxSqft, minYear, maxYear, maxHoa, maxDom, sortBy]);
 
   const activeFilterCount =
     propertyTypes.size +
@@ -725,7 +748,14 @@ function BuyPage({ initial }: BuyClientProps) {
     (maxHoa !== null ? 1 : 0) +
     (maxDom !== null ? 1 : 0);
 
-  // Client-side text search + remaining local filters on API results
+  // Client-side text search + remaining local filters on API results.
+  //
+  // Year, DOM, and New-Construction are ALSO pushed to the server (see
+  // fetchListings) so the server trims results before pagination. We keep
+  // client-side mirrors for two reasons:
+  //   1. Infinite-scroll batches may have arrived before the filter changed.
+  //   2. Manual listings in `pinnedListings` skip the Spark filter — the
+  //      client mirror catches them.
   const filtered = properties.filter((h) => {
     if (search) {
       const q = search.toLowerCase();
@@ -734,22 +764,32 @@ function BuyPage({ initial }: BuyClientProps) {
     if (minYear !== null && h.yearBuilt && h.yearBuilt < minYear) return false;
     if (maxYear !== null && h.yearBuilt && h.yearBuilt > maxYear) return false;
     if (maxDom !== null && h.daysOnMarket !== undefined && h.daysOnMarket > maxDom) return false;
+    if (openHousesOnly && !hasUpcomingOpenHouse(h.openHouses)) return false;
     if (listingTypes.size > 0) {
       const isGivenest = h.listOfficeName?.toLowerCase().includes("givenest");
-      if (listingTypes.has("Givenest Listings") && !isGivenest) return false;
-      if (listingTypes.has("MLS Listings") && isGivenest) return false;
+      // "Givenest Listings" / "MLS Listings" are mutually-exclusive toggles.
+      // If the user ticks ONLY one, apply as a positive filter. If both are
+      // ticked (redundant but legal), we skip the filter so results aren't
+      // accidentally emptied.
+      const wantsGivenest = listingTypes.has("Givenest Listings");
+      const wantsMls = listingTypes.has("MLS Listings");
+      if (wantsGivenest && !wantsMls && !isGivenest) return false;
+      if (wantsMls && !wantsGivenest && isGivenest) return false;
     }
     return true;
   });
 
   // Sort:
-  //   • "recommended" / "nearest" — pin Givenest listings first, then sort
-  //     all remaining listings by pure distance (closest miles first).
+  //   • "recommended" — pin Givenest listings first, then everything else by
+  //     distance (closest miles first). The pin is what makes Recommended
+  //     "recommended": it puts our own listings (where we fund the charity
+  //     donation) at the top of the first screenful.
+  //   • "nearest"     — PURE distance, no pinning. A user scanning for the
+  //     absolute closest home should see the absolute closest home, even if
+  //     it's not one of ours.
   //   • All other sort values trust the server-side ordering from the API.
   const sorted = useMemo(() => {
-    if (sortBy === "nearest" || sortBy === "recommended") {
-      if (sortBy === "nearest" && userLat === null) return filtered;
-
+    if (sortBy === "recommended") {
       const pinnedSlugs = new Set(pinnedListings.map((l) => l.slug));
       const rest = filtered.filter((l) => !pinnedSlugs.has(l.slug));
 
@@ -760,11 +800,28 @@ function BuyPage({ initial }: BuyClientProps) {
             ? haversine(userLat, userLng, l.latitude, l.longitude)
             : Number.POSITIVE_INFINITY,
       }));
-
-      // Pure distance — closest first, no other factors.
       withDist.sort((a, b) => a.dist - b.dist);
 
       return [...pinnedListings, ...withDist.map((s) => s.listing)];
+    }
+
+    if (sortBy === "nearest") {
+      if (userLat === null || userLng === null) return filtered;
+      // Merge any manual listings (still delivered via `pinnedListings` from
+      // the API) into the regular grid — dedupe by slug so they don't double
+      // up — then sort the whole set by distance. No pinning for this sort.
+      const seen = new Set(filtered.map((l) => l.slug));
+      const manualExtras = pinnedListings.filter((l) => !seen.has(l.slug));
+      const merged = [...filtered, ...manualExtras];
+      const withDist = merged.map((l) => ({
+        listing: l,
+        dist:
+          l.latitude != null && l.longitude != null
+            ? haversine(userLat, userLng, l.latitude, l.longitude)
+            : Number.POSITIVE_INFINITY,
+      }));
+      withDist.sort((a, b) => a.dist - b.dist);
+      return withDist.map((s) => s.listing);
     }
 
     return filtered;
