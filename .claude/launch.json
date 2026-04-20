@@ -4,7 +4,7 @@
     {
       "name": "givenest",
       "runtimeExecutable": "/usr/local/bin/node",
-      "runtimeArgs": ["/Users/dustin/Desktop/givenest/node_modules/.bin/next", "dev"],
+      "runtimeArgs": ["/Users/dustin/Desktop/givenest/node_modules/next/dist/bin/next", "dev"],
       "port": 3000,
       "autoPort": true
     }
