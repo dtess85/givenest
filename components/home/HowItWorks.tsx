@@ -37,7 +37,7 @@ export default function HowItWorks() {
           {steps.map((step) => (
             <div
               key={step.number}
-              className="rounded-lg border border-border bg-white px-7 py-12"
+              className="flex flex-col rounded-lg border border-border bg-white px-7 py-12"
             >
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-[#D5DFDB] font-serif text-[14px] italic font-normal text-black/40">
                 {step.number}
@@ -50,7 +50,7 @@ export default function HowItWorks() {
               </div>
               <Link
                 href={step.link.href}
-                className="text-[13px] font-medium text-coral transition-colors hover:text-[#d4574a]"
+                className="mt-auto text-[13px] font-medium text-coral transition-colors hover:text-[#d4574a]"
               >
                 {step.link.label} →
               </Link>
