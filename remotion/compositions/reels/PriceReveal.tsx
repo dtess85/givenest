@@ -12,7 +12,6 @@ import { KenBurns } from "../shared/KenBurns";
 import {
   Scrim,
   Kicker,
-  EndCard,
   Wordmark,
 } from "../shared/BrandOverlays";
 import { loadFonts } from "../shared/fonts";
@@ -76,7 +75,7 @@ const CLIPS: {
   { start: 225, duration: 45,  sourceIdx: 5, motion: "zoomIn" },     // 6. City
   { start: 270, duration: 120, sourceIdx: 7, motion: "hardCut" },    // 7. PRICE DROP (4s)
   { start: 390, duration: 75,  sourceIdx: 6, motion: "slowZoomIn" }, // 8. Donation drop
-  { start: 465, duration: 75,  sourceIdx: 7, motion: "slowZoomIn" }, // 9. End card
+  { start: 465, duration: 75,  sourceIdx: 0, motion: "slowZoomIn" }, // 9. End card — hero return (bookends the opening question hook)
 ];
 
 export const PriceReveal: React.FC<ReelInputProps> = ({
@@ -84,6 +83,7 @@ export const PriceReveal: React.FC<ReelInputProps> = ({
   donationLabel,
   officeName,
   city,
+  neighborhood,
   clips,
   yearBuilt,
   lotSize,
@@ -99,8 +99,8 @@ export const PriceReveal: React.FC<ReelInputProps> = ({
   const bedsBaths = clips[1]?.overlay ?? "";
   // Sqft is at clip[2].overlay.
   const sqftText = clips[2]?.overlay ?? "";
-  // Upcased lot size for beat 5 — "0.29 acres" → "0.29 ACRES".
-  const lotText = lotSize?.toUpperCase() ?? "";
+  // Lot size passes through as-is for mixed-case Lora display ("0.29 acres").
+  const lotText = lotSize ?? "";
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
@@ -125,28 +125,34 @@ export const PriceReveal: React.FC<ReelInputProps> = ({
         <Kicker city={city} />
       </AbsoluteFill>
 
-      <AbsoluteFill>
-        <Wordmark />
-      </AbsoluteFill>
+      {/* Wordmark on every beat except the end card — the quiet Lora end-card
+          owns the bottom of the frame on beat 9, so a second Lora element
+          stacked below it would fight for attention. */}
+      <Sequence from={0} durationInFrames={CLIPS[8].start}>
+        <AbsoluteFill>
+          <Wordmark />
+        </AbsoluteFill>
+      </Sequence>
 
       {/* Beat 1 — question hook. */}
       <Sequence from={CLIPS[0].start} durationInFrames={CLIPS[0].duration}>
         <QuestionHook />
       </Sequence>
 
-      {/* Beats 2–6 — suspense stats in uppercase sans. Year (beat 4) and
-          lot size (beat 5) skip gracefully if the underlying fields aren't
-          on the listing — the photo still plays, just without a stat card,
-          becoming an accidental teaser beat. */}
+      {/* Beats 2–6 — suspense stats as Lora-italic lower-third chyrons. Mixed
+          case matches the italic letterforms (uppercase Lora italic reads as
+          shouty). Year (beat 4) and lot size (beat 5) skip gracefully if the
+          underlying fields aren't on the listing — the photo still plays,
+          just without a stat card, becoming an accidental teaser beat. */}
       <Sequence from={CLIPS[1].start} durationInFrames={CLIPS[1].duration}>
-        <StatCard text={bedsBaths.toUpperCase()} />
+        <StatCard text={bedsBaths} />
       </Sequence>
       <Sequence from={CLIPS[2].start} durationInFrames={CLIPS[2].duration}>
-        <StatCard text={sqftText.toUpperCase()} />
+        <StatCard text={sqftText} />
       </Sequence>
       {yearBuilt ? (
         <Sequence from={CLIPS[3].start} durationInFrames={CLIPS[3].duration}>
-          <StatCard text={`BUILT ${yearBuilt}`} />
+          <StatCard text={`Built ${yearBuilt}`} />
         </Sequence>
       ) : null}
       {lotText ? (
@@ -154,8 +160,11 @@ export const PriceReveal: React.FC<ReelInputProps> = ({
           <StatCard text={lotText} />
         </Sequence>
       ) : null}
+      {/* Beat 6 — location. When the listing has a subdivision name, pair it
+          with the city ("Stratland Estates, Gilbert") so the location beat is
+          more specific than just the city; fall back to the city alone. */}
       <Sequence from={CLIPS[5].start} durationInFrames={CLIPS[5].duration}>
-        <StatCard text={city.toUpperCase()} />
+        <StatCard text={neighborhood ? `${neighborhood}, ${city}` : city} />
       </Sequence>
 
       {/* Beat 7 — PRICE DROP. Big spring-in, 4s hold. */}
@@ -170,12 +179,16 @@ export const PriceReveal: React.FC<ReelInputProps> = ({
         <DonationDrop amountLabel={donationLabel} />
       </Sequence>
 
-      {/* Beat 9 — end card. */}
+      {/* Beat 9 — quiet end card. Template-specific (not the shared EndCard):
+          smaller Lora italic text hugging the bottom of the frame so the
+          payoff beat still belongs to the price/donation drops, not the CTA.
+          Wordmark is hidden during this beat (see above) so the card can
+          sit close to the bottom without stacking against the brand mark. */}
       <Sequence
         from={CLIPS[8].start}
         durationInFrames={durationInFrames - CLIPS[8].start}
       >
-        <EndCard ctaText={ctaText} officeName={officeName} />
+        <QuietEndCard ctaText={ctaText} officeName={officeName} />
       </Sequence>
     </AbsoluteFill>
   );
@@ -185,8 +198,10 @@ export const PriceReveal: React.FC<ReelInputProps> = ({
 /* Template-local overlays                                                    */
 /* -------------------------------------------------------------------------- */
 
-/** "Can you guess the price?" hook. Uses uppercase sans-serif to match the
- *  stats beats — the whole template's tone is "quiz show", not "editorial". */
+/** "Guess the price?" hook. Lora italic, sits in the lower-third safe area
+ *  above the Wordmark — same position as the suspense stat cards so the
+ *  whole pre-reveal portion of the reel reads as one consistent lower-third
+ *  chyron treatment instead of popping between card styles. */
 const QuestionHook: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -196,30 +211,32 @@ const QuestionHook: React.FC = () => {
     config: { damping: 18, stiffness: 140, mass: 0.6 },
   });
   const opacity = interpolate(enter, [0, 1], [0, 1]);
-  const translateY = interpolate(enter, [0, 1], [30, 0]);
+  const translateY = interpolate(enter, [0, 1], [20, 0]);
 
   return (
     <AbsoluteFill
       style={{
-        justifyContent: "center",
+        justifyContent: "flex-end",
         alignItems: "center",
-        padding: "0 60px",
+        // Sits above the Wordmark (bottom: 240) with the same clearance the
+        // shared EndCard uses for its stack.
+        paddingBottom: 340,
+        paddingLeft: 60,
+        paddingRight: 60,
       }}
     >
       <div
         style={{
-          fontFamily: "sans-serif",
-          fontWeight: 800,
+          fontFamily: "Lora",
+          fontWeight: 600,
+          fontStyle: "italic",
           color: BRAND.white,
-          fontSize: 88,
-          lineHeight: 1.05,
+          fontSize: 64,
+          lineHeight: 1.1,
           letterSpacing: "-0.01em",
           textAlign: "center",
-          backgroundColor: "rgba(0,0,0,0.65)",
-          padding: "36px 56px",
-          borderRadius: 24,
+          textShadow: "0 3px 12px rgba(0,0,0,0.75)",
           maxWidth: 940,
-          textTransform: "uppercase",
           opacity,
           transform: `translateY(${translateY}px)`,
         }}
@@ -230,9 +247,10 @@ const QuestionHook: React.FC = () => {
   );
 };
 
-/** Tension beat — uppercase sans-serif stat card. Snaps in fast, holds,
- *  fades out at the end. No spring — feels more like a deck slide advancing
- *  than a cinematic overlay. */
+/** Suspense stat — Lora italic lower-third chyron. Sits in the bottom safe
+ *  area, above the Wordmark, matching the QuestionHook position so beats 1–6
+ *  share one consistent text treatment. No background pill — a drop shadow
+ *  carries legibility, which reads more editorial (and less "deck slide"). */
 const StatCard: React.FC<{ text: string }> = ({ text }) => {
   const frame = useCurrentFrame();
   const opacity = interpolate(frame, [0, 5], [0, 1], {
@@ -243,25 +261,25 @@ const StatCard: React.FC<{ text: string }> = ({ text }) => {
   return (
     <AbsoluteFill
       style={{
-        justifyContent: "center",
+        justifyContent: "flex-end",
         alignItems: "center",
-        padding: "0 60px",
+        paddingBottom: 340,
+        paddingLeft: 60,
+        paddingRight: 60,
       }}
     >
       <div
         style={{
-          fontFamily: "sans-serif",
-          fontWeight: 800,
+          fontFamily: "Lora",
+          fontWeight: 600,
+          fontStyle: "italic",
           color: BRAND.white,
-          fontSize: 108,
-          lineHeight: 1,
-          letterSpacing: "-0.02em",
+          fontSize: 60,
+          lineHeight: 1.1,
+          letterSpacing: "-0.01em",
           textAlign: "center",
-          backgroundColor: "rgba(0,0,0,0.55)",
-          padding: "36px 52px",
-          borderRadius: 20,
+          textShadow: "0 3px 12px rgba(0,0,0,0.75)",
           maxWidth: 960,
-          textTransform: "uppercase",
           opacity,
         }}
       >
@@ -387,6 +405,85 @@ const PriceDrop: React.FC<{ priceText: string }> = ({ priceText }) => {
         }}
       >
         {priceText}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+/** Template-local end card — smaller + tighter than the shared one. Lora
+ *  italic throughout (including the brokerage attribution, which the shared
+ *  EndCard sets in sans), pinned to the bottom safe area. Rationale: in
+ *  price-reveal, beats 7 & 8 are the showstoppers. The CTA should read like
+ *  a credits line, not a second spike of volume. */
+const QuietEndCard: React.FC<{ ctaText: string; officeName: string }> = ({
+  ctaText,
+  officeName,
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const enter = spring({
+    frame,
+    fps,
+    config: { damping: 18, stiffness: 130, mass: 0.7 },
+  });
+  const opacity = interpolate(enter, [0, 1], [0, 1]);
+  const translateY = interpolate(enter, [0, 1], [20, 0]);
+
+  const showOffice = officeName.trim().toLowerCase() !== "givenest";
+
+  return (
+    <AbsoluteFill
+      style={{
+        justifyContent: "flex-end",
+        alignItems: "center",
+        // Clears Instagram's bottom chrome (~200px of action rail + caption
+        // + home indicator) with a small cushion. Wordmark is hidden during
+        // this beat so we can sit this low without colliding with it.
+        paddingBottom: 200,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 10,
+          opacity,
+          transform: `translateY(${translateY}px)`,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "Lora",
+            fontWeight: 600,
+            fontStyle: "italic",
+            color: BRAND.white,
+            fontSize: 40,
+            lineHeight: 1.15,
+            letterSpacing: "-0.01em",
+            textAlign: "center",
+            textShadow: "0 2px 8px rgba(0,0,0,0.7)",
+          }}
+        >
+          {ctaText}
+        </div>
+        {showOffice && (
+          <div
+            style={{
+              fontFamily: "Lora",
+              fontWeight: 400,
+              fontStyle: "italic",
+              color: BRAND.white,
+              fontSize: 22,
+              letterSpacing: 0,
+              textAlign: "center",
+              opacity: 0.85,
+              textShadow: "0 2px 6px rgba(0,0,0,0.65)",
+            }}
+          >
+            {`Listed by ${officeName}`}
+          </div>
+        )}
       </div>
     </AbsoluteFill>
   );

@@ -50,6 +50,11 @@ export interface ReelInputProps {
   officeName: string;
   /** Short city ("Scottsdale"). */
   city: string;
+  /** Subdivision / community name when the listing has one ("Stratland Estates").
+   *  Templates that want to show a more specific location than the city alone
+   *  (e.g. price-reveal pairs it with the city — "Stratland Estates, Gilbert")
+   *  read this and gracefully fall back to just `city` when absent. */
+  neighborhood?: string;
   /** Street address ("4248 E Patricia Jane Drive"). Used as an editorial-
    *  style corner caption in details-closeup. */
   address: string;
@@ -74,6 +79,7 @@ export const DEFAULT_REEL_INPUT_PROPS: ReelInputProps = {
   donationLabel: "~$5,499",
   officeName: "Example Brokerage",
   city: "Scottsdale",
+  neighborhood: "Troon North",
   address: "1234 N Example Way",
   yearBuilt: 2022,
   lotSize: "0.45 acres",

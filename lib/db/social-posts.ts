@@ -218,3 +218,38 @@ export async function updateVideoUrl(
   `;
   return (rows[0] as SocialPostRow) ?? null;
 }
+
+/**
+ * Rewrite the image ordering on a REEL draft's snapshot. Called by the
+ * admin "Pick clips" flow — reorders `listing_snapshot.images` (and the
+ * parallel `image_categories` array in lockstep) so the admin-picked photos
+ * land in clip slots 0..N-1 when the Remotion render reads them.
+ *
+ * Uses jsonb_set rather than re-writing the whole snapshot so we don't race
+ * with any field a future admin path might add to the blob.
+ */
+export async function updateReelImageOrder(
+  id: string,
+  images: string[],
+  imageCategories: string[]
+): Promise<SocialPostRow | null> {
+  const { rows } = await sql`
+    UPDATE social_posts
+       SET listing_snapshot = jsonb_set(
+             jsonb_set(
+               COALESCE(listing_snapshot, '{}'::jsonb),
+               '{images}',
+               ${JSON.stringify(images)}::jsonb,
+               true
+             ),
+             '{image_categories}',
+             ${JSON.stringify(imageCategories)}::jsonb,
+             true
+           ),
+           updated_at = NOW()
+     WHERE id = ${id}
+       AND format = 'REEL'
+     RETURNING *
+  `;
+  return (rows[0] as SocialPostRow) ?? null;
+}

@@ -37,6 +37,16 @@ const FIELDS = [
   "BackOnMarketDate",
   "ModificationTimestamp",
   "OnMarketDate",
+  // Price-drop card on the property page reads PreviousListPrice to compute
+  // the delta ("List price was lowered by $275K"). OriginalListPrice is also
+  // pulled so we can show "down from $1,099,500" on listings that have had
+  // multiple price changes since coming on market.
+  "OriginalListPrice",
+  "PreviousListPrice",
+  "PriceChangeTimestamp",
+  // ParcelNumber is the APN we hand to the Maricopa County Assessor API for
+  // tax-history lookups. Spark exposes it for every Maricopa-county listing.
+  "ParcelNumber",
 ].join(",");
 
 export interface SparkOpenHouse {
@@ -92,6 +102,10 @@ export interface SparkStandardFields {
   BackOnMarketDate?: string | null;
   ModificationTimestamp?: string | null;
   CumulativeDaysOnMarket?: number | null;
+  OriginalListPrice?: number | null;
+  PreviousListPrice?: number | null;
+  PriceChangeTimestamp?: string | null;
+  ParcelNumber?: string | null;
   Photos?: SparkPhoto[];
   OpenHouses?: SparkOpenHouse[];
 }
@@ -197,6 +211,10 @@ export function sparkToProperty(listing: SparkListing): Property {
     neighborhood: f.SubdivisionName ?? undefined,
     backOnMarketDate: f.BackOnMarketDate ?? undefined,
     modifiedAt: f.ModificationTimestamp ?? undefined,
+    originalPrice: num(f.OriginalListPrice) ?? undefined,
+    previousPrice: num(f.PreviousListPrice) ?? undefined,
+    priceChangeAt: f.PriceChangeTimestamp ?? undefined,
+    parcelNumber: f.ParcelNumber ?? undefined,
     daysOnMarket: (() => {
       // Prefer OnMarketDate — represents when the listing actually went live to buyers.
       // Fall back to ListingContractDate if OnMarketDate is missing.
@@ -221,7 +239,7 @@ function isSaleListing(p: Property): boolean {
   return true;
 }
 
-function sparkHeaders() {
+export function sparkHeaders() {
   if (!TOKEN) throw new Error("SPARK_API_TOKEN is not set");
   return {
     Authorization: `Bearer ${TOKEN}`,

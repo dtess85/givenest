@@ -162,6 +162,7 @@ async function main() {
     donationLabel: script.donationLabel,
     officeName: script.officeName,
     city: script.city,
+    neighborhood: script.neighborhood,
     address: script.address,
     yearBuilt: script.yearBuilt,
     lotSize: script.lotSize,

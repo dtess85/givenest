@@ -25,6 +25,18 @@ export function shortCity(cityField: string): string {
   return (comma === -1 ? cityField : cityField.slice(0, comma)).trim();
 }
 
+/** ARMLS returns subdivision names in ALL CAPS ("STRATLAND ESTATES"). Title-case
+ *  them so templates that display the name in mixed case (e.g. editorial
+ *  overlays) don't shout. Templates that want uppercase can toUpperCase() it
+ *  themselves. */
+function titleCaseSubdivision(s: string): string {
+  return s
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
 /* -------------------------------------------------------------------------- */
 /* Carousel — long-form, detail-rich                                          */
 /* -------------------------------------------------------------------------- */
@@ -160,6 +172,7 @@ export function buildReelScript(
   donationLabel: string;
   officeName: string;
   city: string;
+  neighborhood?: string;
   address: string;
   yearBuilt?: number;
   lotSize?: string;
@@ -192,6 +205,7 @@ export function buildReelScript(
     donationLabel,
     officeName,
     city,
+    neighborhood: p.neighborhood?.trim() ? titleCaseSubdivision(p.neighborhood) : undefined,
     address: p.address,
     yearBuilt: p.yearBuilt,
     lotSize: p.lotSize,
