@@ -28,9 +28,16 @@ async function fetchHistoryFields(sparkKey: string): Promise<{
   streetName: string;
   city: string;
   parcelNumber: string | null;
+  /** Current ListPrice — used to backfill the "Listed" event's price for
+   *  brand-new listings whose history endpoint hasn't yet recorded a
+   *  Price Changed event we can derive the original list price from. */
+  listPrice: number | null;
 } | null> {
   const url = new URL(`${SPARK_BASE}/listings/${sparkKey}`);
-  url.searchParams.set("_select", "StreetNumber,StreetName,City,ParcelNumber");
+  url.searchParams.set(
+    "_select",
+    "StreetNumber,StreetName,City,ParcelNumber,ListPrice"
+  );
   const res = await fetch(url.toString(), {
     headers: sparkHeaders(),
     next: { revalidate: 600 },
@@ -44,6 +51,7 @@ async function fetchHistoryFields(sparkKey: string): Promise<{
           StreetName?: string;
           City?: string;
           ParcelNumber?: string;
+          ListPrice?: number;
         };
       }>;
     };
@@ -55,6 +63,7 @@ async function fetchHistoryFields(sparkKey: string): Promise<{
     streetName: f.StreetName,
     city: f.City,
     parcelNumber: f.ParcelNumber ?? null,
+    listPrice: typeof f.ListPrice === "number" ? f.ListPrice : null,
   };
 }
 
@@ -86,7 +95,8 @@ export async function GET(
         sparkKey,
         fields?.streetNumber ?? "",
         fields?.streetName ?? "",
-        fields?.city ?? ""
+        fields?.city ?? "",
+        fields?.listPrice ?? undefined
       ),
       fields?.parcelNumber
         ? getMaricopaValuations(fields.parcelNumber).catch((err) => {

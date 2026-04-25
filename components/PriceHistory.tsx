@@ -364,10 +364,6 @@ function ValuationRow({
 function CycleRows({ cycle, sqft }: { cycle: HistoryCycle; sqft?: number }) {
   return (
     <>
-      {/* MLS# group banner spans all three columns. */}
-      <div className="col-span-3 mt-2 bg-[#FAF9F6] px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted">
-        ARMLS #{cycle.mlsNumber}
-      </div>
       {cycle.events.map((e, i) => (
         <EventRow key={`${cycle.sparkKey}-${i}`} event={e} sqft={sqft} />
       ))}
