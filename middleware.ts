@@ -5,13 +5,16 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "dustin@givenest.com,kyndall@g
   .split(",")
   .map((e) => e.trim().toLowerCase());
 
-const protectedPaths = ["/charity/dashboard", "/admin"];
+const protectedPaths = ["/charity/dashboard", "/admin", "/landlord/dashboard"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow the login page through without auth.
-  if (pathname.startsWith("/admin/login")) {
+  // Allow login pages through without auth.
+  if (
+    pathname.startsWith("/admin/login") ||
+    pathname.startsWith("/landlord/login")
+  ) {
     return NextResponse.next();
   }
 
@@ -54,7 +57,14 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    const loginUrl = new URL("/admin/login", req.url);
+    // Route unauth visitors to the login that matches the area they tried
+    // to enter — landlords go to /landlord/login, everyone else to /admin/login.
+    // Both forms post to the same Supabase signInWithPassword flow, but the
+    // landing pages are styled and copy-tuned for their audience.
+    const loginPath = pathname.startsWith("/landlord")
+      ? "/landlord/login"
+      : "/admin/login";
+    const loginUrl = new URL(loginPath, req.url);
     loginUrl.searchParams.set("redirect_url", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -66,6 +76,9 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/", req.url));
     }
   }
+  // Landlord-role binding is enforced server-side via `requireLandlord()` in
+  // each /landlord/dashboard page/handler — middleware can't run pg.Pool
+  // queries (Edge runtime). Middleware only ensures the visitor is logged in.
 
   return response;
 }
