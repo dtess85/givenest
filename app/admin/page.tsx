@@ -29,6 +29,7 @@ export default function AdminDashboard() {
     { href: "/admin/transactions/new", label: "Log closing", desc: "Record a completed transaction" },
     { href: "/admin/listings", label: "Listings", desc: "View and edit manual listings" },
     { href: "/admin/social", label: "Social posts", desc: "Instagram drafts & schedule" },
+    { href: "/admin/landlords", label: "Landlords", desc: "Manage owners, properties, service log & invoices" },
   ];
 
   return (
