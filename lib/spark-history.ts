@@ -223,6 +223,12 @@ async function findListingsAtAddress(
  * cycle plus any prior cycles at the same address. Cycles are returned
  * newest-first; events within a cycle are also newest-first.
  *
+ * `currentPriceFallback` is used to backfill the "Listed" event price when
+ * Spark masks `PriceAtEvent` for `NewListing` and there are no later
+ * `Price Changed` events to derive the original list price from (the case
+ * for brand-new listings). Only applied to the cycle whose `sparkKey`
+ * matches the requested key.
+ *
  * Returns an empty array on any Spark failure rather than throwing — the
  * UI degrades to "no history available" instead of breaking the page.
  */
@@ -230,7 +236,8 @@ export async function getAddressSaleHistory(
   sparkKey: string,
   streetNumber: string,
   streetName: string,
-  city: string
+  city: string,
+  currentPriceFallback?: number
 ): Promise<HistoryCycle[]> {
   // Find every cycle at this address. We always include the requested key,
   // even if the lookup fails or doesn't list it (defensive belt-and-suspenders
@@ -252,6 +259,30 @@ export async function getAddressSaleHistory(
         .map(mapEvent)
         .filter((e): e is HistoryEvent => e !== null)
         .sort((a, b) => +new Date(b.date) - +new Date(a.date));
+
+      // Backfill the Listed event's price. Spark masks PriceAtEvent for
+      // NewListing rows, so the original list price comes from the OLDEST
+      // "Price Changed" event's previousPrice — that's the price that was
+      // in effect before any reductions or increases. For the cycle that
+      // matches the user's listing key, we additionally fall back to the
+      // current ListPrice when no Price Changed events exist (brand-new
+      // listings haven't generated one yet).
+      const listedEvents = mapped.filter((e) => e.event === "Listed");
+      if (listedEvents.length > 0 && listedEvents.some((e) => e.price == null)) {
+        // Oldest = last in newest-first array.
+        const oldestPriceChange = [...mapped]
+          .reverse()
+          .find((e) => e.event === "Price Changed" && e.previousPrice);
+        const fallback =
+          oldestPriceChange?.previousPrice ??
+          (key === sparkKey ? currentPriceFallback : undefined);
+        if (fallback != null) {
+          for (const e of listedEvents) {
+            if (e.price == null) e.price = fallback;
+          }
+        }
+      }
+
       const mlsNumber =
         events.find((e) => e.Listing?.StandardFields?.ListingId)?.Listing
           ?.StandardFields?.ListingId ?? key;
