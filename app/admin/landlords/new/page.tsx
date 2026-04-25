@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import AdminHeader from "../AdminHeader";
 
 /**
  * Admin: invite a new landlord. Submits to /api/admin/landlords which:
@@ -62,25 +62,11 @@ export default function NewLandlordPage() {
 
   return (
     <div className="min-h-screen bg-[#F4F3EE]">
-      <div className="border-b border-border bg-black px-8 py-4">
-        <div className="mx-auto flex max-w-[760px] items-center justify-between">
-          <div className="flex items-center gap-3">
-            <a href="/" className="font-sans text-[16px] font-medium text-white">
-              give<span className="text-coral">nest</span>
-            </a>
-            <span className="text-white/30">|</span>
-            <Link href="/admin" className="text-[13px] text-white/60 hover:text-white transition-colors">
-              Admin
-            </Link>
-            <span className="text-white/30">/</span>
-            <Link href="/admin/landlords" className="text-[13px] text-white/60 hover:text-white transition-colors">
-              Landlords
-            </Link>
-            <span className="text-white/30">/</span>
-            <span className="text-[13px] text-white">New</span>
-          </div>
-        </div>
-      </div>
+      <AdminHeader trail={[
+        { label: "Admin", href: "/admin" },
+        { label: "Landlords", href: "/admin/landlords" },
+        { label: "New" },
+      ]} />
 
       <div className="mx-auto max-w-[760px] px-8 py-10">
         <h1 className="mb-2 font-serif text-[28px] font-medium tracking-[-0.01em]">Invite landlord</h1>

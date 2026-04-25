@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Wordmark from "@/components/Wordmark";
 
 /**
  * Black top bar shown on every /landlord/dashboard/* page. Mirrors the
@@ -34,11 +35,11 @@ export default function DashboardHeader({ email }: { email: string }) {
     <div className="border-b border-border bg-black px-8 py-4">
       <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <a href="/" className="font-sans text-[16px] font-medium text-white">
-            give<span className="text-coral">nest</span>
-          </a>
-          <span className="text-white/30">|</span>
-          <span className="text-[13px] text-white/60">Owner portal</span>
+          <Link href="/" aria-label="Givenest home" className="inline-flex items-center">
+            <Wordmark size={18} dark />
+          </Link>
+          <span className="text-white/40">|</span>
+          <span className="text-[13px] text-white/80">Owner portal</span>
         </div>
         <nav className="flex items-center gap-5 text-[13px]">
           {links.map((l) => {
@@ -49,15 +50,15 @@ export default function DashboardHeader({ email }: { email: string }) {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`transition-colors ${active ? "text-white" : "text-white/60 hover:text-white"}`}
+                className={`transition-colors ${active ? "text-white" : "text-white/80 hover:text-white"}`}
               >
                 {l.label}
               </Link>
             );
           })}
-          <span className="text-white/20">|</span>
-          <span className="text-[12px] text-white/40">{email}</span>
-          <button onClick={signOut} className="text-[13px] text-white/60 transition-colors hover:text-white">
+          <span className="text-white/30">|</span>
+          <span className="text-[12px] text-white/60">{email}</span>
+          <button onClick={signOut} className="text-[13px] text-white/80 transition-colors hover:text-white">
             Sign out
           </button>
         </nav>
