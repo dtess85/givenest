@@ -573,6 +573,12 @@ export default function PropertyDetail() {
             );
           })()}
 
+          {/* ── Sale history (Spark + same-address lookup) ──
+              Sits above the IDX listing-courtesy block on wide screens so
+              the buyer-facing data table is the prominent end-of-content
+              section; the brokerage attribution is a smaller follow-on. */}
+          <SaleHistoryTable listingSlug={property.slug} sqft={property.sqft} />
+
           {/* ── Listed by — hidden on small screens, shown inline on lg ── */}
           <div className="hidden lg:block border-t border-border pt-5 pb-4">
             <p className="mb-4 text-[13px] text-muted">
@@ -625,9 +631,6 @@ export default function PropertyDetail() {
               )}
             </div>
           </div>
-
-          {/* ── Sale history (Spark + same-address lookup) ── */}
-          <SaleHistoryTable listingSlug={property.slug} sqft={property.sqft} />
 
         </div>
         {/* ── END LEFT COLUMN ── */}
