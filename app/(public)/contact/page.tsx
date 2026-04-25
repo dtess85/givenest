@@ -51,8 +51,8 @@ export default function Contact() {
             <div className="flex flex-col gap-5">
               <div>
                 <div className="mb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">Email</div>
-                <a href="mailto:dustin@givenest.com" className="text-[15px] text-coral hover:underline">
-                  dustin@givenest.com
+                <a href="mailto:hello@givenest.com" className="text-[15px] text-coral hover:underline">
+                  hello@givenest.com
                 </a>
               </div>
               <div>
