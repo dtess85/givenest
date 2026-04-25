@@ -365,6 +365,16 @@ function BuyPage({ initial }: BuyClientProps) {
     return s ? new Set(s.split(",")) : new Set();
   });
   const [openHousesOnly, setOpenHousesOnly] = useState(() => searchParams.get("openHouses") === "1");
+  // Recent price-change filter — empty = no filter, "reduced" = drops only,
+  // "increased" = increases only. Backed by `previous_price` + `price_changed_at`
+  // on the listings index (synced by the listings cron). 10-day window matches
+  // the badge + banner.
+  const [priceChange, setPriceChange] = useState<"" | "reduced" | "increased">(
+    () => {
+      const v = searchParams.get("priceChange");
+      return v === "reduced" || v === "increased" ? v : "";
+    }
+  );
   // Listing type
   const [listingTypes, setListingTypes] = useState<Set<string>>(() => {
     const t = searchParams.get("listingType");
@@ -565,6 +575,7 @@ function BuyPage({ initial }: BuyClientProps) {
     // "Givenest Listings" / "MLS Listings" are still applied client-side — they
     // filter on listOfficeName which we already have in the Property payload.
     if (listingTypes.has("New Construction")) params.set("listingType", "New Construction");
+    if (priceChange) params.set("priceChange", priceChange);
     if (selectedLocation?.city) params.set("city", selectedLocation.city);
     if (selectedLocation?.zip) params.set("zip", selectedLocation.zip);
     if (selectedLocation?.subdivision) params.set("subdivision", selectedLocation.subdivision);
@@ -625,7 +636,7 @@ function BuyPage({ initial }: BuyClientProps) {
       else setLoadingMore(false);
       loadingRef.current = false;
     }
-  }, [minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, minYear, maxYear, maxDom, listingTypes, selectedLocation, sortBy, userLat, userLng]);
+  }, [minPrice, maxPrice, propertyTypes, statuses, minBeds, minBaths, minSqft, maxSqft, maxHoa, minYear, maxYear, maxDom, listingTypes, priceChange, selectedLocation, sortBy, userLat, userLng]);
 
   // Debounced refetch — waits for location detection on first load.
   // Runs whenever fetchListings identity changes (filter / sort / lat-lng change).
@@ -720,6 +731,7 @@ function BuyPage({ initial }: BuyClientProps) {
     if (statuses.size > 0) p.set("status", Array.from(statuses).join(","));
     if (listingTypes.size > 0) p.set("listingType", Array.from(listingTypes).join(","));
     if (openHousesOnly) p.set("openHouses", "1");
+    if (priceChange) p.set("priceChange", priceChange);
     if (minBeds !== null) p.set("minBeds", String(minBeds));
     if (minBaths !== null) p.set("minBaths", String(minBaths));
     if (minSqft) p.set("minSqft", minSqft);
@@ -732,12 +744,13 @@ function BuyPage({ initial }: BuyClientProps) {
     const qs = p.toString();
     router.replace(qs ? `?${qs}` : "?", { scroll: false });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationReady, selectedLocation, minPrice, maxPrice, propertyTypes, statuses, listingTypes, openHousesOnly, minBeds, minBaths, minSqft, maxSqft, minYear, maxYear, maxHoa, maxDom, sortBy]);
+  }, [locationReady, selectedLocation, minPrice, maxPrice, propertyTypes, statuses, listingTypes, openHousesOnly, priceChange, minBeds, minBaths, minSqft, maxSqft, minYear, maxYear, maxHoa, maxDom, sortBy]);
 
   const activeFilterCount =
     propertyTypes.size +
     statuses.size +
     (openHousesOnly ? 1 : 0) +
+    (priceChange ? 1 : 0) +
     listingTypes.size +
     (minBeds !== null ? 1 : 0) +
     (minBaths !== null ? 1 : 0) +
@@ -1180,6 +1193,23 @@ function BuyPage({ initial }: BuyClientProps) {
                         <div className="mt-3">
                           <CheckRow label="Open Houses" checked={openHousesOnly} onChange={() => setOpenHousesOnly((v) => !v)} />
                         </div>
+                        <div className="mt-3">
+                          <div className="mb-[6px] text-[11px] font-medium text-muted">Price Change</div>
+                          <div className="relative">
+                            <select
+                              value={priceChange}
+                              onChange={(e) =>
+                                setPriceChange(e.target.value as "" | "reduced" | "increased")
+                              }
+                              className={filterSelectClass}
+                            >
+                              <option value="">Any</option>
+                              <option value="reduced">Recently reduced</option>
+                              <option value="increased">Recently increased</option>
+                            </select>
+                            <ChevronIcon />
+                          </div>
+                        </div>
                       </div>
 
                       {/* Property Facts */}
@@ -1380,11 +1410,32 @@ function BuyPage({ initial }: BuyClientProps) {
                           h.status === "For Sale" && isBackOnMarket ? "BACK ON MARKET" :
                           null;
                         const showStatusPill = h.status && !(isGivenest && h.status === "For Sale") && !primaryLabel;
+                        // Price-change pill: shows for 10 days after a price change.
+                        // Drops use emerald (buyer-favorable signal); increases use
+                        // amber (informational, less urgent — increases are rare and
+                        // typically signal seller testing the market).
+                        const priceChange = (() => {
+                          if (h.previousPrice == null || !h.priceChangeAt) return null;
+                          const ageMs = Date.now() - new Date(h.priceChangeAt).getTime();
+                          if (ageMs < 0 || ageMs > 10 * 24 * 60 * 60 * 1000) return null;
+                          if (h.previousPrice > h.price) return { label: "Price drop", drop: true };
+                          if (h.previousPrice < h.price) return { label: "Price increase", drop: false };
+                          return null;
+                        })();
                         return (
                           <div className="absolute left-3 top-3 flex flex-wrap gap-1">
                             {isGivenest && (
                               <span className="rounded-full bg-[rgba(227,104,88,0.8)] px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm backdrop-blur-sm">
                                 Listed by Givenest
+                              </span>
+                            )}
+                            {priceChange && (
+                              <span
+                                className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm backdrop-blur-sm ${
+                                  priceChange.drop ? "bg-emerald-600/85" : "bg-amber-500/85"
+                                }`}
+                              >
+                                {priceChange.label}
                               </span>
                             )}
                             {primaryLabel && (
