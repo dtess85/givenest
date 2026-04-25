@@ -377,6 +377,46 @@ export async function enrichWithShortSlugs<T extends Property>(
 }
 
 /**
+ * Spark listing keys whose price changed within `days` days, optionally
+ * narrowed to drops or increases only. Backs the /buy page "Price reduced"
+ * filter — the caller hands the resulting keys to Spark via
+ * `ListingKey In (...)` so pagination + sort are still done by Spark.
+ *
+ * Limit is generous (1000) so the filter doesn't silently drop results in
+ * the rare event we have a huge wave of price changes; SparkQL `In` clauses
+ * comfortably handle this many keys.
+ */
+export async function getKeysWithRecentPriceChange(
+  opts: { direction?: "drop" | "increase" | "any"; days?: number; limit?: number } = {}
+): Promise<string[]> {
+  const direction = opts.direction ?? "any";
+  const days = opts.days ?? 10;
+  const limit = opts.limit ?? 1000;
+
+  const conditions: string[] = [
+    "price_changed_at IS NOT NULL",
+    "price_changed_at >= NOW() - INTERVAL '1 day' * $1",
+    "previous_price IS NOT NULL",
+    "price IS NOT NULL",
+  ];
+  const values: unknown[] = [days];
+
+  if (direction === "drop") conditions.push("price < previous_price");
+  else if (direction === "increase") conditions.push("price > previous_price");
+
+  values.push(limit);
+  const { rows } = await pool.query(
+    `SELECT spark_listing_key
+       FROM listings
+      WHERE ${conditions.join(" AND ")}
+      ORDER BY price_changed_at DESC
+      LIMIT $${values.length}`,
+    values
+  );
+  return rows.map((r: { spark_listing_key: string }) => r.spark_listing_key);
+}
+
+/**
  * Bulk-fill `previousPrice` + `priceChangeAt` on a batch of Property objects
  * from our `listings` index. Spark masks `PreviousListPrice` for most ARMLS
  * listings, so the buy-page card needs our sync-derived snapshot to show

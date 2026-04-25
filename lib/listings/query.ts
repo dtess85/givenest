@@ -1,6 +1,6 @@
 import { fetchSparkListings, countSparkListings } from "@/lib/spark";
 import { getActiveManualListings, manualListingToProperty } from "@/lib/db/listings";
-import { getListingKeysByAgent, getListingKeysBySubdivision, getOfficeIdsByBrokerageName, enrichWithShortSlugs, enrichWithPriceChanges } from "@/lib/db/listings-index";
+import { getListingKeysByAgent, getListingKeysBySubdivision, getOfficeIdsByBrokerageName, enrichWithShortSlugs, enrichWithPriceChanges, getKeysWithRecentPriceChange } from "@/lib/db/listings-index";
 import { GIVENEST_OFFICE_ID } from "@/lib/constants/givenest";
 import { CITY_ALIASES } from "@/lib/az-locations";
 import type { Property } from "@/lib/mock-data";
@@ -50,6 +50,10 @@ function applyManualFilters(listings: Property[], params: URLSearchParams): Prop
     // Manual listings don't carry an agent field; if the user is filtering by agent,
     // exclude all manual listings.
     if (agent) return false;
+    // Manual listings aren't tracked in the price-change snapshot (they're not
+    // synced through `upsertListings`), so when the user filters by recent
+    // price change we exclude them outright.
+    if (params.get("priceChange")) return false;
 
     // Price
     if (minPrice && p.price < Number(minPrice)) return false;
@@ -223,6 +227,27 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
       return { listings: [], pinnedListings: [], total: 0, totalPages: 0 };
     }
     const keyGroup = agentKeys
+      .map((k) => `ListingKey Eq '${k.replace(/'/g, "")}'`)
+      .join(" Or ");
+    conditions.push(`(${keyGroup})`);
+  }
+
+  // Price-change filter (10-day window) — narrows the Spark filter to listings
+  // whose synced price differs from the prior snapshot. Drops are emerald
+  // "Price drop" pills on the cards, increases are amber "Price increase".
+  const priceChange = searchParams.get("priceChange");
+  if (priceChange === "reduced" || priceChange === "increased" || priceChange === "any") {
+    const direction =
+      priceChange === "reduced"
+        ? ("drop" as const)
+        : priceChange === "increased"
+          ? ("increase" as const)
+          : ("any" as const);
+    const changeKeys = await getKeysWithRecentPriceChange({ direction, days: 10 });
+    if (changeKeys.length === 0) {
+      return { listings: [], pinnedListings: [], total: 0, totalPages: 0 };
+    }
+    const keyGroup = changeKeys
       .map((k) => `ListingKey Eq '${k.replace(/'/g, "")}'`)
       .join(" Or ");
     conditions.push(`(${keyGroup})`);

@@ -26,6 +26,7 @@ const FILTER_KEYS = [
   "maxSqft",
   "maxHoa",
   "sort",
+  "priceChange",
 ] as const;
 
 function isDefaultVariant(searchParams: SearchParams): boolean {
