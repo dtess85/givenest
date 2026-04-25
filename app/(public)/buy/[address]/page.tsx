@@ -8,6 +8,10 @@ import type { Property } from "@/lib/mock-data";
 import { fmt } from "@/lib/utils";
 import { calcGivingPool } from "@/lib/commission";
 import GivingPanel from "@/components/GivingPanel";
+import {
+  PriceDropAlert,
+  SaleHistoryTable,
+} from "@/components/PriceHistory";
 import IdxAttribution from "@/components/IdxAttribution";
 import AgentPicker from "@/components/AgentPicker";
 import LeadModal from "@/components/LeadModal";
@@ -426,6 +430,12 @@ export default function PropertyDetail() {
             })()}
           </div>
 
+          {/* ── Price drop alert (only renders when ListPrice was lowered) ── */}
+          <PriceDropAlert
+            listingSlug={property.slug}
+            currentPrice={property.price}
+          />
+
           {/* ── About this home ── */}
           {property.description && (() => {
             const LIMIT = 300;
@@ -615,6 +625,9 @@ export default function PropertyDetail() {
               )}
             </div>
           </div>
+
+          {/* ── Sale history (Spark + same-address lookup) ── */}
+          <SaleHistoryTable listingSlug={property.slug} sqft={property.sqft} />
 
         </div>
         {/* ── END LEFT COLUMN ── */}

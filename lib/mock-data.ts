@@ -36,6 +36,19 @@ export interface Property {
   backOnMarketDate?: string; // ISO date — set when a listing is relisted after withdrawal
   openHouses?: Array<{ date: string; startTime: string; endTime: string }>; // upcoming open houses
   modifiedAt?: string; // ISO — ModificationTimestamp from Spark (when listing data last changed)
+  /** Initial list price when the listing first went on market. Used together
+   *  with `price` to show "down from $X" on the property page. */
+  originalPrice?: number;
+  /** The list price immediately before the most recent change. Drives the
+   *  "Price drop — list price was lowered by $X" alert card. */
+  previousPrice?: number;
+  /** When the price was last changed. ISO timestamp from Spark. */
+  priceChangeAt?: string;
+  /** Maricopa County APN ("169-39-018"). Used to look up tax-history data
+   *  via the Maricopa County Assessor public API. Only populated for
+   *  Maricopa-county listings — Pinal/Pima/Yavapai listings will leave this
+   *  undefined and the tax history tab will fall back to "no data". */
+  parcelNumber?: string;
 }
 
 export interface CharityItem {

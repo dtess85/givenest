@@ -4,6 +4,8 @@ import { listingDetailUrl } from "@/lib/constants/givenest";
 import EditableCaption from "./EditableCaption";
 import CopyButton from "./CopyButton";
 import ScrollableHero, { type HeroImage } from "./ScrollableHero";
+import GenerateReelPanel from "./GenerateReelPanel";
+import PickClipsButton from "./PickClipsButton";
 
 export const dynamic = "force-dynamic";
 
@@ -301,6 +303,14 @@ function PostCard({ row }: { row: SocialPostRow }) {
                 View on Givenest
               </Link>
             )}
+            {row.format === "REEL" && snap && (
+              <PickClipsButton
+                rowId={row.id}
+                addressLabel={`${snap.address} · ${snap.city}`}
+                images={snap.images ?? []}
+                imageCategories={snap.image_categories ?? []}
+              />
+            )}
             {/* Phase 3: Approve / Reject / Post now (inert placeholders for now) */}
             <button
               disabled
@@ -372,6 +382,9 @@ export default async function AdminSocialPage() {
             Failed to load posts: {loadError}
           </div>
         )}
+
+        {/* Generate a reel on demand — produces a REEL draft for any listing */}
+        <GenerateReelPanel />
 
         {/* Drafts */}
         <section className="mb-12">
