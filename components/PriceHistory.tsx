@@ -61,19 +61,23 @@ function fmtPricePerSqft(price: number | null, sqft: number | undefined): string
 /* Price drop alert                                                           */
 /* -------------------------------------------------------------------------- */
 
-export function PriceDropAlert({
+export function PriceChangeAlert({
   listingSlug,
   currentPrice,
 }: {
   listingSlug: string;
   currentPrice: number;
 }) {
-  const [drop, setDrop] = useState<{ amount: number; date: string } | null>(null);
+  const [change, setChange] = useState<{
+    direction: "drop" | "increase";
+    amount: number;
+    date: string;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     // Spark masks `PreviousListPrice` on most ARMLS-replicated listings, so
-    // the only reliable source for the drop amount is the listing's history
+    // the only reliable source for the change amount is the listing's history
     // endpoint — find the most recent ListPrice change in the current cycle.
     fetch(`/api/listings/${listingSlug}/history`)
       .then((r) => (r.ok ? r.json() : null))
@@ -85,54 +89,70 @@ export function PriceDropAlert({
         const lastChange = cycle?.events.find(
           (e) => e.event === "Price Changed" && e.previousPrice
         );
-        if (
-          lastChange?.previousPrice &&
-          lastChange.previousPrice > currentPrice
-        ) {
-          // Cap visibility to 10 days post-drop. Past that, the price drop is
-          // no longer "news" — the sale-history table below still shows the
-          // change for context, but the urgency banner stops nagging buyers
-          // about a months-old reduction. Threshold is in ms.
-          const VISIBLE_FOR_MS = 10 * 24 * 60 * 60 * 1000;
-          const ageMs = Date.now() - new Date(lastChange.date).getTime();
-          if (ageMs <= VISIBLE_FOR_MS) {
-            setDrop({
-              amount: lastChange.previousPrice - currentPrice,
-              date: lastChange.date,
-            });
-          }
+        if (!lastChange?.previousPrice) return;
+
+        // Cap visibility to 10 days. Past that, the change is no longer "news"
+        // — the sale-history table below still shows it for context, but the
+        // banner stops nagging buyers about a months-old change.
+        const VISIBLE_FOR_MS = 10 * 24 * 60 * 60 * 1000;
+        const ageMs = Date.now() - new Date(lastChange.date).getTime();
+        if (ageMs > VISIBLE_FOR_MS) return;
+
+        if (lastChange.previousPrice > currentPrice) {
+          setChange({
+            direction: "drop",
+            amount: lastChange.previousPrice - currentPrice,
+            date: lastChange.date,
+          });
+        } else if (lastChange.previousPrice < currentPrice) {
+          setChange({
+            direction: "increase",
+            amount: currentPrice - lastChange.previousPrice,
+            date: lastChange.date,
+          });
         }
       })
       .catch(() => {
-        /* silent — drop card just won't render */
+        /* silent — banner just won't render */
       });
     return () => {
       cancelled = true;
     };
   }, [listingSlug, currentPrice]);
 
-  if (!drop) return null;
-  const dropLabel = fmtCompact(drop.amount);
+  if (!change) return null;
+  const amountLabel = fmtCompact(change.amount);
+  const isDrop = change.direction === "drop";
 
   return (
     <div className="rounded-[12px] border border-border bg-white p-5">
       <div className="flex items-start gap-3">
-        <PriceTagIcon />
+        <PriceTagIcon direction={change.direction} />
         <div className="flex-1">
-          <div className="text-[15px] font-semibold text-foreground">Price drop</div>
+          <div className="text-[15px] font-semibold text-foreground">
+            {isDrop ? "Price drop" : "Price increase"}
+          </div>
           <p className="mt-0.5 text-[14px] text-foreground/80">
-            List price was lowered by {dropLabel}. Tour it before it&apos;s gone!
+            {isDrop
+              ? `List price was lowered by ${amountLabel}. Tour it before it's gone!`
+              : `List price was raised by ${amountLabel}.`}
           </p>
-          <p className="mt-3 text-[13px] text-muted">{fmtDate(drop.date)}</p>
+          <p className="mt-3 text-[13px] text-muted">{fmtDate(change.date)}</p>
         </div>
       </div>
     </div>
   );
 }
 
-/** Inline SVG to avoid a runtime icon dependency. The coral-fill triangle
- *  inside the tag mirrors the brand mark's angle. */
-function PriceTagIcon() {
+/** Backwards-compat alias — kept so any older imports keep resolving. New
+ *  callers should prefer `PriceChangeAlert`. */
+export const PriceDropAlert = PriceChangeAlert;
+
+/** Inline SVG to avoid a runtime icon dependency. The triangle inside the
+ *  tag is coral on a drop (matches the brand) and amber on an increase
+ *  (informational, signals "less buyer-favorable" without alarming). */
+function PriceTagIcon({ direction }: { direction: "drop" | "increase" }) {
+  const triangleFill = direction === "drop" ? "#E85A4F" : "#D89F2E";
   return (
     <svg
       width="44"
@@ -150,8 +170,8 @@ function PriceTagIcon() {
       />
       <circle cx="30" cy="16" r="2.4" stroke="#1F1F1F" strokeWidth="1.5" />
       <path
-        d="M14 28 L26 28 L20 35 Z"
-        fill="#E85A4F"
+        d={direction === "drop" ? "M14 28 L26 28 L20 35 Z" : "M14 35 L26 35 L20 28 Z"}
+        fill={triangleFill}
       />
       {/* Sparkle marks above the tag */}
       <path d="M24 4 L24 8 M27 5 L25 7 M21 5 L23 7" stroke="#1F1F1F" strokeWidth="1.5" strokeLinecap="round" />

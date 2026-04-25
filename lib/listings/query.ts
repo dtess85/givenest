@@ -1,6 +1,6 @@
 import { fetchSparkListings, countSparkListings } from "@/lib/spark";
 import { getActiveManualListings, manualListingToProperty } from "@/lib/db/listings";
-import { getListingKeysByAgent, getListingKeysBySubdivision, getOfficeIdsByBrokerageName, enrichWithShortSlugs } from "@/lib/db/listings-index";
+import { getListingKeysByAgent, getListingKeysBySubdivision, getOfficeIdsByBrokerageName, enrichWithShortSlugs, enrichWithPriceChanges } from "@/lib/db/listings-index";
 import { GIVENEST_OFFICE_ID } from "@/lib/constants/givenest";
 import { CITY_ALIASES } from "@/lib/az-locations";
 import type { Property } from "@/lib/mock-data";
@@ -363,8 +363,12 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
   }
 
   // Swap raw Spark keys for short `gpid-XXXXXXXX` slugs wherever we have one
-  // in the index. One bulk DB query per listings request.
-  await enrichWithShortSlugs([...listings, ...pinnedListings]);
+  // in the index, and bulk-fill price-change snapshots for the badge UI.
+  // One bulk DB query each per listings request, run in parallel.
+  await Promise.all([
+    enrichWithShortSlugs([...listings, ...pinnedListings]),
+    enrichWithPriceChanges([...listings, ...pinnedListings]),
+  ]);
 
   const totalPages = Math.ceil(total / limit) || 1;
   return { listings, pinnedListings, total, totalPages };

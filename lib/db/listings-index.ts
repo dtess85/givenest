@@ -22,6 +22,11 @@ export interface ListingIndexRow {
   mls_status: string | null;
   modified_at: string | null;
   synced_at: string;
+  /** Snapshot of the prior price taken whenever the synced price differs
+   *  from the stored one. Drives the "Price drop" / "Price increase" badge
+   *  on buy-page cards (within 10 days of `price_changed_at`). */
+  previous_price: number | null;
+  price_changed_at: string | null;
 }
 
 export interface ListingUpsertData {
@@ -91,6 +96,12 @@ export async function upsertListings(listings: ListingUpsertData[]): Promise<voi
       );
     }
 
+    // On price change, snapshot the prior price + stamp price_changed_at
+    // BEFORE overwriting the price column. The CASE expressions reference
+    // listings.price (the OLD value pre-update) and EXCLUDED.price (the
+    // incoming value); they only fire when both are non-null and different,
+    // so first-time inserts and unchanged rows leave the snapshot fields as
+    // they were.
     const text = `
       INSERT INTO listings (
         spark_listing_key, mls_number, address, street_number, street_name,
@@ -105,6 +116,20 @@ export async function upsertListings(listings: ListingUpsertData[]): Promise<voi
         city             = EXCLUDED.city,
         state            = EXCLUDED.state,
         zip              = EXCLUDED.zip,
+        previous_price   = CASE
+                              WHEN listings.price IS NOT NULL
+                                   AND EXCLUDED.price IS NOT NULL
+                                   AND listings.price <> EXCLUDED.price
+                              THEN listings.price
+                              ELSE listings.previous_price
+                            END,
+        price_changed_at = CASE
+                              WHEN listings.price IS NOT NULL
+                                   AND EXCLUDED.price IS NOT NULL
+                                   AND listings.price <> EXCLUDED.price
+                              THEN NOW()
+                              ELSE listings.price_changed_at
+                            END,
         price            = EXCLUDED.price,
         beds             = EXCLUDED.beds,
         baths            = EXCLUDED.baths,
@@ -347,6 +372,55 @@ export async function enrichWithShortSlugs<T extends Property>(
   for (const l of listings) {
     const sid = l.sparkKey ? shortIdMap.get(l.sparkKey) : undefined;
     if (sid) l.slug = makePublicSlug(sid);
+  }
+  return listings;
+}
+
+/**
+ * Bulk-fill `previousPrice` + `priceChangeAt` on a batch of Property objects
+ * from our `listings` index. Spark masks `PreviousListPrice` for most ARMLS
+ * listings, so the buy-page card needs our sync-derived snapshot to show
+ * "Price drop" / "Price increase" badges. One query for the whole batch.
+ *
+ * Listings not in the index (manual listings, or stale before next sync)
+ * are left untouched — caller logic should treat the absence of these
+ * fields as "no recent change to advertise".
+ */
+export async function enrichWithPriceChanges<T extends Property>(
+  listings: T[]
+): Promise<T[]> {
+  if (listings.length === 0) return listings;
+  const keys = listings.map((l) => l.sparkKey ?? l.slug).filter(Boolean);
+  if (keys.length === 0) return listings;
+
+  const { rows } = await pool.query(
+    `SELECT spark_listing_key, previous_price, price_changed_at
+       FROM listings
+      WHERE price_changed_at IS NOT NULL
+        AND spark_listing_key = ANY($1)`,
+    [keys]
+  );
+
+  const map = new Map<string, { previousPrice: number; priceChangeAt: string }>();
+  for (const r of rows as {
+    spark_listing_key: string;
+    previous_price: string | number | null;
+    price_changed_at: string | null;
+  }[]) {
+    if (r.previous_price == null || r.price_changed_at == null) continue;
+    map.set(r.spark_listing_key, {
+      previousPrice: Number(r.previous_price),
+      priceChangeAt: r.price_changed_at,
+    });
+  }
+
+  for (const l of listings) {
+    const key = l.sparkKey ?? l.slug;
+    const hit = map.get(key);
+    if (hit) {
+      l.previousPrice = hit.previousPrice;
+      l.priceChangeAt = hit.priceChangeAt;
+    }
   }
   return listings;
 }

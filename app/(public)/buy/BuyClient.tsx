@@ -1380,11 +1380,32 @@ function BuyPage({ initial }: BuyClientProps) {
                           h.status === "For Sale" && isBackOnMarket ? "BACK ON MARKET" :
                           null;
                         const showStatusPill = h.status && !(isGivenest && h.status === "For Sale") && !primaryLabel;
+                        // Price-change pill: shows for 10 days after a price change.
+                        // Drops use emerald (buyer-favorable signal); increases use
+                        // amber (informational, less urgent — increases are rare and
+                        // typically signal seller testing the market).
+                        const priceChange = (() => {
+                          if (h.previousPrice == null || !h.priceChangeAt) return null;
+                          const ageMs = Date.now() - new Date(h.priceChangeAt).getTime();
+                          if (ageMs < 0 || ageMs > 10 * 24 * 60 * 60 * 1000) return null;
+                          if (h.previousPrice > h.price) return { label: "Price drop", drop: true };
+                          if (h.previousPrice < h.price) return { label: "Price increase", drop: false };
+                          return null;
+                        })();
                         return (
                           <div className="absolute left-3 top-3 flex flex-wrap gap-1">
                             {isGivenest && (
                               <span className="rounded-full bg-[rgba(227,104,88,0.8)] px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm backdrop-blur-sm">
                                 Listed by Givenest
+                              </span>
+                            )}
+                            {priceChange && (
+                              <span
+                                className={`rounded-full px-[10px] py-[5px] text-[10px] font-semibold uppercase tracking-[0.06em] text-white shadow-sm backdrop-blur-sm ${
+                                  priceChange.drop ? "bg-emerald-600/85" : "bg-amber-500/85"
+                                }`}
+                              >
+                                {priceChange.label}
                               </span>
                             )}
                             {primaryLabel && (

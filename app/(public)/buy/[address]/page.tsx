@@ -9,7 +9,7 @@ import { fmt } from "@/lib/utils";
 import { calcGivingPool } from "@/lib/commission";
 import GivingPanel from "@/components/GivingPanel";
 import {
-  PriceDropAlert,
+  PriceChangeAlert,
   SaleHistoryTable,
 } from "@/components/PriceHistory";
 import IdxAttribution from "@/components/IdxAttribution";
@@ -430,8 +430,8 @@ export default function PropertyDetail() {
             })()}
           </div>
 
-          {/* ── Price drop alert (only renders when ListPrice was lowered) ── */}
-          <PriceDropAlert
+          {/* ── Price-change banner — drop or increase, hidden after 10 days ── */}
+          <PriceChangeAlert
             listingSlug={property.slug}
             currentPrice={property.price}
           />
