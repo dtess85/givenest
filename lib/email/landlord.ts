@@ -82,8 +82,8 @@ function shell(body: string): string {
   // element itself. Coral + Lora-ish stack matches the brand.
   return `
     <div style="font-family:Georgia,'Times New Roman',serif;max-width:520px;margin:0 auto;padding:24px;color:#0C0D0D">
-      <div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:18px;font-weight:500;margin-bottom:16px">
-        give<span style="color:#E36858">nest</span>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:600;margin-bottom:16px;color:#0C0D0D">
+        give<span style="font-style:italic;color:#E36858">nest</span>
       </div>
       ${body}
       <hr style="border:none;border-top:1px solid #E3DED6;margin:24px 0"/>

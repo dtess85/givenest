@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Wordmark from "@/components/Wordmark";
 
 /**
  * Landlord sign-in. Same Supabase email+password flow as the admin login,
@@ -66,9 +67,8 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-[#F4F3EE] px-4 py-16">
       <div className="w-full max-w-[400px]">
         <div className="mb-8 text-center">
-          <a href="/" className="inline-flex items-center gap-1 font-sans text-[18px] font-medium">
-            <span>give</span>
-            <span className="text-coral">nest</span>
+          <a href="/" className="inline-flex items-center">
+            <Wordmark size={22} />
           </a>
           <p className="mt-2 text-[13px] text-muted">Owner portal</p>
         </div>
