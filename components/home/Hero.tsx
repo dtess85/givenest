@@ -34,9 +34,9 @@ export default function Hero() {
           Every home funds a cause{" "}
           <em className="text-coral">you choose.</em>
         </h1>
-        <p className="mb-10 max-w-[460px] text-[18px] font-normal leading-[1.8] text-white" style={{ textShadow: "0 2px 6px rgba(0,0,0,1), 0 4px 16px rgba(0,0,0,0.95), 0 8px 32px rgba(0,0,0,0.85)" }}>
-          Buy or sell on givenest and we donate to a charity of your choice at
-          closing — at no extra cost.
+        <p className="mb-10 max-w-[460px] text-[18px] font-normal leading-[1.8] text-white" style={{ textShadow: "0 0 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,1), 0 0 16px rgba(0,0,0,1), 0 2px 6px rgba(0,0,0,1), 0 4px 20px rgba(0,0,0,1), 0 8px 40px rgba(0,0,0,1)" }}>
+          Buy, sell or manage on givenest and we donate to a charity of your
+          choice at no extra cost.
         </p>
 
         {/* Search bar with autocomplete */}
@@ -48,6 +48,12 @@ export default function Hero() {
             className="text-[13px] text-white transition-colors hover:text-white/80"
           >
             Get a selling estimate →
+          </Link>
+          <Link
+            href="/manage"
+            className="text-[13px] text-white transition-colors hover:text-white/80"
+          >
+            Manage a rental →
           </Link>
           <Link
             href="/charities"

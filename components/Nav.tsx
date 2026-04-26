@@ -9,6 +9,7 @@ import ListingSearch from "./ListingSearch";
 const links = [
   { href: "/buy", label: "Buy" },
   { href: "/sell", label: "Sell" },
+  { href: "/manage", label: "Manage" },
   { href: "/charities", label: "Charities" },
   { href: "/agents", label: "Agents" },
 ];
