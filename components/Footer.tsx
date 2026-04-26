@@ -30,6 +30,7 @@ export default function Footer() {
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
               <Link href="/buy" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Buy</Link>
               <Link href="/sell" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Sell</Link>
+              <Link href="/manage" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Manage</Link>
               <Link href="/charities" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Charities</Link>
               <Link href="/agents" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Agents</Link>
             </div>
