@@ -1,18 +1,19 @@
 import Link from "next/link";
-import Wordmark from "@/components/Wordmark";
 
 /**
- * Shared header for /admin/landlords/* pages. Black bar with the Givenest
- * brand mark on the left and a breadcrumb trail on the right.
+ * Shared header for /admin/landlords/* pages. Matches the inline
+ * `font-sans give<span coral>nest</span>` logo used by every other admin
+ * tab (`/admin`, `/admin/listings/*`, `/admin/transactions/*`,
+ * `/admin/social`, `/admin/featured`) so the brand mark stays consistent
+ * as the user clicks between tabs. The /landlord/* portal uses a separate
+ * <Wordmark> brand mark — admin is intentionally a different visual mode
+ * (lightweight ops UI vs. customer-facing brand surface).
  *
- * Why a shared component: the three landlord admin pages (list / new /
- * detail) had subtly different inline implementations. Two pre-existing
- * issues this fixes:
- *   1. The logo was rendered as `font-sans <give><span coral>nest</span></a>`
- *      instead of the canonical <Wordmark> (serif italic per the brand).
- *   2. Breadcrumb separators at `text-white/30` and link text at
- *      `text-white/60` against pure black were essentially invisible.
- *      Bumped to /50 and /80 respectively so the chain reads at a glance.
+ * Breadcrumb visibility fix: separators bumped from `text-white/30` →
+ * `/40` and link text from `text-white/60` → `/85`. The original values
+ * rendered as nearly invisible against pure black; the new opacities
+ * read at a glance while still de-emphasizing the trail vs. the
+ * current-page label (which stays at full white).
  */
 export interface BreadcrumbItem {
   label: string;
@@ -23,9 +24,9 @@ export default function AdminHeader({ trail }: { trail: BreadcrumbItem[] }) {
   return (
     <div className="border-b border-border bg-black px-8 py-4">
       <div className="mx-auto flex max-w-[1100px] flex-wrap items-center gap-x-3 gap-y-1">
-        <Link href="/" aria-label="Givenest home" className="inline-flex items-center">
-          <Wordmark size={18} dark />
-        </Link>
+        <a href="/" className="font-sans text-[16px] font-medium text-white">
+          give<span className="text-coral">nest</span>
+        </a>
         {trail.length > 0 && <span className="text-white/40">|</span>}
         {trail.map((item, i) => {
           const isLast = i === trail.length - 1;
@@ -34,7 +35,7 @@ export default function AdminHeader({ trail }: { trail: BreadcrumbItem[] }) {
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
-                  className="text-[13px] text-white/80 transition-colors hover:text-white"
+                  className="text-[13px] text-white/85 transition-colors hover:text-white"
                 >
                   {item.label}
                 </Link>
