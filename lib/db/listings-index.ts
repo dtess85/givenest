@@ -165,7 +165,7 @@ export interface ListingSearchResult {
 export async function searchListings(
   query: string,
   limit = 8
-): Promise<{ results: ListingSearchResult[]; isMlsNumber: boolean; hasSubdivisionMatch: boolean; hasAgentMatch: boolean; matchedAgentName: string | null }> {
+): Promise<{ results: ListingSearchResult[]; isMlsNumber: boolean; hasSubdivisionMatch: boolean }> {
   const q = query.trim();
 
   // ── MLS number ────────────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ export async function searchListings(
        FROM listings WHERE mls_number = $1 LIMIT $2`,
       [q, limit]
     );
-    return { results: rows.map(rowToResult), isMlsNumber: true, hasSubdivisionMatch: false, hasAgentMatch: false, matchedAgentName: null };
+    return { results: rows.map(rowToResult), isMlsNumber: true, hasSubdivisionMatch: false };
   }
 
   // ── "123 Main" — street number + name ────────────────────────────────────
@@ -204,21 +204,22 @@ export async function searchListings(
        ORDER BY price DESC LIMIT $3`,
       [streetNum, `%${bareName}%`, limit]
     );
-    return { results: rows.map(rowToResult), isMlsNumber: false, hasSubdivisionMatch: false, hasAgentMatch: false, matchedAgentName: null };
+    return { results: rows.map(rowToResult), isMlsNumber: false, hasSubdivisionMatch: false };
   }
 
-  // ── General: trigram search on address, neighborhood, zip, agent; exact on city ──
-  // For agent_name, replace inter-word spaces with `%` so "teresa porpiglia"
-  // matches "Teresa M Porpiglia" — middle initials shouldn't break the search.
+  // ── General: trigram search on address, neighborhood, zip; exact on city ──
+  // Agent-name matching is intentionally removed: ARMLS access rules forbid
+  // exposing MLS agent data to the public, so we no longer let a search query
+  // resolve to "browse <agent>'s listings". Address/neighborhood/city/zip
+  // remain the only public lookup axes.
   const pattern = `%${q}%`;
-  const agentPattern = `%${q.split(/\s+/).filter(Boolean).join("%")}%`;
   const { rows } = await pool.query(
-    `SELECT spark_listing_key, address, city, price, neighborhood, agent_name,
-       CASE WHEN city ILIKE $1 THEN 4 WHEN neighborhood ILIKE $2 THEN 3 WHEN agent_name ILIKE $4 THEN 2 ELSE 1 END AS score
+    `SELECT spark_listing_key, address, city, price, neighborhood,
+       CASE WHEN city ILIKE $1 THEN 3 WHEN neighborhood ILIKE $2 THEN 2 ELSE 1 END AS score
      FROM listings
-     WHERE address ILIKE $2 OR neighborhood ILIKE $2 OR city ILIKE $1 OR zip = $1 OR agent_name ILIKE $4
+     WHERE address ILIKE $2 OR neighborhood ILIKE $2 OR city ILIKE $1 OR zip = $1
      ORDER BY score DESC, price DESC LIMIT $3`,
-    [q, pattern, limit, agentPattern]
+    [q, pattern, limit]
   );
 
   const qUpper = q.toUpperCase();
@@ -227,25 +228,10 @@ export async function searchListings(
       r.neighborhood && r.neighborhood.toUpperCase().includes(qUpper)
   );
 
-  // Same word-gap regex for the post-query agent check so "teresa porpiglia"
-  // recognizes "Teresa M Porpiglia" as an agent match.
-  const agentTokens = q.toUpperCase().split(/\s+/).filter(Boolean);
-  const agentRegex = new RegExp(
-    agentTokens.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*")
-  );
-  const agentRow = rows.find(
-    (r: { agent_name: string | null }) =>
-      r.agent_name && agentRegex.test(r.agent_name.toUpperCase())
-  );
-  const hasAgentMatch = !!agentRow && !hasSubdivisionMatch;
-  const matchedAgentName: string | null = hasAgentMatch ? (agentRow as { agent_name: string }).agent_name : null;
-
   return {
     results: rows.map(rowToResult),
     isMlsNumber: false,
     hasSubdivisionMatch,
-    hasAgentMatch,
-    matchedAgentName,
   };
 }
 
@@ -710,6 +696,28 @@ export async function searchAgents(
   );
 
   return { agents: rows as AgentRow[], total };
+}
+
+/**
+ * Returns the Givenest team — the small set of agents flagged
+ * `is_givenest = true` in the agents index. This is the ONLY agent list
+ * we expose publicly: ARMLS access rules forbid sharing other agents'
+ * data, but our own team has explicitly opted into being listed on the
+ * site. Used by the `<AgentPicker>` on property detail pages.
+ *
+ * Returns up to `limit` agents, ordered with the highest active listing
+ * count first so whoever is most active appears at the top of the picker.
+ */
+export async function getGivenestAgents(limit = 10): Promise<AgentRow[]> {
+  const { rows } = await pool.query(
+    `SELECT name, office_name, primary_city, active_listing_count, is_givenest
+       FROM agents
+      WHERE is_givenest = true
+      ORDER BY active_listing_count DESC, name ASC
+      LIMIT $1`,
+    [limit]
+  );
+  return rows as AgentRow[];
 }
 
 function rowToResult(r: {

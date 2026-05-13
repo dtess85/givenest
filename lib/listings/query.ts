@@ -1,6 +1,9 @@
 import { fetchSparkListings, countSparkListings } from "@/lib/spark";
 import { getActiveManualListings, manualListingToProperty } from "@/lib/db/listings";
-import { getListingKeysByAgent, getListingKeysBySubdivision, getOfficeIdsByBrokerageName, enrichWithShortSlugs, enrichWithPriceChanges, getKeysWithRecentPriceChange } from "@/lib/db/listings-index";
+// getListingKeysByAgent intentionally not imported — agent-name filtering
+// was removed for ARMLS compliance. The helper still exists in listings-
+// index.ts for any future internal/admin use.
+import { getListingKeysBySubdivision, getOfficeIdsByBrokerageName, enrichWithShortSlugs, enrichWithPriceChanges, getKeysWithRecentPriceChange } from "@/lib/db/listings-index";
 import { GIVENEST_OFFICE_ID } from "@/lib/constants/givenest";
 import { CITY_ALIASES } from "@/lib/az-locations";
 import type { Property } from "@/lib/mock-data";
@@ -32,24 +35,21 @@ function applyManualFilters(listings: Property[], params: URLSearchParams): Prop
   const city = params.get("city");
   const zip = params.get("zip");
   const subdivision = params.get("subdivision");
-  const agent = params.get("agent");
   const minPrice = params.get("minPrice");
   const maxPrice = params.get("maxPrice");
   const type = params.get("type");
   const rawStatus = params.get("status");
 
   return listings.filter((p) => {
-    // Location: city/zip/subdivision/agent — manual listing is included if no location filter,
-    // or if it matches the specified filter
+    // Location: city/zip/subdivision — manual listing is included if no
+    // location filter, or if it matches. (Agent filtering was removed for
+    // ARMLS compliance.)
     if (city && !p.city.toLowerCase().startsWith(city.toLowerCase())) return false;
     if (zip) {
       // city field format: "Gilbert, AZ 85296"
       if (!p.city.includes(zip)) return false;
     }
     if (subdivision && !p.neighborhood?.toLowerCase().includes(subdivision.toLowerCase())) return false;
-    // Manual listings don't carry an agent field; if the user is filtering by agent,
-    // exclude all manual listings.
-    if (agent) return false;
     // Manual listings aren't tracked in the price-change snapshot (they're not
     // synced through `upsertListings`), so when the user filters by recent
     // price change we exclude them outright.
@@ -219,18 +219,11 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
     conditions.push(`(${keyGroup})`);
   }
 
-  // Agent name search — resolve via local index
-  const agent = searchParams.get("agent");
-  if (agent) {
-    const agentKeys = await getListingKeysByAgent(agent);
-    if (agentKeys.length === 0) {
-      return { listings: [], pinnedListings: [], total: 0, totalPages: 0 };
-    }
-    const keyGroup = agentKeys
-      .map((k) => `ListingKey Eq '${k.replace(/'/g, "")}'`)
-      .join(" Or ");
-    conditions.push(`(${keyGroup})`);
-  }
+  // Agent-name filter intentionally removed: ARMLS access rules forbid
+  // exposing MLS agent data to the public, so we no longer accept an
+  // `?agent=` param on the public listings query. If a stale URL still
+  // carries it, we silently drop it — the rest of the filter chain
+  // (city / zip / subdivision / brokerage / etc.) still applies.
 
   // Price-change filter (10-day window) — narrows the Spark filter to listings
   // whose synced price differs from the prior snapshot. Drops are emerald
@@ -323,7 +316,6 @@ export async function queryListings(searchParams: URLSearchParams): Promise<List
     searchParams.get("city") ||
     searchParams.get("zip") ||
     searchParams.get("subdivision") ||
-    searchParams.get("agent") ||
     searchParams.get("brokerage")
   );
   if (lat && lng && !hasExplicitLocation && (sort === "recommended" || sort === "nearest")) {

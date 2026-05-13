@@ -11,7 +11,10 @@ const links = [
   { href: "/sell", label: "Sell" },
   { href: "/manage", label: "Manage" },
   { href: "/charities", label: "Charities" },
-  { href: "/agents", label: "Agents" },
+  // "/agents" intentionally removed — ARMLS access rules forbid publicly
+  // exposing MLS agent data. The public agent directory has been retired;
+  // Givenest's own team is now reachable only via the AgentPicker on
+  // property detail pages.
 ];
 
 export default function Nav() {
