@@ -20,7 +20,7 @@ export default function FinalCTA() {
             Browse homes
           </Link>
           <Link
-            href="/agents"
+            href="/about"
             className="rounded-md bg-black px-[22px] py-[11px] text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
             Learn more

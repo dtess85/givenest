@@ -1,10 +1,13 @@
 export type LocationSuggestion = {
-  type: "city" | "zip" | "subdivision" | "agent" | "brokerage";
+  // "agent" intentionally absent — ARMLS access rules forbid public exposure
+  // of MLS agent data, so the search dropdown / URL filter / chip
+  // rendering no longer support browsing by agent. Brokerage filtering is
+  // still allowed; brokerages are listed as offices, not individuals.
+  type: "city" | "zip" | "subdivision" | "brokerage";
   label: string;
   city?: string;
   zip?: string;
   subdivision?: string; // exact SubdivisionName Eq value to pass to the API
-  agent?: string;       // exact ListAgentName Eq value to pass to the API
   brokerage?: string;   // exact ListOfficeName Eq value to pass to the API
   lat?: number;
   lng?: number;

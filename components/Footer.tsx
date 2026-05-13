@@ -32,7 +32,7 @@ export default function Footer() {
               <Link href="/sell" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Sell</Link>
               <Link href="/manage" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Manage</Link>
               <Link href="/charities" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Charities</Link>
-              <Link href="/agents" style={{ color: "#999999", fontSize: 13, textDecoration: "none" }}>Agents</Link>
+              {/* "/agents" removed — ARMLS access rules forbid publicly exposing MLS agent data. */}
             </div>
           </div>
 

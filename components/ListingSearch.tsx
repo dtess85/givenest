@@ -90,8 +90,6 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
   const [addressLoading, setAddressLoading] = useState(false);
   const [isMlsSearch, setIsMlsSearch] = useState(false);
   const [hasSubdivisionMatch, setHasSubdivisionMatch] = useState(false);
-  const [hasAgentMatch, setHasAgentMatch] = useState(false);
-  const [matchedAgentName, setMatchedAgentName] = useState<string | null>(null);
   const [hasBrokerageMatch, setHasBrokerageMatch] = useState(false);
   const [matchedBrokerageName, setMatchedBrokerageName] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -122,8 +120,7 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
         setAddressResults(data.listings ?? []);
         setIsMlsSearch(data.isMlsNumber ?? false);
         setHasSubdivisionMatch(data.hasSubdivisionMatch ?? false);
-        setHasAgentMatch(data.hasAgentMatch ?? false);
-        setMatchedAgentName(data.matchedAgentName ?? null);
+        // Agent autocomplete intentionally not consumed — ARMLS compliance.
         setHasBrokerageMatch(data.hasBrokerageMatch ?? false);
         setMatchedBrokerageName(data.matchedBrokerageName ?? null);
       } catch {
@@ -154,7 +151,7 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
     if (loc.type === "city" && loc.city) params.set("city", loc.city);
     else if (loc.type === "zip" && loc.zip) params.set("zip", loc.zip);
     else if (loc.type === "subdivision" && loc.subdivision) params.set("subdivision", loc.subdivision);
-    else if (loc.type === "agent" && loc.agent) params.set("agent", loc.agent);
+    // "agent" suggestion type removed for ARMLS compliance — see lib/az-locations.ts
     else if (loc.type === "brokerage" && loc.brokerage) params.set("brokerage", loc.brokerage);
     router.push(`/buy${params.toString() ? "?" + params.toString() : ""}`);
   }
@@ -166,7 +163,7 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
 
   const showDropdown =
     dropdownOpen &&
-    (citySuggestions.length > 0 || zipSuggestions.length > 0 || addressLoading || addressResults.length > 0 || hasSubdivisionMatch || hasAgentMatch || hasBrokerageMatch);
+    (citySuggestions.length > 0 || zipSuggestions.length > 0 || addressLoading || addressResults.length > 0 || hasSubdivisionMatch || hasBrokerageMatch);
 
   // ── Variant-dependent shell styling ──────────────────────────────────────
   const shellClass =
@@ -293,28 +290,6 @@ export default function ListingSearch({ variant = "hero", className = "" }: List
                   <div className="min-w-0 flex-1">
                     <div className="text-[13px] font-medium text-[#2a2825]">Browse {searchInput.trim()} community</div>
                     <div className="text-[11px] text-muted">See all listings in this neighborhood</div>
-                  </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
-              )}
-
-              {/* Browse agent's listings shortcut */}
-              {hasAgentMatch && matchedAgentName && (
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    navigateToLocation({ type: "agent", label: matchedAgentName, agent: matchedAgentName });
-                  }}
-                  className="flex w-full items-center gap-3 px-4 py-[9px] text-left hover:bg-[#F9F7F4] transition-colors"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                  </svg>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-medium text-[#2a2825]">{matchedAgentName}</div>
-                    <div className="text-[11px] text-muted">See all listings by this agent</div>
                   </div>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-muted">
                     <path d="M9 18l6-6-6-6" />

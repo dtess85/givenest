@@ -17,7 +17,7 @@ export default function AgentCTA() {
           choose you.
         </p>
         <Link
-          href="/agents"
+          href="/contact?source=agent-recruit"
           className="inline-block rounded-md bg-coral px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#d4574a]"
         >
           Learn more →
