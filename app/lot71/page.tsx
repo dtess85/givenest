@@ -32,8 +32,10 @@ export default function Lot71Home() {
       <Nav overHero />
 
       {/* HERO — the studio's own hero media (see `homeHero` above). Swap in
-          a real looping video when ready. */}
-      <section className="relative flex min-h-[92vh] items-end">
+          a real looping video when ready. The dark `bg` is a safety net for
+          iOS Safari Low Power Mode (which disables all autoplay) and other
+          cases where the Vimeo iframe fails to render anything. */}
+      <section className="relative flex min-h-[92vh] items-end bg-[#1A1812]">
         <HeroMedia media={homeHero} priority />
         <div className="relative z-10 mx-auto w-full max-w-[1200px] px-6 pb-24 pt-32 md:px-10 md:pb-32">
           <div className="fade-up max-w-[720px]">

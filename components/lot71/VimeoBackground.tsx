@@ -135,7 +135,9 @@ export default function VimeoBackground({
     >
       <iframe
         ref={iframeRef}
-        src={`https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&loop=1&muted=1&dnt=1#t=${startAt}s`}
+        // `playsinline=1` is required for iOS Safari to play the embed
+        // inline instead of refusing autoplay (or opening a native player).
+        src={`https://player.vimeo.com/video/${videoId}?background=1&autoplay=1&loop=1&muted=1&playsinline=1&dnt=1#t=${startAt}s`}
         allow="autoplay; fullscreen; picture-in-picture"
         style={{ width: "100%", height: "100%", border: 0 }}
         title={alt ?? "Background video"}
