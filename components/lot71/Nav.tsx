@@ -49,9 +49,9 @@ export default function Nav({ overHero = false }: { overHero?: boolean }) {
               <Link
                 key={href}
                 href={href}
-                className={`text-[13px] tracking-[0.08em] uppercase transition-colors ${
+                className={`text-[13px] font-bold tracking-[0.08em] uppercase transition-colors ${
                   transparent
-                    ? "text-white/90 hover:text-white"
+                    ? "text-white hover:text-white"
                     : active
                       ? "text-[#121212]"
                       : "text-[#6B6860] hover:text-[#121212]"

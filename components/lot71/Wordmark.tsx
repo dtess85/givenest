@@ -15,7 +15,7 @@ export default function Wordmark({
   const fg = dark ? "#FAF9F7" : "#121212";
   const accent = dark ? "#E7C57A" : "#B8873D";
   return (
-    <span className="inline-flex flex-col items-start leading-none">
+    <span className="inline-flex items-baseline gap-[0.35em] leading-none">
       <span
         className="font-serif font-semibold not-italic"
         style={{
@@ -29,15 +29,15 @@ export default function Wordmark({
       </span>
       {showSub && (
         <span
-          className="font-sans"
+          className="font-serif italic"
           style={{
-            fontSize: Math.max(8, Math.round(size * 0.42)),
-            letterSpacing: "0.32em",
-            marginTop: Math.max(2, Math.round(size * 0.18)),
-            color: dark ? "#8E8A82" : "#6B6860",
+            fontSize: size,
+            // Match the LOT fg color so it stays white on hero and black
+            // when the nav is scrolled over a light background.
+            color: fg,
           }}
         >
-          DESIGNS
+          Designs
         </span>
       )}
     </span>

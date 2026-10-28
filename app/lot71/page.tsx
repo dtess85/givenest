@@ -37,17 +37,14 @@ export default function Lot71Home() {
         <HeroMedia media={homeHero} priority />
         <div className="relative z-10 mx-auto w-full max-w-[1200px] px-6 pb-24 pt-32 md:px-10 md:pb-32">
           <div className="fade-up max-w-[720px]">
-            <div className="mb-6 inline-block text-[10px] uppercase tracking-[0.3em] text-[#E7C57A]">
-              Design · Build · Sell
-            </div>
             <h1
               className="font-serif text-[clamp(44px,6vw,82px)] font-medium leading-[1.05] tracking-[-0.015em] text-white"
               style={{ textShadow: "0 2px 24px rgba(0,0,0,0.5)" }}
             >
-              We build the homes.
+              We design homes
               <br />
               <em className="font-serif italic text-[#E7C57A]">
-                Then we sell them.
+                with you in mind.
               </em>
             </h1>
             <p
@@ -67,34 +64,24 @@ export default function Lot71Home() {
                 See the homes
                 <span className="transition-transform group-hover:translate-x-1">→</span>
               </Link>
-              <Link
-                href="/lot71/story"
-                className="text-[13px] uppercase tracking-[0.18em] text-white hover:text-[#E7C57A]"
-                style={{ textShadow: "0 1px 2px rgba(0,0,0,0.8)" }}
-              >
-                The story →
-              </Link>
             </div>
           </div>
         </div>
       </section>
 
       {/* INTRO STRIP */}
-      <section className="border-b border-[#E8E4DC] px-6 py-24 md:px-10 md:py-32">
+      <section className="bg-[#EEEAE1] px-6 py-24 md:px-10 md:py-32">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-14 md:grid-cols-[1fr_1.3fr] md:gap-24">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-[#B8873D]">
-              The studio
-            </div>
-            <h2 className="mt-6 font-serif text-[clamp(32px,3.4vw,46px)] font-medium leading-[1.15] tracking-[-0.01em]">
-              Quiet from the street.
+            <h2 className="font-serif text-[clamp(32px,3.4vw,46px)] font-medium leading-[1.15] tracking-[-0.01em]">
+              Built like we were
               <br />
-              Generous once you&apos;re inside.
+              <em className="italic text-[#B8873D]">building our own.</em>
             </h2>
           </div>
           <div className="text-[16px] leading-[1.9] text-[#2A2A26]">
             <p>
-              LOT71 is a small design-and-build studio in Gilbert, Arizona.
+              LOT71 Designs is a small develop-and-build studio in Gilbert, Arizona.
               We don&apos;t take on client work. We buy the lot or the house,
               we draw the home in full, and we build it like we were
               building it for ourselves — every window sized, every sightline
@@ -102,10 +89,9 @@ export default function Lot71Home() {
               up here in mind. Then we list it.
             </p>
             <p className="mt-6">
-              Our work tends to read quiet from the street and generous once
-              you&apos;re inside. We like plaster. We like white oak. We like
-              windows that are sized for a specific tree. We care about where
-              the light lands at four o&apos;clock.
+              We like plaster. We like white oak. We like windows sized for a
+              specific tree. We care about where the light lands at four
+              o&apos;clock.
             </p>
             <Link
               href="/lot71/story"
@@ -122,11 +108,8 @@ export default function Lot71Home() {
       <section className="px-6 py-24 md:px-10 md:py-32">
         <div className="mx-auto max-w-[1200px]">
           <div className="mb-16">
-            <div className="text-[10px] uppercase tracking-[0.3em] text-[#B8873D]">
-              Projects
-            </div>
-            <h2 className="mt-5 font-serif text-[clamp(30px,3vw,42px)] font-medium leading-[1.15] tracking-[-0.01em]">
-              Every home, by its lot.
+            <h2 className="font-serif text-[clamp(30px,3vw,42px)] font-medium leading-[1.15] tracking-[-0.01em]">
+              Our Projects
             </h2>
           </div>
 
@@ -145,10 +128,7 @@ export default function Lot71Home() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-1 gap-14 md:grid-cols-[1fr_1.3fr] md:gap-24">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-[#B8873D]">
-                Approach
-              </div>
-              <h2 className="mt-6 font-serif text-[clamp(30px,3vw,44px)] font-medium leading-[1.15] tracking-[-0.01em]">
+              <h2 className="font-serif text-[clamp(30px,3vw,44px)] font-medium leading-[1.15] tracking-[-0.01em]">
                 A short list of things we <em className="italic text-[#B8873D]">use well.</em>
               </h2>
               <p className="mt-7 max-w-[420px] text-[16px] leading-[1.9] text-[#2A2A26]">
@@ -182,10 +162,7 @@ export default function Lot71Home() {
       <section className="relative overflow-hidden bg-[#1A1812] px-6 py-28 text-white md:px-10 md:py-36">
         <div className="mx-auto max-w-[1200px]">
           <div className="max-w-[620px]">
-            <div className="text-[10px] uppercase tracking-[0.3em] text-[#E7C57A]">
-              The next one is always coming
-            </div>
-            <h2 className="mt-6 font-serif text-[clamp(32px,3.4vw,48px)] font-medium leading-[1.15] tracking-[-0.01em]">
+            <h2 className="font-serif text-[clamp(32px,3.4vw,48px)] font-medium leading-[1.15] tracking-[-0.01em]">
               Interested in a LOT71 home?{" "}
               <em className="italic text-[#E7C57A]">Join the list.</em>
             </h2>

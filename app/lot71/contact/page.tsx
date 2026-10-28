@@ -15,10 +15,7 @@ export default function ContactPage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-1 gap-14 md:grid-cols-[1fr_1fr] md:gap-24">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-[#B8873D]">
-                Reach us
-              </div>
-              <h1 className="mt-6 font-serif text-[clamp(42px,5vw,68px)] font-medium leading-[1.05] tracking-[-0.02em]">
+              <h1 className="font-serif text-[clamp(42px,5vw,68px)] font-medium leading-[1.05] tracking-[-0.02em]">
                 Interested in a <em className="italic text-[#B8873D]">LOT71 home?</em>
               </h1>
               <p className="mt-7 max-w-[480px] text-[16px] leading-[1.9] text-[#2A2A26]">

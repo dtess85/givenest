@@ -12,7 +12,7 @@ const statusStyles: Record<ProjectStatus, { label: string; className: string }> 
   },
   "coming-soon": {
     label: "Coming soon",
-    className: "bg-white/90 text-[#121212]",
+    className: "bg-[#2A2A26]/50 text-white backdrop-blur-sm",
   },
   sold: {
     label: "Sold",
@@ -29,14 +29,14 @@ export default function ProjectCard({
   project: Project;
   size?: "default" | "feature";
 }) {
-  const aspect = size === "feature" ? "aspect-[16/10]" : "aspect-[4/5]";
+  const aspect = size === "feature" ? "aspect-[2/1]" : "aspect-[3/2]";
 
   return (
     <Link
       href={`/lot71/work/${project.slug}`}
       className="group block"
     >
-      <div className={`relative ${aspect} w-full overflow-hidden bg-[#EEEAE1]`}>
+      <div className={`relative ${aspect} w-full overflow-hidden rounded-2xl bg-[#EEEAE1]`}>
         {project.hero.kind === "placeholder" && (
           <Placeholder
             label={project.hero.label}
@@ -72,12 +72,16 @@ export default function ProjectCard({
           />
         )}
         <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
-          <span
-            className={`rounded-full px-3 py-[6px] text-[10px] uppercase tracking-[0.18em] ${statusStyles[project.status].className}`}
-          >
-            {statusStyles[project.status].label}
-          </span>
-          <span className="rounded-full bg-black/35 px-3 py-[6px] text-[10px] uppercase tracking-[0.18em] text-white backdrop-blur-sm">
+          {project.status === "sold" ? (
+            <span />
+          ) : (
+            <span
+              className={`rounded-full px-3 py-[6px] text-[10px] uppercase tracking-[0.18em] ${statusStyles[project.status].className}`}
+            >
+              {statusStyles[project.status].label}
+            </span>
+          )}
+          <span className="rounded-full bg-[#2A2A26]/50 px-3 py-[6px] text-[10px] uppercase tracking-[0.18em] text-white backdrop-blur-sm">
             {project.kind === "build" ? "New Build" : "Remodel"}
           </span>
         </div>

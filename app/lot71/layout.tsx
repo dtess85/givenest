@@ -3,7 +3,7 @@ import "./lot71.css";
 
 const siteUrl = "https://lot71designs.com";
 const siteDescription =
-  "A small design-and-build studio in Gilbert, Arizona. We build the homes, then we sell them — every detail designed, every finish chosen.";
+  "A small develop-and-build studio in Gilbert, Arizona. We build the homes, then we sell them — every detail designed, every finish chosen.";
 
 export const metadata: Metadata = {
   // metadataBase lets Next resolve OG / twitter image URLs against the

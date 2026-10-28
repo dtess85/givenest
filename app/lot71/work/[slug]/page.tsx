@@ -84,10 +84,6 @@ export default function ProjectPage({
         <div className="relative z-10 mx-auto w-full max-w-[1200px] px-6 pb-20 pt-32 md:px-10 md:pb-28">
           <div className="fade-up">
             <div className="mb-5 flex flex-wrap items-center gap-3">
-              <span className="inline-block text-[10px] uppercase tracking-[0.3em] text-[#E7C57A]">
-                {project.kind === "build" ? "New Build" : "Remodel"} ·{" "}
-                {project.year}
-              </span>
               {project.status === "available" && (
                 <span className="inline-block rounded-full bg-[#B8873D] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-white">
                   For sale
@@ -154,10 +150,7 @@ export default function ProjectPage({
           </div>
 
           <aside>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-[#B8873D]">
-              Details
-            </div>
-            <dl className="mt-6 divide-y divide-[#E8E4DC] border-y border-[#E8E4DC]">
+            <dl className="divide-y divide-[#E8E4DC] border-y border-[#E8E4DC]">
               {project.specs.map((s) => (
                 <div
                   key={s.label}
@@ -203,10 +196,7 @@ export default function ProjectPage({
         <section className="bg-[#F4F1E8] px-6 py-20 md:px-10 md:py-28">
           <div className="mx-auto flex max-w-[1200px] flex-col items-start gap-6 md:flex-row md:items-end md:justify-between">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-[#B8873D]">
-                {project.status === "coming-soon" ? "Coming soon" : "Interested?"}
-              </div>
-              <h2 className="mt-5 font-serif text-[clamp(26px,2.8vw,38px)] font-medium leading-tight">
+              <h2 className="font-serif text-[clamp(26px,2.8vw,38px)] font-medium leading-tight">
                 {project.status === "coming-soon"
                   ? `Want a first look at ${project.name}?`
                   : `Come see ${project.name}.`}
@@ -237,11 +227,8 @@ export default function ProjectPage({
             href={`/lot71/work/${prev.slug}`}
             className="group block"
           >
-            <div className="text-[10px] uppercase tracking-[0.3em] text-[#6B6860]">
-              ← Previous
-            </div>
-            <div className="mt-3 font-serif text-[26px] font-medium text-[#121212] group-hover:text-[#B8873D]">
-              {prev.name}
+            <div className="font-serif text-[26px] font-medium text-[#121212] group-hover:text-[#B8873D]">
+              ← {prev.name}
             </div>
             <div className="mt-1 text-[13px] text-[#6B6860]">
               {prev.city}, {prev.state} · {prev.year}
@@ -251,11 +238,8 @@ export default function ProjectPage({
             href={`/lot71/work/${next.slug}`}
             className="group block md:text-right"
           >
-            <div className="text-[10px] uppercase tracking-[0.3em] text-[#6B6860]">
-              Next →
-            </div>
-            <div className="mt-3 font-serif text-[26px] font-medium text-[#121212] group-hover:text-[#B8873D]">
-              {next.name}
+            <div className="font-serif text-[26px] font-medium text-[#121212] group-hover:text-[#B8873D]">
+              {next.name} →
             </div>
             <div className="mt-1 text-[13px] text-[#6B6860]">
               {next.city}, {next.state} · {next.year}

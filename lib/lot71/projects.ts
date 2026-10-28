@@ -59,7 +59,7 @@ export const projects: Project[] = [
     name: "Lot 98",
     kind: "build",
     status: "coming-soon",
-    year: 2026,
+    year: 2027,
     city: "Gilbert",
     state: "AZ",
     summary:
@@ -121,20 +121,37 @@ export const projects: Project[] = [
     year: 2026,
     city: "Gilbert",
     state: "AZ",
-    summary: "A whole-home remodel in Gilbert — details coming soon.",
+    summary:
+      "A whole-home remodel in Gilbert — in design. Elevations shown; interiors coming soon.",
     description: [
-      "Placeholder description. Replace with the project narrative — scope, plan moves, materials — when photos are ready.",
+      "A whole-home remodel in design. Four exterior elevations shown — south (front), east, north (rear), and west.",
+      "More to come as the project moves from drawings to construction.",
     ],
     specs: [
       { label: "Status", value: "Coming soon" },
       { label: "Type", value: "Whole-home Remodel" },
     ],
-    hero: { kind: "placeholder", label: "Lot 73", tone: "shadow" },
+    hero: {
+      kind: "image",
+      src: "/lot71/projects/lot-73/hero.jpg",
+      alt: "Lot 73 — south elevation",
+    },
     gallery: [
-      { kind: "placeholder", label: "Exterior", tone: "stone" },
-      { kind: "placeholder", label: "Kitchen", tone: "warm" },
-      { kind: "placeholder", label: "Living", tone: "ochre" },
-      { kind: "placeholder", label: "Primary", tone: "clay" },
+      {
+        kind: "image",
+        src: "/lot71/projects/lot-73/gallery-01-east.jpg",
+        alt: "East elevation",
+      },
+      {
+        kind: "image",
+        src: "/lot71/projects/lot-73/gallery-02-north.jpg",
+        alt: "North elevation (rear)",
+      },
+      {
+        kind: "image",
+        src: "/lot71/projects/lot-73/gallery-03-west.jpg",
+        alt: "West elevation",
+      },
     ],
   },
   {
@@ -142,25 +159,58 @@ export const projects: Project[] = [
     name: "Lot 150",
     kind: "build",
     status: "sold",
-    year: 2023,
+    year: 2026,
     city: "Gilbert",
     state: "AZ",
-    summary: "A new build in Somerset Phase 2 — 2635 E Los Altos Rd.",
+    summary:
+      "A new build on an acre lot in Somerset Phase 2. White brick, cedar-shake roof, stone chimney, flagstone courtyard, pool loggia with full-height sliders.",
     description: [
-      "Placeholder description. Replace with the project narrative — plan moves, siting, materials — when photos are ready.",
+      "A ground-up custom on an acre lot in Somerset Phase 2, Gilbert. Painted brick and limestone at the ground floor, cedar-shake roofs with copper gutters, dormered second story, oversized steel-and-glass arched entry flanked by brass carriage lanterns.",
+      "The plan opens on a long cross-axis: great room with vaulted beam ceiling and three arched steel sliders, kitchen with rift oak millwork, and a covered pool loggia that reads as a second living room. Primary suite sits on its own wing with a stone chimney and a view to the yard.",
     ],
     specs: [
-      { label: "Status", value: "Sold" },
+      { label: "Status", value: "Sold · 2026" },
       { label: "Type", value: "New Build" },
       { label: "Address", value: "2635 E Los Altos Rd" },
       { label: "Subdivision", value: "Somerset Phase 2" },
+      { label: "Lot", value: "~1 ac" },
     ],
-    hero: { kind: "placeholder", label: "Lot 150", tone: "warm" },
+    hero: {
+      kind: "image",
+      src: "/lot71/projects/lot-150/hero.jpg",
+      alt: "Lot 150 — twilight front elevation with iron gate and brass lanterns",
+    },
     gallery: [
-      { kind: "placeholder", label: "Exterior", tone: "stone" },
-      { kind: "placeholder", label: "Kitchen", tone: "warm" },
-      { kind: "placeholder", label: "Living", tone: "ochre" },
-      { kind: "placeholder", label: "Primary", tone: "clay" },
+      {
+        kind: "image",
+        src: "/lot71/projects/lot-150/gallery-01-courtyard.jpg",
+        alt: "Twilight flagstone courtyard off the arched entry",
+      },
+      {
+        kind: "image",
+        src: "/lot71/projects/lot-150/gallery-02-front-day.jpg",
+        alt: "Daytime street elevation with grass courtyard and paver driveway",
+      },
+      {
+        kind: "image",
+        src: "/lot71/projects/lot-150/gallery-03-great-room.jpg",
+        alt: "Vaulted great room with beams, arched sliders, and open kitchen",
+      },
+      {
+        kind: "image",
+        src: "/lot71/projects/lot-150/gallery-04-entry.jpg",
+        alt: "Arched stone entry vignette with brass sconce and console",
+      },
+      {
+        kind: "image",
+        src: "/lot71/projects/lot-150/gallery-05-loggia.jpg",
+        alt: "Covered pool loggia at dusk",
+      },
+      {
+        kind: "image",
+        src: "/lot71/projects/lot-150/gallery-06-aerial.jpg",
+        alt: "Aerial twilight view of the property with the Superstitions",
+      },
     ],
   },
   {

@@ -9,7 +9,7 @@ export default function Footer() {
           <div>
             <Wordmark size={22} dark />
             <p className="mt-6 max-w-[340px] text-[14px] leading-[1.9] text-[#8E8A82]">
-              A design-and-build studio in Gilbert, Arizona. We build, remodel,
+              A develop-and-build studio in Gilbert, Arizona. We build, remodel,
               and design residential projects, one at a time.
             </p>
           </div>
