@@ -43,7 +43,7 @@ export default function Lot71Home() {
               className="font-serif text-[clamp(44px,6vw,82px)] font-medium leading-[1.05] tracking-[-0.015em] text-white"
               style={{ textShadow: "0 2px 24px rgba(0,0,0,0.5)" }}
             >
-              We design homes
+              We build homes
               <br />
               <em className="font-serif italic text-[#E7C57A]">
                 with you in mind.
