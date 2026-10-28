@@ -7,8 +7,32 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "dustin@givenest.com,kyndall@g
 
 const protectedPaths = ["/charity/dashboard", "/admin", "/landlord/dashboard"];
 
+// Hosts that should serve the LOT71 brand site (route group at /lot71/*).
+// Add more here when staging domains come online. The /lot71 prefix is
+// hidden from visitors on these hosts via an internal rewrite.
+const LOT71_HOSTS = new Set([
+  "lot71designs.com",
+  "www.lot71designs.com",
+]);
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // --- LOT71 Designs brand host → serve the /lot71/* route tree ---
+  // When the request comes in on a LOT71 host, rewrite so the URL the
+  // visitor sees (e.g. lot71designs.com/work/the-ranch) is served by
+  // /lot71/work/the-ranch internally. The brand site is public and
+  // shares nothing with Givenest's protected routes, so we return
+  // right after rewriting.
+  const host = req.headers.get("host")?.toLowerCase() ?? "";
+  if (LOT71_HOSTS.has(host)) {
+    const url = req.nextUrl.clone();
+    if (!pathname.startsWith("/lot71")) {
+      url.pathname = `/lot71${pathname === "/" ? "" : pathname}`;
+      return NextResponse.rewrite(url);
+    }
+    return NextResponse.next();
+  }
 
   // Allow login pages through without auth.
   if (

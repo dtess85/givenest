@@ -1,0 +1,38 @@
+/* LOT71-scoped tokens and small utilities. Keeps the brand's palette and
+   motion rules isolated from the Givenest root globals. */
+
+.lot71-brand {
+  --l71-bg: #FAFAF7;
+  --l71-fg: #121212;
+  --l71-ochre: #B8873D;
+  --l71-ochre-hover: #9B6F2C;
+  --l71-muted: #6B6860;
+  --l71-border: #E8E4DC;
+  --l71-stone: #EEEAE1;
+}
+
+/* Fade-up for scroll-reveal elements */
+.lot71-brand .fade-up {
+  animation: lot71-fade-up 0.9s ease forwards;
+  opacity: 0;
+}
+
+.lot71-brand .fade-up-slow {
+  animation: lot71-fade-up 1.4s ease forwards;
+  opacity: 0;
+}
+
+@keyframes lot71-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Hero: subtle slow zoom, drawn into motion for photographic heros */
+.lot71-brand .hero-kenburns {
+  animation: lot71-kenburns 18s ease-out forwards;
+}
+
+@keyframes lot71-kenburns {
+  from { transform: scale(1); }
+  to   { transform: scale(1.06); }
+}
