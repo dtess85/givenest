@@ -163,17 +163,20 @@ export const projects: Project[] = [
     city: "Gilbert",
     state: "AZ",
     summary:
-      "A new build on an acre lot in Somerset Phase 2. White brick, cedar-shake roof, stone chimney, flagstone courtyard, pool loggia with full-height sliders.",
+      "A furnished, turn-key European-inspired estate behind the gates of Somerset Landmark — 6,677 sq ft, 5 bedrooms, 4.5 baths, plus a 957-sq-ft guest house.",
     description: [
-      "A ground-up custom on an acre lot in Somerset Phase 2, Gilbert. Painted brick and limestone at the ground floor, cedar-shake roofs with copper gutters, dormered second story, oversized steel-and-glass arched entry flanked by brass carriage lanterns.",
-      "The plan opens on a long cross-axis: great room with vaulted beam ceiling and three arched steel sliders, kitchen with rift oak millwork, and a covered pool loggia that reads as a second living room. Primary suite sits on its own wing with a stone chimney and a view to the yard.",
+      "Set behind the gates of Somerset Landmark in Gilbert, on a corner lot with direct views of the nearby LDS temple. 6,677 square feet across five bedrooms and four and a half baths, plus a 957-square-foot guest house with its own kitchen and laundry. A collaboration with Cory Black Design and THELIFESTYLEDCO — furnished and turn-key when it listed.",
+      "Signature arches set the elevation. A flagstone path crosses a private courtyard with a fireplace — one of the more inviting front yards in the community. Inside, a gallery-style entry sets the scale, and the vaulted great room opens through three arched French doors to the back.",
+      "The kitchen centers on a furniture-style island with layered white oak cabinetry — a prep kitchen, walk-in pantry, and laundry run off the back, routed cleanly to the garage. A spacious game room overlooks the outdoor living area with its own fireplace and workspace. A library lines the bedroom corridor with built-in shelving, a rolling ladder, and integrated bench seating.",
+      "The primary suite reads as a private retreat: a statement fireplace, exposed white oak beams, a soaking tub, and a center-island closet. Out back: a château-style pool, outdoor kitchen, barrel sauna, and sport court. Natural materials — white oak, stone, flagstone — pair with Lutron HomeWorks whole-home lighting and Visual Comfort fixtures. A four-car garage with a trailer gate and parking for five more completes the property.",
     ],
     specs: [
       { label: "Status", value: "Sold · 2026" },
       { label: "Type", value: "New Build" },
       { label: "Address", value: "2635 E Los Altos Rd" },
-      { label: "Subdivision", value: "Somerset Phase 2" },
-      { label: "Lot", value: "~1 ac" },
+      { label: "Subdivision", value: "Somerset Landmark" },
+      { label: "Home", value: "6,677 sq ft · 5 BD / 4.5 BA" },
+      { label: "Guest house", value: "957 sq ft ADU" },
     ],
     hero: {
       kind: "image",
