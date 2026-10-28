@@ -4,19 +4,18 @@ import { useEffect, useRef, useState } from "react";
 
 // Reveal — fades + slides children up once they enter the viewport.
 // Idempotent: toggles the class once on first intersection, then
-// disconnects the observer.
+// disconnects the observer. Always wraps in a <div> for simplicity;
+// if semantic markup matters, the caller can pass semantic children.
 export default function Reveal({
   children,
   delay = 0,
-  as: Tag = "div",
   className = "",
 }: {
   children: React.ReactNode;
   delay?: number;
-  as?: "div" | "section" | "li" | "article";
   className?: string;
 }) {
-  const ref = useRef<HTMLElement | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
@@ -54,12 +53,8 @@ export default function Reveal({
   };
 
   return (
-    <Tag
-      ref={ref as React.Ref<HTMLElement>}
-      className={className}
-      style={style}
-    >
+    <div ref={ref} className={className} style={style}>
       {children}
-    </Tag>
+    </div>
   );
 }

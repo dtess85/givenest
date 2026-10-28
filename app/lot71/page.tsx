@@ -121,21 +121,13 @@ export default function Lot71Home() {
       {/* PROJECTS */}
       <section className="px-6 py-24 md:px-10 md:py-32">
         <div className="mx-auto max-w-[1200px]">
-          <div className="mb-16 flex items-end justify-between gap-6">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-[#B8873D]">
-                Projects
-              </div>
-              <h2 className="mt-5 font-serif text-[clamp(30px,3vw,42px)] font-medium leading-[1.15] tracking-[-0.01em]">
-                Every home, by its lot.
-              </h2>
+          <div className="mb-16">
+            <div className="text-[10px] uppercase tracking-[0.3em] text-[#B8873D]">
+              Projects
             </div>
-            <Link
-              href="/lot71/work"
-              className="hidden text-[12px] uppercase tracking-[0.2em] text-[#6B6860] hover:text-[#121212] md:inline"
-            >
-              See all →
-            </Link>
+            <h2 className="mt-5 font-serif text-[clamp(30px,3vw,42px)] font-medium leading-[1.15] tracking-[-0.01em]">
+              Every home, by its lot.
+            </h2>
           </div>
 
           <div className="grid grid-cols-1 gap-x-10 gap-y-20 md:grid-cols-2">
@@ -144,15 +136,6 @@ export default function Lot71Home() {
                 <ProjectCard project={p} />
               </Reveal>
             ))}
-          </div>
-
-          <div className="mt-16 flex justify-center md:hidden">
-            <Link
-              href="/lot71/work"
-              className="inline-flex items-center gap-3 border border-[#121212] px-7 py-3 text-[12px] uppercase tracking-[0.2em] text-[#121212]"
-            >
-              All projects →
-            </Link>
           </div>
         </div>
       </section>
@@ -177,16 +160,18 @@ export default function Lot71Home() {
 
             <ul className="grid grid-cols-1 gap-8 sm:grid-cols-2">
               {materials.map((m, i) => (
-                <Reveal key={m.title} as="li" delay={i * 90}>
-                  <div className="border-l-2 border-[#B8873D] pl-5">
-                    <div className="font-serif text-[20px] font-medium leading-tight text-[#121212]">
-                      {m.title}
+                <li key={m.title}>
+                  <Reveal delay={i * 90}>
+                    <div className="border-l-2 border-[#B8873D] pl-5">
+                      <div className="font-serif text-[20px] font-medium leading-tight text-[#121212]">
+                        {m.title}
+                      </div>
+                      <div className="mt-2 text-[14px] leading-[1.7] text-[#6B6860]">
+                        {m.note}
+                      </div>
                     </div>
-                    <div className="mt-2 text-[14px] leading-[1.7] text-[#6B6860]">
-                      {m.note}
-                    </div>
-                  </div>
-                </Reveal>
+                  </Reveal>
+                </li>
               ))}
             </ul>
           </div>

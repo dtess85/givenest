@@ -40,15 +40,27 @@ function GalleryItem({ media }: { media: Media }) {
       />
     );
   }
+  if (media.kind === "video") {
+    return (
+      <video
+        src={media.src}
+        poster={media.poster}
+        muted
+        loop
+        playsInline
+        autoPlay
+        className="h-full w-full object-cover"
+      />
+    );
+  }
+  // Vimeo embeds don't belong in the gallery grid (fixed aspect iframes
+  // don't crop like `object-cover`). Fall back to a stock player embed.
   return (
-    <video
-      src={media.src}
-      poster={media.poster}
-      muted
-      loop
-      playsInline
-      autoPlay
-      className="h-full w-full object-cover"
+    <iframe
+      src={`https://player.vimeo.com/video/${media.videoId}?dnt=1`}
+      title={media.alt ?? "Video"}
+      allow="autoplay; fullscreen; picture-in-picture"
+      className="h-full w-full border-0"
     />
   );
 }

@@ -37,20 +37,22 @@ export default function ProjectCard({
       className="group block"
     >
       <div className={`relative ${aspect} w-full overflow-hidden bg-[#EEEAE1]`}>
-        {project.hero.kind === "placeholder" ? (
+        {project.hero.kind === "placeholder" && (
           <Placeholder
             label={project.hero.label}
             tone={project.hero.tone}
             showLabel={false}
           />
-        ) : project.hero.kind === "image" ? (
+        )}
+        {project.hero.kind === "image" && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={project.hero.src}
             alt={project.hero.alt ?? project.name}
             className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.03]"
           />
-        ) : (
+        )}
+        {project.hero.kind === "video" && (
           <video
             src={project.hero.src}
             poster={project.hero.poster}
@@ -59,6 +61,14 @@ export default function ProjectCard({
             playsInline
             autoPlay
             className="h-full w-full object-cover"
+          />
+        )}
+        {project.hero.kind === "vimeo" && (
+          <iframe
+            src={`https://player.vimeo.com/video/${project.hero.videoId}?background=1&autoplay=1&loop=1&muted=1&dnt=1`}
+            title={project.hero.alt ?? project.name}
+            allow="autoplay; fullscreen; picture-in-picture"
+            className="h-full w-full border-0"
           />
         )}
         <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
