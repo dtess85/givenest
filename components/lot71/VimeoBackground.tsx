@@ -9,6 +9,27 @@ type Props = {
   alt?: string;
 };
 
+// Minimal shape of Vimeo's Player SDK — just the methods we touch.
+// Lets us avoid pulling in `@types/vimeo__player` or using `any`.
+type VimeoTimeEvent = { seconds: number };
+type VimeoPlayer = {
+  ready: () => Promise<void>;
+  setCurrentTime: (seconds: number) => Promise<number>;
+  on: (
+    event: "timeupdate",
+    handler: (data: VimeoTimeEvent) => void
+  ) => void;
+  off: (
+    event: "timeupdate",
+    handler: (data: VimeoTimeEvent) => void
+  ) => void;
+};
+type VimeoGlobal = {
+  Vimeo?: {
+    Player: new (iframe: HTMLIFrameElement) => VimeoPlayer;
+  };
+};
+
 // Vimeo background video with support for a sub-clip loop.
 // - Uses Vimeo's `background=1` for autoplay / muted / no controls.
 // - Loads the Player SDK on mount and seeks to `startAt` once ready.
@@ -26,14 +47,14 @@ export default function VimeoBackground({
 
   useEffect(() => {
     let cancelled = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let player: any;
-    let onTime: ((d: { seconds: number }) => void) | undefined;
+    let player: VimeoPlayer | undefined;
+    let onTime: ((d: VimeoTimeEvent) => void) | undefined;
+
+    const vimeoGlobal = () => window as unknown as VimeoGlobal;
 
     const loadSdk = () =>
       new Promise<void>((resolve, reject) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((window as any).Vimeo?.Player) return resolve();
+        if (vimeoGlobal().Vimeo?.Player) return resolve();
         const existing = document.querySelector<HTMLScriptElement>(
           'script[data-vimeo-sdk="1"]'
         );
@@ -57,13 +78,15 @@ export default function VimeoBackground({
       try {
         await loadSdk();
         if (cancelled || !iframeRef.current) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        player = new (window as any).Vimeo.Player(iframeRef.current);
-        await player.ready();
+        const PlayerCtor = vimeoGlobal().Vimeo?.Player;
+        if (!PlayerCtor) return;
+        const p: VimeoPlayer = new PlayerCtor(iframeRef.current);
+        player = p;
+        await p.ready();
         if (cancelled) return;
         if (startAt > 0) {
           try {
-            await player.setCurrentTime(startAt);
+            await p.setCurrentTime(startAt);
           } catch {
             // Ignore — initial seek is nice-to-have; the fragment `#t=` in
             // the iframe URL already biases toward the correct start.
@@ -74,14 +97,14 @@ export default function VimeoBackground({
         const wrapFloor = Math.max(0, startAt - 2);
         onTime = ({ seconds }) => {
           if (endAt !== undefined && seconds >= endAt) {
-            player.setCurrentTime(startAt);
+            p.setCurrentTime(startAt);
             return;
           }
           if (startAt > 0 && seconds < wrapFloor) {
-            player.setCurrentTime(startAt);
+            p.setCurrentTime(startAt);
           }
         };
-        player.on("timeupdate", onTime);
+        p.on("timeupdate", onTime);
       } catch {
         // SDK blocked or failed; the iframe still plays via background=1.
       }
