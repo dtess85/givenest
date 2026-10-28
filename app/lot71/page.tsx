@@ -51,9 +51,9 @@ export default function Lot71Home() {
               className="mt-7 max-w-[560px] text-[17px] leading-[1.75] text-white"
               style={{ textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 2px 16px rgba(0,0,0,0.7)" }}
             >
-              A small studio in Gilbert, Arizona. Every home designed in full
-              with the person who&apos;ll live in it in mind — every detail
-              planned, every finish chosen. Not another spec.{" "}
+              Every home designed in full with the person who&apos;ll live in
+              it in mind — every detail planned, every finish chosen. Not
+              another spec.{" "}
               <em className="italic text-[#E7C57A]">A home designed.</em>
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-7">
