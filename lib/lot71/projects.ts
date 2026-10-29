@@ -237,7 +237,11 @@ export const projects: Project[] = [
     hero: { kind: "placeholder", label: "Lot 30", tone: "stone" },
     gallery: [
       { kind: "placeholder", label: "Exterior", tone: "warm" },
-      { kind: "placeholder", label: "Kitchen", tone: "stone" },
+      {
+        kind: "image",
+        src: "/lot71/projects/lot-30/gallery-02-kitchen.jpg",
+        alt: "Kitchen with floating oak island, honed charcoal counters, and three bell pendants",
+      },
       { kind: "placeholder", label: "Living", tone: "ochre" },
       { kind: "placeholder", label: "Primary", tone: "clay" },
     ],
