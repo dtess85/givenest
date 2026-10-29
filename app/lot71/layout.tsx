@@ -32,11 +32,11 @@ export const metadata: Metadata = {
     follow: true,
   },
   // The root layout (Givenest) pins icons to /favicon.png with
-  // explicit metadata, which overrides the per-route icon.svg
-  // convention. Override back here so lot71 tabs show their own mark.
+  // explicit metadata, which overrides the per-route icon convention.
+  // Override back here so lot71 tabs show their own mark.
   icons: {
-    icon: [{ url: "/lot71/icon.svg", type: "image/svg+xml" }],
-    shortcut: "/lot71/icon.svg",
+    icon: [{ url: "/lot71/icon.png", type: "image/png" }],
+    shortcut: "/lot71/icon.png",
   },
 };
 
