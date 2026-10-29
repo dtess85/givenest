@@ -1,15 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Wordmark from "./Wordmark";
 
 const links = [
   { href: "/lot71/work", label: "Work" },
   { href: "/lot71/story", label: "Story" },
   { href: "/lot71/contact", label: "Contact" },
 ];
+
+// Intrinsic image dims of the wordmark PNGs in public/lot71/brand/.
+// Rendered at 26px tall → ~94px wide; next/image serves resized files.
+const WORDMARK_INTRINSIC_W = 1260;
+const WORDMARK_INTRINSIC_H = 349;
+const WORDMARK_H = 26;
+const WORDMARK_W = Math.round(
+  (WORDMARK_INTRINSIC_W / WORDMARK_INTRINSIC_H) * WORDMARK_H
+);
 
 export default function Nav({ overHero = false }: { overHero?: boolean }) {
   const pathname = usePathname();
@@ -37,8 +46,35 @@ export default function Nav({ overHero = false }: { overHero?: boolean }) {
       }`}
     >
       <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-6 px-6 md:px-10">
-        <Link href="/lot71" className="flex-shrink-0">
-          <Wordmark size={16} dark={transparent} />
+        <Link
+          href="/lot71"
+          aria-label="LOT71 Designs — home"
+          className="relative block flex-shrink-0"
+          style={{ width: WORDMARK_W, height: WORDMARK_H }}
+        >
+          {/* Crossfade between the dark-ink (light bg) and light-ink
+              (over-hero) wordmarks. Both are transparent PNGs that render
+              only the glyphs; the "71" is pre-tinted ochre in each. */}
+          <Image
+            src="/lot71/brand/wordmark-dark.png"
+            alt=""
+            fill
+            priority
+            sizes={`${WORDMARK_W}px`}
+            className={`object-contain transition-opacity duration-300 ${
+              transparent ? "opacity-0" : "opacity-100"
+            }`}
+          />
+          <Image
+            src="/lot71/brand/wordmark-light.png"
+            alt=""
+            fill
+            priority
+            sizes={`${WORDMARK_W}px`}
+            className={`object-contain transition-opacity duration-300 ${
+              transparent ? "opacity-100" : "opacity-0"
+            }`}
+          />
         </Link>
 
         <div className="ml-auto hidden items-center gap-9 md:flex">
