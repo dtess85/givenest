@@ -111,10 +111,10 @@ export default function ContactForm() {
         <p className="mt-4 text-[12px] text-[#C44] leading-[1.6]">
           Something went wrong. Try again, or email us directly at{" "}
           <a
-            href="mailto:studio@lot71designs.com"
+            href="mailto:hello@lot71designs.com"
             className="underline"
           >
-            studio@lot71designs.com
+            hello@lot71designs.com
           </a>
           .
         </p>

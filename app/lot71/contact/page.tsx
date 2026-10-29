@@ -34,10 +34,10 @@ export default function ContactPage() {
                     Studio
                   </div>
                   <a
-                    href="mailto:studio@lot71designs.com"
+                    href="mailto:hello@lot71designs.com"
                     className="mt-2 block font-serif text-[22px] text-[#121212] hover:text-[#B8873D]"
                   >
-                    studio@lot71designs.com
+                    hello@lot71designs.com
                   </a>
                 </div>
                 <div>
