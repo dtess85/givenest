@@ -12,10 +12,10 @@ const links = [
 ];
 
 // Intrinsic image dims of the wordmark PNGs in public/lot71/brand/.
-// Rendered at 26px tall → ~94px wide; next/image serves resized files.
+// Rendered at 34px tall → ~123px wide; next/image serves resized files.
 const WORDMARK_INTRINSIC_W = 1260;
 const WORDMARK_INTRINSIC_H = 349;
-const WORDMARK_H = 26;
+const WORDMARK_H = 34;
 const WORDMARK_W = Math.round(
   (WORDMARK_INTRINSIC_W / WORDMARK_INTRINSIC_H) * WORDMARK_H
 );
