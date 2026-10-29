@@ -1,5 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
-import Wordmark from "./Wordmark";
+
+// Intrinsic dims of /public/lot71/brand/wordmark-light.png.
+// Rendered at 36px tall → ~130px wide; next/image serves resized files.
+const WORDMARK_H = 36;
+const WORDMARK_W = Math.round((1260 / 349) * WORDMARK_H);
 
 export default function Footer() {
   return (
@@ -7,7 +12,13 @@ export default function Footer() {
       <div className="mx-auto max-w-[1200px]">
         <div className="grid grid-cols-1 gap-14 md:grid-cols-[2fr_1fr_1fr] md:gap-12">
           <div>
-            <Wordmark size={22} dark />
+            <Image
+              src="/lot71/brand/wordmark-light.png"
+              alt="LOT71 Designs"
+              width={WORDMARK_W}
+              height={WORDMARK_H}
+              className="h-9 w-auto"
+            />
             <p className="mt-6 max-w-[340px] text-[14px] leading-[1.9] text-[#8E8A82]">
               A develop-and-build studio in Gilbert, Arizona. We build, remodel,
               and design residential projects, one at a time.
