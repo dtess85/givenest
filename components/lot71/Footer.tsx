@@ -37,10 +37,10 @@ export default function Footer() {
             </div>
             <div className="flex flex-col gap-3">
               <a
-                href="mailto:studio@lot71designs.com"
+                href="mailto:hello@lot71designs.com"
                 className="text-[14px] text-[#D7D2C8] hover:text-white"
               >
-                studio@lot71designs.com
+                hello@lot71designs.com
               </a>
               <span className="text-[14px] text-[#8E8A82]">
                 Gilbert, Arizona
